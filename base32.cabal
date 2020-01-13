@@ -1,0 +1,81 @@
+cabal-version:       2.0
+
+name:                base32
+version:             0.1.0.0
+synopsis:            RFC 4648-compliant Base32 encodings/decodings
+description:
+  RFC 4648-compliant Base32 encodings and decodings for 'ByteString' and 'Text'
+  values.
+homepage:            https://github.com/emilypi/base32
+bug-reports:         https://github.com/emilypi/hcodec/issues
+license:             BSD3
+license-file:        LICENSE
+author:              Emily Pillmore
+maintainer:          emilypi@cohomolo.gy
+copyright:           (c) 2020 Emily Pillmore
+category:            Data
+build-type:          Simple
+extra-source-files:
+  CHANGELOG.md
+  README.md
+
+
+tested-with: GHC ==8.8.1 || ==8.6.5 || ==8.6.3 || ==8.4.4 || ==8.4.3 || ==8.0.2
+
+
+source-repository head
+  type: git
+  location: https://github.com/emilypi/base32.git
+
+
+flag perf-flags
+  description: Performance flags monitoring flags
+  default: False
+  manual: True
+
+flag ghc-flags
+    description: Enable ghc dumps of .ghc.flags and .ghc.version for tooling
+    default: False
+    manual: True
+
+
+library
+  exposed-modules:     Data.ByteString.Base32
+                     , Data.ByteString.Base32.Hex
+                     , Data.Text.Encoding.Base32
+                     , Data.Text.Encoding.Base32.Hex
+
+  other-modules:       Data.ByteString.Base32.Internal
+
+  build-depends:       base >=4.10 && <5
+                     , bytestring
+                     , deepseq
+                     , text
+
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+test-suite tasty
+  default-language:    Haskell2010
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Base32Tests.hs
+  build-depends:       base >=4.10 && <5
+                     , base32
+                     , random-bytestring
+                     , tasty
+                     , tasty-hunit
+                     , text
+
+benchmark bench
+  default-language:    Haskell2010
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      benchmarks
+  main-is:             Base32Bench.hs
+  build-depends:       base >=4.10 && <5
+                     , base32
+                     , deepseq
+                     , criterion
+                     , memory
+                     , random-bytestring
+                     , text
