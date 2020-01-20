@@ -20,7 +20,7 @@ extra-source-files:
   README.md
 
 
-tested-with: GHC ==8.8.1 || ==8.6.5 || ==8.6.3 || ==8.4.4 || ==8.4.3 || ==8.0.2
+tested-with: GHC ==8.8.1 || ==8.6.5 || ==8.6.3 || ==8.4.4 || ==8.4.3 || ==8.2.2 || ==8.0.2
 
 
 source-repository head
@@ -54,6 +54,15 @@ library
 
   hs-source-dirs:      src
   default-language:    Haskell2010
+
+  if flag(perf-flags)
+    ghc-options:       -ddump-simpl -ddump-to-file
+
+  if flag(ghc-flags)
+    build-tool-depends: hsinspect:hsinspect
+    build-depends:      ghcflags
+    ghc-options:        -fplugin GhcFlags.Plugin
+
 
 test-suite tasty
   default-language:    Haskell2010
