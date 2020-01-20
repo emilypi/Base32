@@ -87,7 +87,7 @@ encodeBase32_'
     -> Ptr Word8
     -> Ptr Word8
     -> IO ()
-encodeBase32_' !(Ptr addr#) !dptr !sptr !end = go dptr sptr
+encodeBase32_' !(Ptr alpha) !dptr !sptr !end = go dptr sptr
   where
     go dst src
       | plusPtr src 4 >= end = finalize dst src
@@ -96,9 +96,9 @@ encodeBase32_' !(Ptr addr#) !dptr !sptr !end = go dptr sptr
         b <- peek (plusPtr src 4)
 
 #ifdef WORDS_BIGENDIAN
-        encodeOctet addr# dst a b
+        encodeOctet alpha dst a b
 #else
-        encodeOctet addr# dst (byteSwap32 a) b
+        encodeOctet alpha dst (byteSwap32 a) b
 #endif
         go (plusPtr dst 8) (plusPtr src 5)
 
@@ -118,8 +118,8 @@ encodeBase32_' !(Ptr addr#) !dptr !sptr !end = go dptr sptr
             let x = shiftR (a .&. 0xf8) 3
                 y = shiftL (a .&. 0x07) 2 .|. (shiftR (b .&. 0xc0) 6)
 
-            poke dst (aix x addr#)
-            poke (plusPtr dst 1) (aix y addr#)
+            poke dst (aix x alpha)
+            poke (plusPtr dst 1) (aix y alpha)
             padN (plusPtr dst 2) 6
 
           | plusPtr src 2 == end -> do -- 4 4
@@ -130,10 +130,10 @@ encodeBase32_' !(Ptr addr#) !dptr !sptr !end = go dptr sptr
                 y = shiftR (b .&. 0x3e) 1
                 z = (shiftL (b .&. 0x01) 4)
 
-            poke dst (aix w addr#)
-            poke (plusPtr dst 1) (aix x addr#)
-            poke (plusPtr dst 2) (aix y addr#)
-            poke (plusPtr dst 3) (aix z addr#)
+            poke dst (aix w alpha)
+            poke (plusPtr dst 1) (aix x alpha)
+            poke (plusPtr dst 2) (aix y alpha)
+            poke (plusPtr dst 3) (aix z alpha)
             padN (plusPtr dst 4) 4
 
           | plusPtr src 3 == end -> do -- 5 3
@@ -146,11 +146,11 @@ encodeBase32_' !(Ptr addr#) !dptr !sptr !end = go dptr sptr
                 x = (shiftL (b .&. 0x01) 4) .|. (shiftR (c .&. 0xf0) 4)
                 y = (shiftL (c .&. 0x0f) 1)
 
-            poke dst (aix t addr#)
-            poke (plusPtr dst 1) (aix u addr#)
-            poke (plusPtr dst 2) (aix v addr#)
-            poke (plusPtr dst 3) (aix x addr#)
-            poke (plusPtr dst 4) (aix y addr#)
+            poke dst (aix t alpha)
+            poke (plusPtr dst 1) (aix u alpha)
+            poke (plusPtr dst 2) (aix v alpha)
+            poke (plusPtr dst 3) (aix x alpha)
+            poke (plusPtr dst 4) (aix y alpha)
             padN (plusPtr dst 5) 3
 
           | plusPtr src 4 == end -> do -- 7 1
@@ -166,11 +166,11 @@ encodeBase32_' !(Ptr addr#) !dptr !sptr !end = go dptr sptr
                 y = shiftR (d .&. 0x7c) 2
                 z = shiftL (d .&. 0x03) 3
 
-            poke dst (aix t addr#)
-            poke (plusPtr dst 1) (aix u addr#)
-            poke (plusPtr dst 2) (aix v addr#)
-            poke (plusPtr dst 3) (aix w addr#)
-            poke (plusPtr dst 4) (aix x addr#)
-            poke (plusPtr dst 5) (aix y addr#)
-            poke (plusPtr dst 6) (aix z addr#)
+            poke dst (aix t alpha)
+            poke (plusPtr dst 1) (aix u alpha)
+            poke (plusPtr dst 2) (aix v alpha)
+            poke (plusPtr dst 3) (aix w alpha)
+            poke (plusPtr dst 4) (aix x alpha)
+            poke (plusPtr dst 5) (aix y alpha)
+            poke (plusPtr dst 6) (aix z alpha)
             padN (plusPtr dst 7) 1
