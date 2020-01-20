@@ -17,8 +17,11 @@
 -- processes and tables.
 --
 module Data.ByteString.Base32.Internal
-( -- * Alphabets
-  stdAlphabet
+( -- * Encoding
+  encodeBase32_
+
+  -- * Alphabets
+, stdAlphabet
 , hexAlphabet
 ) where
 
@@ -49,6 +52,22 @@ stdAlphabet = Ptr "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 hexAlphabet :: Ptr Word8
 hexAlphabet = Ptr "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 
+encodeOctet :: Addr# -> Ptr Word8 -> Word32 -> Word8 -> IO ()
+encodeOctet !addr# !dst !lo !hi =
+      let k !w !i = poke @Word8 (plusPtr dst i) (aix (fromIntegral w .&. 0x1f) addr#)
+          !a = fromIntegral (shiftR lo 27)
+          !b = shiftR lo 22
+          !c = shiftR lo 17
+          !d = shiftR lo 12
+          !e = shiftR lo 7
+          !f = shiftR lo 2
+          !g = (shiftL lo 3) .|. fromIntegral (shiftR hi 5)
+          !h = fromIntegral hi
+      in k a 0 >> k b 1 >> k c 2 >> k d 3 >> k e 4 >> k f 5 >> k g 6 >> k h 7
+
+type Five = Word8 -> Word8 -> Word8 -> Word8 -> Word8
+type Eight = (Word8, Word8, Word8, Word8, Word8, Word8, Word8, Word8)
+
 encodeBase32_ :: Ptr Word8 -> ByteString -> ByteString
 encodeBase32_ !alpha (PS !sfp !soff !slen) =
     unsafeCreate dlen $ \dptr ->
@@ -77,43 +96,81 @@ encodeBase32_' !(Ptr addr#) !dptr !sptr !end = go dptr sptr
         b <- peek (plusPtr src 4)
 
 #ifdef WORDS_BIGENDIAN
-        encodeOctet dst a b
+        encodeOctet addr# dst a b
 #else
-        encodeOctet dst (byteSwap32 a) b
+        encodeOctet addr# dst (byteSwap32 a) b
 #endif
         go (plusPtr dst 8) (plusPtr src 5)
 
     padN !d 0 = return ()
     padN !d !n = poke @Word8 d 0x3d >> padN (plusPtr d 1) (n - 1)
 
-    encodeOctet !dst !lo !hi =
-      let k !w !i = poke @Word8 (plusPtr dst i) (aix (fromIntegral w .&. 0x1f) addr#)
-          !a = fromIntegral (shiftR lo 27)
-          !b = shiftR lo 22
-          !c = shiftR lo 17
-          !d = shiftR lo 12
-          !e = shiftR lo 7
-          !f = shiftR lo 2
-          !g = (shiftL lo 3) .|. fromIntegral (shiftR hi 5)
-          !h = fromIntegral hi
-      in k a 0 >> k b 1 >> k c 2 >> k d 3 >> k e 4 >> k f 5 >> k g 6 >> k h 7
-
     finalize :: Ptr Word8 -> Ptr Word8 -> IO ()
     finalize !dst !src
-      | src == end = return () -- src + 0 = end
+      | src == end = return ()
       | otherwise = do
-        a <- peekByteOff src 0
+        a <- peek src
 
         if
           | plusPtr src 1 == end -> do -- 2 6
+            b <- peek (plusPtr src 1)
+
             let x = shiftR (a .&. 0xf8) 3
-                y = shiftL (a .&. 0x07) 2
+                y = shiftL (a .&. 0x07) 2 .|. (shiftR (b .&. 0xc0) 6)
 
             poke dst (aix x addr#)
             poke (plusPtr dst 1) (aix y addr#)
             padN (plusPtr dst 2) 6
 
-          | plusPtr src 4 == end -> undefined -- 6 1
+          | plusPtr src 2 == end -> do -- 4 4
+            b <- peek (plusPtr src 1)
 
-          | plusPtr src 3 == end -> undefined -- 4 3
-          | plusPtr src 2 == end -> undefined -- 3 4
+            let w = shiftR (a .&. 0xf8) 3
+                x = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
+                y = shiftR (b .&. 0x3e) 1
+                z = (shiftL (b .&. 0x01) 4)
+
+            poke dst (aix w addr#)
+            poke (plusPtr dst 1) (aix x addr#)
+            poke (plusPtr dst 2) (aix y addr#)
+            poke (plusPtr dst 3) (aix z addr#)
+            padN (plusPtr dst 4) 4
+
+          | plusPtr src 3 == end -> do -- 5 3
+            b <- peek (plusPtr src 1)
+            c <- peek (plusPtr src 2)
+
+            let t = shiftR (a .&. 0xf8) 3
+                u = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
+                v = shiftR (b .&. 0x3e) 1
+                x = (shiftL (b .&. 0x01) 4) .|. (shiftR (c .&. 0xf0) 4)
+                y = (shiftL (c .&. 0x0f) 1)
+
+            poke dst (aix t addr#)
+            poke (plusPtr dst 1) (aix u addr#)
+            poke (plusPtr dst 2) (aix v addr#)
+            poke (plusPtr dst 3) (aix x addr#)
+            poke (plusPtr dst 4) (aix y addr#)
+            padN (plusPtr dst 5) 3
+
+          | plusPtr src 4 == end -> do -- 7 1
+            b <- peek (plusPtr src 1)
+            c <- peek (plusPtr src 2)
+            d <- peek (plusPtr src 3)
+
+            let t = shiftR (a .&. 0xf8) 3
+                u = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
+                v = shiftR (b .&. 0x3e) 1
+                w = (shiftL (b .&. 0x01) 4) .|. (shiftR (c .&. 0xf0) 4)
+                x = (shiftL (c .&. 0x0f) 1) .|. (shiftR (d .&. 0x80) 7)
+                y = shiftR (d .&. 0x7c) 2
+                z = shiftL (d .&. 0x03) 3
+
+            poke dst (aix t addr#)
+            poke (plusPtr dst 1) (aix u addr#)
+            poke (plusPtr dst 2) (aix v addr#)
+            poke (plusPtr dst 3) (aix w addr#)
+            poke (plusPtr dst 4) (aix x addr#)
+            poke (plusPtr dst 5) (aix y addr#)
+            poke (plusPtr dst 6) (aix z addr#)
+            padN (plusPtr dst 7) 1
