@@ -109,26 +109,26 @@ encodeBase32_' !(Ptr alpha) !dptr !sptr !end = go dptr sptr
     finalize !dst !src
       | src == end = return ()
       | otherwise = do
-        a <- peek src
+        !a <- peek src
 
         if
           | plusPtr src 1 == end -> do -- 2 6
-            b <- peek (plusPtr src 1)
+            !b <- peek (plusPtr src 1)
 
-            let x = shiftR (a .&. 0xf8) 3
-                y = shiftL (a .&. 0x07) 2 .|. (shiftR (b .&. 0xc0) 6)
+            let !x = shiftR (a .&. 0xf8) 3
+                !y = shiftL (a .&. 0x07) 2 .|. (shiftR (b .&. 0xc0) 6)
 
             poke dst (aix x alpha)
             poke (plusPtr dst 1) (aix y alpha)
             padN (plusPtr dst 2) 6
 
           | plusPtr src 2 == end -> do -- 4 4
-            b <- peek (plusPtr src 1)
+            !b <- peek (plusPtr src 1)
 
-            let w = shiftR (a .&. 0xf8) 3
-                x = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
-                y = shiftR (b .&. 0x3e) 1
-                z = (shiftL (b .&. 0x01) 4)
+            let !w = shiftR (a .&. 0xf8) 3
+                !x = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
+                !y = shiftR (b .&. 0x3e) 1
+                !z = (shiftL (b .&. 0x01) 4)
 
             poke dst (aix w alpha)
             poke (plusPtr dst 1) (aix x alpha)
@@ -137,14 +137,14 @@ encodeBase32_' !(Ptr alpha) !dptr !sptr !end = go dptr sptr
             padN (plusPtr dst 4) 4
 
           | plusPtr src 3 == end -> do -- 5 3
-            b <- peek (plusPtr src 1)
-            c <- peek (plusPtr src 2)
+            !b <- peek (plusPtr src 1)
+            !c <- peek (plusPtr src 2)
 
-            let t = shiftR (a .&. 0xf8) 3
-                u = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
-                v = shiftR (b .&. 0x3e) 1
-                x = (shiftL (b .&. 0x01) 4) .|. (shiftR (c .&. 0xf0) 4)
-                y = (shiftL (c .&. 0x0f) 1)
+            let !t = shiftR (a .&. 0xf8) 3
+                !u = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
+                !v = shiftR (b .&. 0x3e) 1
+                !x = (shiftL (b .&. 0x01) 4) .|. (shiftR (c .&. 0xf0) 4)
+                !y = (shiftL (c .&. 0x0f) 1)
 
             poke dst (aix t alpha)
             poke (plusPtr dst 1) (aix u alpha)
@@ -154,17 +154,17 @@ encodeBase32_' !(Ptr alpha) !dptr !sptr !end = go dptr sptr
             padN (plusPtr dst 5) 3
 
           | plusPtr src 4 == end -> do -- 7 1
-            b <- peek (plusPtr src 1)
-            c <- peek (plusPtr src 2)
-            d <- peek (plusPtr src 3)
+            !b <- peek (plusPtr src 1)
+            !c <- peek (plusPtr src 2)
+            !d <- peek (plusPtr src 3)
 
-            let t = shiftR (a .&. 0xf8) 3
-                u = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
-                v = shiftR (b .&. 0x3e) 1
-                w = (shiftL (b .&. 0x01) 4) .|. (shiftR (c .&. 0xf0) 4)
-                x = (shiftL (c .&. 0x0f) 1) .|. (shiftR (d .&. 0x80) 7)
-                y = shiftR (d .&. 0x7c) 2
-                z = shiftL (d .&. 0x03) 3
+            let !t = shiftR (a .&. 0xf8) 3
+                !u = (shiftL (a .&. 0x07) 2) .|. (shiftR (b .&. 0xc0) 6)
+                !v = shiftR (b .&. 0x3e) 1
+                !w = (shiftL (b .&. 0x01) 4) .|. (shiftR (c .&. 0xf0) 4)
+                !x = (shiftL (c .&. 0x0f) 1) .|. (shiftR (d .&. 0x80) 7)
+                !y = shiftR (d .&. 0x7c) 2
+                !z = shiftL (d .&. 0x03) 3
 
             poke dst (aix t alpha)
             poke (plusPtr dst 1) (aix u alpha)
