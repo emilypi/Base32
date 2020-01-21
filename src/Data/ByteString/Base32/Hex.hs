@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module       : Data.ByteString.Base32.Hex
--- Copyright 	: (c) 2019 Emily Pillmore
+-- Copyright 	: (c) 2020 Emily Pillmore
 -- License	: BSD-style
 --
 -- Maintainer	: Emily Pillmore <emilypi@cohomolo.gy>
@@ -16,12 +16,12 @@
 module Data.ByteString.Base32.Hex
 ( encodeBase32
 , encodeBase32'
--- , decodeBase32
+, decodeBase32
 , encodeBase32Unpadded
 , encodeBase32Unpadded'
--- , decodeBase32Unpadded
+, decodeBase32Unpadded
 -- , decodeBase32Lenient
--- , isBase32Hex
+, isBase32Hex
 , isValidBase32Hex
 ) where
 
@@ -47,17 +47,17 @@ encodeBase32 = T.decodeUtf8 . encodeBase32'
 encodeBase32' :: ByteString -> ByteString
 encodeBase32' = encodeBase32_ hexAlphabet
 
--- -- | Decode a padded Base32url encoded 'ByteString' value. If its length is not a multiple
--- -- of 4, then padding chars will be added to fill out the input to a multiple of
--- -- 4 for safe decoding as Base32url-encoded values are optionally padded.
--- --
--- -- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
--- --
--- -- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
--- --
--- decodeBase32 :: ByteString -> Either Text ByteString
--- decodeBase32 = decodeBase32_ True decodeB32HexTable
--- {-# INLINE decodeBase32 #-}
+-- | Decode a padded Base32url encoded 'ByteString' value. If its length is not a multiple
+-- of 4, then padding chars will be added to fill out the input to a multiple of
+-- 4 for safe decoding as Base32url-encoded values are optionally padded.
+--
+-- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
+--
+-- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+--
+decodeBase32 :: ByteString -> Either Text ByteString
+decodeBase32 = decodeBase32_ True hexDecodeTable
+{-# INLINE decodeBase32 #-}
 
 -- | Encode a 'ByteString' value as Base32url 'Text' without padding. Note that for Base32url,
 -- padding is optional. If you call this function, you will simply be encoding
@@ -78,18 +78,18 @@ encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
 encodeBase32Unpadded' :: ByteString -> ByteString
 encodeBase32Unpadded' = encodeBase32Nopad_ hexAlphabet
 
--- -- | Decode a padded Base32url-encoded 'ByteString' value. If its length is not a multiple
--- -- of 4, then padding chars will /not/ be added to fill out the input to a multiple of
--- -- 4.
--- --
--- -- In general, unless unpadded Base32url is explicitly required, it is
--- -- safer to call 'decodeBase32'.
--- --
--- -- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
--- --
--- decodeBase32Unpadded :: ByteString -> Either Text ByteString
--- decodeBase32Unpadded = decodeBase32_ False decodeB32HexTable
--- {-# INLINE decodeBase32Unpadded #-}
+-- | Decode a padded Base32url-encoded 'ByteString' value. If its length is not a multiple
+-- of 4, then padding chars will /not/ be added to fill out the input to a multiple of
+-- 4.
+--
+-- In general, unless unpadded Base32url is explicitly required, it is
+-- safer to call 'decodeBase32'.
+--
+-- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+--
+decodeBase32Unpadded :: ByteString -> Either Text ByteString
+decodeBase32Unpadded = decodeBase32_ False hexDecodeTable
+{-# INLINE decodeBase32Unpadded #-}
 
 -- -- | Leniently decode an unpadded Base32url-encoded 'ByteString'. This function
 -- -- will not generate parse errors. If input data contains padding chars,
@@ -101,11 +101,11 @@ encodeBase32Unpadded' = encodeBase32Nopad_ hexAlphabet
 -- decodeBase32Lenient = decodeBase32Lenient_ decodeB32HexTable
 -- {-# INLINE decodeBase32Lenient #-}
 
--- -- | Tell whether a 'ByteString' is Base32url-encoded.
--- --
--- isBase32Hex :: ByteString -> Bool
--- isBase32Hex bs = isValidBase32Hex bs && isRight (decodeBase32 bs)
--- {-# INLINE isBase32Hex #-}
+-- | Tell whether a 'ByteString' is Base32url-encoded.
+--
+isBase32Hex :: ByteString -> Bool
+isBase32Hex bs = isValidBase32Hex bs && isRight (decodeBase32 bs)
+{-# INLINE isBase32Hex #-}
 
 -- | Tell whether a 'ByteString' is a valid Base32url format.
 --

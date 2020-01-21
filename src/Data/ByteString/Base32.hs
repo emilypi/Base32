@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module       : Data.ByteString.Base32
--- Copyright 	: (c) 2019 Emily Pillmore
+-- Copyright 	: (c) 2020 Emily Pillmore
 -- License	: BSD-style
 --
 -- Maintainer	: Emily Pillmore <emilypi@cohomolo.gy>
@@ -16,12 +16,12 @@
 module Data.ByteString.Base32
 ( encodeBase32
 , encodeBase32'
--- , decodeBase32
+, decodeBase32
 , encodeBase32Unpadded
 , encodeBase32Unpadded'
--- , decodeBase32Unpadded
+, decodeBase32Unpadded
 -- , decodeBase32Lenient
--- , isBase32
+, isBase32
 , isValidBase32
 ) where
 
@@ -48,13 +48,13 @@ encodeBase32 = T.decodeUtf8 . encodeBase32'
 encodeBase32' :: ByteString -> ByteString
 encodeBase32' = encodeBase32_ stdAlphabet
 
--- -- | Decode a padded Base32-encoded 'ByteString' value.
--- --
--- -- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
--- --
--- decodeBase32 :: ByteString -> Either Text ByteString
--- decodeBase32 = decodeBase32_ False decodeB32Table
--- {-# INLINE decodeBase32 #-}
+-- | Decode a padded Base32-encoded 'ByteString' value.
+--
+-- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+--
+decodeBase32 :: ByteString -> Either Text ByteString
+decodeBase32 = decodeBase32_ False stdDecodeTable
+{-# INLINE decodeBase32 #-}
 
 -- | Encode a 'ByteString' value as Base32 'Text' without padding.
 --
@@ -89,16 +89,16 @@ encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
 encodeBase32Unpadded' :: ByteString -> ByteString
 encodeBase32Unpadded' = encodeBase32Nopad_ stdAlphabet
 
--- -- | Decode an unpadded Base32-encoded 'ByteString'.
--- --
--- -- __Note:__ Only call unpadded variants when you can make assumptions
--- -- about the length of your input data.
--- --
--- -- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
--- --
--- decodeBase32Unpadded :: ByteString -> Either Text ByteString
--- decodeBase32Unpadded = decodeBase32_ False decodeB32Table
--- {-# INLINE decodeBase32Unpadded #-}
+-- | Decode an unpadded Base32-encoded 'ByteString'.
+--
+-- __Note:__ Only call unpadded variants when you can make assumptions
+-- about the length of your input data.
+--
+-- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+--
+decodeBase32Unpadded :: ByteString -> Either Text ByteString
+decodeBase32Unpadded = decodeBase32_ False stdDecodeTable
+{-# INLINE decodeBase32Unpadded #-}
 
 -- -- | Leniently decode an unpadded Base32-encoded 'ByteString' value. This function
 -- -- will not generate parse errors. If input data contains padding chars,
@@ -110,11 +110,11 @@ encodeBase32Unpadded' = encodeBase32Nopad_ stdAlphabet
 -- decodeBase32Lenient = decodeBase32Lenient_ decodeB32Table
 -- {-# INLINE decodeBase32Lenient #-}
 
--- -- | Tell whether a 'ByteString' value is base32 encoded.
--- --
--- isBase32 :: ByteString -> Bool
--- isBase32 bs = isValidBase32 bs && isRight (decodeBase32 bs)
--- {-# INLINE isBase32 #-}
+-- | Tell whether a 'ByteString' value is base32 encoded.
+--
+isBase32 :: ByteString -> Bool
+isBase32 bs = isValidBase32 bs && isRight (decodeBase32 bs)
+{-# INLINE isBase32 #-}
 
 -- | Tell whether a 'ByteString' value is a valid Base32 format.
 --
