@@ -16,17 +16,16 @@
 module Data.ByteString.Base32.Hex
 ( encodeBase32
 , encodeBase32'
-, decodeBase32
-, encodeBase32Unpadded
-, encodeBase32Unpadded'
-, decodeBase32Unpadded
+-- , decodeBase32
 -- , decodeBase32Lenient
-, isBase32Hex
+-- , isBase32Hex
 , isValidBase32Hex
 ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Base32.Internal
+import Data.ByteString.Base32.Internal.Head
+import Data.ByteString.Base32.Internal.Tables
 import Data.Either (isRight)
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
@@ -47,65 +46,33 @@ encodeBase32 = T.decodeUtf8 . encodeBase32'
 encodeBase32' :: ByteString -> ByteString
 encodeBase32' = encodeBase32_ hexAlphabet
 
--- | Decode a padded Base32url encoded 'ByteString' value. If its length is not a multiple
--- of 4, then padding chars will be added to fill out the input to a multiple of
--- 4 for safe decoding as Base32url-encoded values are optionally padded.
---
--- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
---
-decodeBase32 :: ByteString -> Either Text ByteString
-decodeBase32 = decodeBase32_ True hexDecodeTable
-{-# INLINE decodeBase32 #-}
-
--- | Encode a 'ByteString' value as Base32url 'Text' without padding. Note that for Base32url,
--- padding is optional. If you call this function, you will simply be encoding
--- as Base32url and stripping padding chars from the output.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
---
-encodeBase32Unpadded :: ByteString -> Text
-encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
-{-# INLINE encodeBase32Unpadded #-}
-
--- | Encode a 'ByteString' value as Base32url without padding. Note that for Base32url,
--- padding is optional. If you call this function, you will simply be encoding
--- as Base32url and stripping padding chars from the output.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
---
-encodeBase32Unpadded' :: ByteString -> ByteString
-encodeBase32Unpadded' = encodeBase32Nopad_ hexAlphabet
-
--- | Decode a padded Base32url-encoded 'ByteString' value. If its length is not a multiple
--- of 4, then padding chars will /not/ be added to fill out the input to a multiple of
--- 4.
---
--- In general, unless unpadded Base32url is explicitly required, it is
--- safer to call 'decodeBase32'.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
---
-decodeBase32Unpadded :: ByteString -> Either Text ByteString
-decodeBase32Unpadded = decodeBase32_ False hexDecodeTable
-{-# INLINE decodeBase32Unpadded #-}
-
--- -- | Leniently decode an unpadded Base32url-encoded 'ByteString'. This function
--- -- will not generate parse errors. If input data contains padding chars,
--- -- then the input will be parsed up until the first pad character.
+-- -- | Decode a padded Base32url encoded 'ByteString' value. If its length is not a multiple
+-- -- of 4, then padding chars will be added to fill out the input to a multiple of
+-- -- 4 for safe decoding as Base32url-encoded values are optionally padded.
 -- --
--- -- __Note:__ This is not RFC 4648-compliant.
+-- -- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
 -- --
--- decodeBase32Lenient :: ByteString -> ByteString
--- decodeBase32Lenient = decodeBase32Lenient_ decodeB32HexTable
--- {-# INLINE decodeBase32Lenient #-}
+-- -- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- --
+-- decodeBase32 :: ByteString -> Either Text ByteString
+-- decodeBase32 = decodeBase32_
+-- {-# INLINE decodeBase32 #-}
 
--- | Tell whether a 'ByteString' is Base32url-encoded.
---
-isBase32Hex :: ByteString -> Bool
-isBase32Hex bs = isValidBase32Hex bs && isRight (decodeBase32 bs)
-{-# INLINE isBase32Hex #-}
+-- -- -- | Leniently decode an unpadded Base32url-encoded 'ByteString'. This function
+-- -- -- will not generate parse errors. If input data contains padding chars,
+-- -- -- then the input will be parsed up until the first pad character.
+-- -- --
+-- -- -- __Note:__ This is not RFC 4648-compliant.
+-- -- --
+-- -- decodeBase32Lenient :: ByteString -> ByteString
+-- -- decodeBase32Lenient = decodeBase32Lenient_ decodeB32HexTable
+-- -- {-# INLINE decodeBase32Lenient #-}
+
+-- -- | Tell whether a 'ByteString' is Base32url-encoded.
+-- --
+-- isBase32Hex :: ByteString -> Bool
+-- isBase32Hex bs = isValidBase32Hex bs && isRight (decodeBase32 bs)
+-- {-# INLINE isBase32Hex #-}
 
 -- | Tell whether a 'ByteString' is a valid Base32url format.
 --

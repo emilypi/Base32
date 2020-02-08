@@ -46,10 +46,14 @@ library
                      , Data.Text.Encoding.Base32.Hex
 
   other-modules:       Data.ByteString.Base32.Internal
+                       Data.ByteString.Base32.Internal.Head
+                       Data.ByteString.Base32.Internal.Tables
+                       Data.ByteString.Base32.Internal.Tail
+                       Data.ByteString.Base32.Internal.Utils
+                       Data.ByteString.Base32.Internal.Loop
 
   build-depends:       base >=4.10 && <5
                      , bytestring
-                     , deepseq
                      , text
 
   hs-source-dirs:      src

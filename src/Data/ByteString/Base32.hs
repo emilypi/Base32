@@ -16,18 +16,18 @@
 module Data.ByteString.Base32
 ( encodeBase32
 , encodeBase32'
-, decodeBase32
-, encodeBase32Unpadded
-, encodeBase32Unpadded'
-, decodeBase32Unpadded
+-- , decodeBase32
+-- , decodeBase32Unpadded
 -- , decodeBase32Lenient
-, isBase32
+-- , isBase32
 , isValidBase32
 ) where
 
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Base32.Internal
+import Data.ByteString.Base32.Internal.Head
+import Data.ByteString.Base32.Internal.Tables
 import Data.Either (isRight)
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
@@ -47,58 +47,15 @@ encodeBase32 = T.decodeUtf8 . encodeBase32'
 --
 encodeBase32' :: ByteString -> ByteString
 encodeBase32' = encodeBase32_ stdAlphabet
+{-# INLINE encodeBase32' #-}
 
--- | Decode a padded Base32-encoded 'ByteString' value.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
---
-decodeBase32 :: ByteString -> Either Text ByteString
-decodeBase32 = decodeBase32_ False stdDecodeTable
-{-# INLINE decodeBase32 #-}
-
--- | Encode a 'ByteString' value as Base32 'Text' without padding.
---
--- __Note:__ in some circumstances, the use of padding ("=") in base-encoded data
--- is not required or used. This is not one of them. If you are absolutely sure
--- the length of your bytestring is divisible by 3, this function will be the same
--- as 'encodeBase32' with padding, however, if not, you may see garbage appended to
--- your bytestring.
---
--- Only call unpadded variants when you can make assumptions about the length of
--- your input data.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
---
-encodeBase32Unpadded :: ByteString -> Text
-encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
-{-# INLINE encodeBase32Unpadded #-}
-
--- | Encode a 'ByteString' value as Base32 without padding.
---
--- __Note:__ in some circumstances, the use of padding ("=") in base-encoded data
--- is not required or used. This is not one of them. If you are absolutely sure
--- the length of your bytestring is divisible by 3, this function will be the same
--- as 'encodeBase32' with padding, however, if not, you may see garbage appended to
--- your bytestring.
---
--- Only call unpadded variants when you can make assumptions about the length of
--- your input data.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
---
-encodeBase32Unpadded' :: ByteString -> ByteString
-encodeBase32Unpadded' = encodeBase32Nopad_ stdAlphabet
-
--- | Decode an unpadded Base32-encoded 'ByteString'.
---
--- __Note:__ Only call unpadded variants when you can make assumptions
--- about the length of your input data.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
---
-decodeBase32Unpadded :: ByteString -> Either Text ByteString
-decodeBase32Unpadded = decodeBase32_ False stdDecodeTable
-{-# INLINE decodeBase32Unpadded #-}
+-- -- | Decode a padded Base32-encoded 'ByteString' value.
+-- --
+-- -- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- --
+-- decodeBase32 :: ByteString -> Either Text ByteString
+-- decodeBase32 = decodeBase32_ False stdDecodeTable
+-- {-# INLINE decodeBase32 #-}
 
 -- -- | Leniently decode an unpadded Base32-encoded 'ByteString' value. This function
 -- -- will not generate parse errors. If input data contains padding chars,
@@ -110,11 +67,11 @@ decodeBase32Unpadded = decodeBase32_ False stdDecodeTable
 -- decodeBase32Lenient = decodeBase32Lenient_ decodeB32Table
 -- {-# INLINE decodeBase32Lenient #-}
 
--- | Tell whether a 'ByteString' value is base32 encoded.
---
-isBase32 :: ByteString -> Bool
-isBase32 bs = isValidBase32 bs && isRight (decodeBase32 bs)
-{-# INLINE isBase32 #-}
+-- -- | Tell whether a 'ByteString' value is base32 encoded.
+-- --
+-- isBase32 :: ByteString -> Bool
+-- isBase32 bs = isValidBase32 bs && isRight (decodeBase32 bs)
+-- {-# INLINE isBase32 #-}
 
 -- | Tell whether a 'ByteString' value is a valid Base32 format.
 --
