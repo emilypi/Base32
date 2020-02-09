@@ -62,6 +62,7 @@ encodeBase32' = encodeBase32_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 
 encodeBase32Unpadded :: ByteString -> Text
 encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
+{-# INLINE encodeBase32Unpadded #-}
 
 -- -- | Decode a padded Base32-encoded 'ByteString' value.
 -- --
@@ -73,6 +74,7 @@ encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
 
 encodeBase32Unpadded' :: ByteString -> ByteString
 encodeBase32Unpadded' = encodeBase32NoPad_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
+{-# INLINE encodeBase32Unpadded' #-}
 
 -- -- | Leniently decode an unpadded Base32-encoded 'ByteString' value. This function
 -- -- will not generate parse errors. If input data contains padding chars,

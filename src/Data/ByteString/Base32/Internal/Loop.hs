@@ -32,6 +32,7 @@ innerLoop
 innerLoop !lut !dptr !sptr !end finish = go dptr sptr
   where
     lix a = return $ w64 (aix (fromIntegral a .&. 0x1f) lut)
+    {-# INLINE lix #-}
 
     go !dst !src
       | plusPtr src 4 >= end = finish (castPtr dst) src
@@ -64,6 +65,7 @@ innerLoop !lut !dptr !sptr !end finish = go dptr sptr
         poke dst w
 
         go (plusPtr dst 8) (plusPtr src 5)
+{-# INLINE innerLoop #-}
 
 innerLoopNoPad
     :: Addr#
@@ -107,6 +109,7 @@ innerLoopNoPad !lut !dptr !sptr !end finish = go dptr sptr 0
         poke dst w
 
         go (plusPtr dst 8) (plusPtr src 5) (n + 8)
+{-# INLINE innerLoopNoPad #-}
 
 -- ------------------------------------------------------------------------ --
 -- Decoding loops

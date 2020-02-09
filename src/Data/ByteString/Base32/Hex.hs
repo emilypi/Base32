@@ -48,6 +48,7 @@ encodeBase32 = T.decodeUtf8 . encodeBase32'
 --
 encodeBase32' :: ByteString -> ByteString
 encodeBase32' = encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
+{-# INLINE encodeBase32' #-}
 
 -- -- | Decode a padded Base32url encoded 'ByteString' value. If its length is not a multiple
 -- -- of 4, then padding chars will be added to fill out the input to a multiple of
@@ -67,6 +68,7 @@ encodeBase32' = encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 --
 encodeBase32Unpadded :: ByteString -> Text
 encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
+{-# INLINE encodeBase32Unpadded #-}
 
 -- | Encode a 'ByteString' as a Base32url 'ByteString' value without padding.
 --
@@ -74,16 +76,17 @@ encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
 --
 encodeBase32Unpadded' :: ByteString -> ByteString
 encodeBase32Unpadded' = encodeBase32NoPad_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
+{-# INLINE encodeBase32Unpadded' #-}
 
--- -- -- | Leniently decode an unpadded Base32url-encoded 'ByteString'. This function
--- -- -- will not generate parse errors. If input data contains padding chars,
--- -- -- then the input will be parsed up until the first pad character.
--- -- --
--- -- -- __Note:__ This is not RFC 4648-compliant.
--- -- --
--- -- decodeBase32Lenient :: ByteString -> ByteString
--- -- decodeBase32Lenient = decodeBase32Lenient_ decodeB32HexTable
--- -- {-# INLINE decodeBase32Lenient #-}
+-- -- | Leniently decode an unpadded Base32url-encoded 'ByteString'. This function
+-- -- will not generate parse errors. If input data contains padding chars,
+-- -- then the input will be parsed up until the first pad character.
+-- --
+-- -- __Note:__ This is not RFC 4648-compliant.
+-- --
+-- decodeBase32Lenient :: ByteString -> ByteString
+-- decodeBase32Lenient = decodeBase32Lenient_ decodeB32HexTable
+-- {-# INLINE decodeBase32Lenient #-}
 
 -- -- | Tell whether a 'ByteString' is Base32url-encoded.
 -- --
@@ -98,5 +101,5 @@ encodeBase32Unpadded' = encodeBase32NoPad_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 -- Base32 encoded 'ByteString' value, use 'isBase32Hex'.
 --
 isValidBase32Hex :: ByteString -> Bool
-isValidBase32Hex = validateBase32 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+isValidBase32Hex = validateBase32 "0123456789ABCDEFGHIJKLMNOPQRSTUV"
 {-# INLINE isValidBase32Hex #-}
