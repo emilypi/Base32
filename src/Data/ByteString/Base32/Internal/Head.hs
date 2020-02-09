@@ -49,7 +49,7 @@ encodeBase32NoPad_ !alphabet (PS !sfp !soff !slen)
           let !end = plusPtr sptr (soff + slen)
           innerLoopNoPad
             alphabet
-            dptr
+            (castPtr dptr)
             (plusPtr sptr soff)
             end
             (loopTailNoPad alphabet dfp end)
