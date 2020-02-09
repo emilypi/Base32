@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module       : Data.ByteString.Base32.Hex
@@ -17,6 +18,8 @@ module Data.ByteString.Base32.Hex
 ( encodeBase32
 , encodeBase32'
 -- , decodeBase32
+, encodeBase32Unpadded
+, encodeBase32Unpadded'
 -- , decodeBase32Lenient
 -- , isBase32Hex
 , isValidBase32Hex
@@ -44,7 +47,7 @@ encodeBase32 = T.decodeUtf8 . encodeBase32'
 -- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
 --
 encodeBase32' :: ByteString -> ByteString
-encodeBase32' = encodeBase32_ hexAlphabet
+encodeBase32' = encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 
 -- -- | Decode a padded Base32url encoded 'ByteString' value. If its length is not a multiple
 -- -- of 4, then padding chars will be added to fill out the input to a multiple of
@@ -57,6 +60,20 @@ encodeBase32' = encodeBase32_ hexAlphabet
 -- decodeBase32 :: ByteString -> Either Text ByteString
 -- decodeBase32 = decodeBase32_
 -- {-# INLINE decodeBase32 #-}
+
+-- | Encode a 'ByteString' as a Base32url 'ByteString' value without padding.
+--
+-- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+--
+encodeBase32Unpadded :: ByteString -> Text
+encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
+
+-- | Encode a 'ByteString' as a Base32url 'ByteString' value without padding.
+--
+-- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+--
+encodeBase32Unpadded' :: ByteString -> ByteString
+encodeBase32Unpadded' = encodeBase32NoPad_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 
 -- -- -- | Leniently decode an unpadded Base32url-encoded 'ByteString'. This function
 -- -- -- will not generate parse errors. If input data contains padding chars,

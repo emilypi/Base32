@@ -1,9 +1,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Tables
-( stdAlphabet
-, hexAlphabet
-, stdDecodeTable
+( stdDecodeTable
 , hexDecodeTable
 ) where
 
@@ -17,12 +15,6 @@ import GHC.Exts
 import GHC.ForeignPtr
 import GHC.Word
 
-
-stdAlphabet :: Ptr Word8
-stdAlphabet = Ptr "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
-
-hexAlphabet :: Ptr Word8
-hexAlphabet = Ptr "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 
 stdDecodeTable :: ForeignPtr Word8
 stdDecodeTable = writeNPlainForeignPtrBytes @Word8 256

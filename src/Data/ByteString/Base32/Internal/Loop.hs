@@ -1,9 +1,10 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Loop
 ( innerLoop
-, innerLoopNopad
+, innerLoopNoPad
 ) where
 
 import Data.Bits
@@ -19,18 +20,18 @@ import GHC.Word
 
 
 innerLoop
-    :: Ptr Word8
-    -> Ptr Word8
+    :: Addr#
+    -> Ptr Word64
     -> Ptr Word8
     -> Ptr Word8
     -> (Ptr Word8 -> Ptr Word8 -> IO ())
     -> IO ()
 innerLoop !lut !dptr !sptr !end finish = go dptr sptr
   where
-    lut64 a dst = poke dst =<< peekElemOff lut (fromIntegral a .&. 0x1f)
+    lix64 a = return $ w64 (aix (fromIntegral a .&. 0x1f) lut)
 
     go !dst !src
-      | plusPtr src 4 >= end = finish dst src
+      | plusPtr src 4 >= end = finish (castPtr dst) src
       | otherwise = do
 #ifdef WORDS_BIGENDIAN
         !t <- peek @Word32 (castPtr src)
@@ -39,38 +40,41 @@ innerLoop !lut !dptr !sptr !end finish = go dptr sptr
 #endif
         !u <- w32 <$> peek (plusPtr src 4)
 
-        let !a = (unsafeShiftR t 27)
-            !b = (unsafeShiftR t 22)
-            !c = (unsafeShiftR t 17)
-            !d = (unsafeShiftR t 12)
-            !e = (unsafeShiftR t 7)
-            !f = (unsafeShiftR t 2)
-            !g = ((unsafeShiftL t 3) .|. (unsafeShiftR u 5))
+        !aa <- lix64 (unsafeShiftR t 27)
+        !bb <- lix64 (unsafeShiftR t 22)
+        !cc <- lix64 (unsafeShiftR t 17)
+        !dd <- lix64 (unsafeShiftR t 12)
+        !ee <- lix64 (unsafeShiftR t 7)
+        !ff <- lix64 (unsafeShiftR t 2)
+        !gg <- lix64 ((unsafeShiftL t 3) .|. (unsafeShiftR u 5))
+        !hh <- lix64 u
 
-        !aa <- lut64 a dst
-        !bb <- lut64 b (plusPtr dst 1)
-        !cc <- lut64 c (plusPtr dst 2)
-        !dd <- lut64 d (plusPtr dst 3)
-        !ee <- lut64 e (plusPtr dst 4)
-        !ff <- lut64 f (plusPtr dst 5)
-        !gg <- lut64 g (plusPtr dst 6)
-        !hh <- lut64 u (plusPtr dst 7)
+        w <- return $ aa
+          .|. (unsafeShiftL bb 8)
+          .|. (unsafeShiftL cc 16)
+          .|. (unsafeShiftL dd 24)
+          .|. (unsafeShiftL ee 32)
+          .|. (unsafeShiftL ff 40)
+          .|. (unsafeShiftL gg 48)
+          .|. (unsafeShiftL hh 56)
+
+        poke dst w
 
         go (plusPtr dst 8) (plusPtr src 5)
 
-innerLoopNopad
-    :: Ptr Word8
+innerLoopNoPad
+    :: Addr#
     -> Ptr Word8
     -> Ptr Word8
     -> Ptr Word8
     -> (Ptr Word8 -> Ptr Word8 -> Int -> IO ByteString)
     -> IO ByteString
-innerLoopNopad (Ptr !lut) !dptr !sptr !end finish = go dptr sptr 0
+innerLoopNoPad !lut !dptr !sptr !end finish = go dptr sptr 0
   where
-    lix dst n a = poke (plusPtr dst n) (aix (fromIntegral (a .&. 0x1f)) lut)
+    lix !a !p = poke @Word8 p (aix (fromIntegral (a .&. 0x1f)) lut)
 
     go !dst !src !n
-      | plusPtr src 5 >= end = finish (castPtr dst) src n
+      | plusPtr src 4 >= end = finish dst src n
       | otherwise = do
 #ifdef WORDS_BIGENDIAN
         !t <- peek @Word32 (castPtr src)
@@ -79,13 +83,13 @@ innerLoopNopad (Ptr !lut) !dptr !sptr !end finish = go dptr sptr 0
 #endif
         !u <- w32 <$> peek (plusPtr src 4)
 
-        lix dst 0 (unsafeShiftR t 27)
-        lix dst 1 (unsafeShiftR t 22)
-        lix dst 2 (unsafeShiftR t 17)
-        lix dst 3 (unsafeShiftR t 12)
-        lix dst 4 (unsafeShiftR t 7)
-        lix dst 5 (unsafeShiftR t 2)
-        lix dst 6 ((unsafeShiftL t 3) .|. (unsafeShiftR u 5))
-        lix dst 7 u
+        !aa <- lix (unsafeShiftR t 27) dst
+        !bb <- lix (unsafeShiftR t 22) (plusPtr dst 1)
+        !cc <- lix (unsafeShiftR t 17) (plusPtr dst 2)
+        !dd <- lix (unsafeShiftR t 12) (plusPtr dst 3)
+        !ee <- lix (unsafeShiftR t 7) (plusPtr dst 4)
+        !ff <- lix (unsafeShiftR t 2) (plusPtr dst 5)
+        !gg <- lix ((unsafeShiftL t 3) .|. (unsafeShiftR u 5)) (plusPtr dst 6)
+        !hh <- lix u (plusPtr dst 7)
 
         go (plusPtr dst 8) (plusPtr src 5) (n + 8)

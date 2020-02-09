@@ -20,7 +20,7 @@ extra-source-files:
   README.md
 
 
-tested-with: GHC ==8.8.1 || ==8.6.5 || ==8.6.3 || ==8.4.4 || ==8.4.3 || ==8.2.2 || ==8.0.2
+tested-with: GHC ==8.8.1 || ==8.6.5 || ==8.6.3 || ==8.4.4 || ==8.4.3 || ==8.2.2
 
 
 source-repository head
@@ -75,6 +75,7 @@ test-suite tasty
   main-is:             Base32Tests.hs
   build-depends:       base >=4.10 && <5
                      , base32
+                     , memory
                      , random-bytestring
                      , tasty
                      , tasty-hunit
@@ -87,6 +88,7 @@ benchmark bench
   main-is:             Base32Bench.hs
   build-depends:       base >=4.10 && <5
                      , base32
+                     , bytestring
                      , deepseq
                      , criterion
                      , memory
