@@ -1,16 +1,20 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Tail
 ( loopTail
 , loopTailNoPad
+, decodeTail
 ) where
 
 
 import Data.Bits
 import Data.ByteString.Internal
 import Data.ByteString.Base32.Internal.Utils
+import Data.Text (Text)
+import qualified Data.Text as T
 
 import Foreign.Ptr
 import Foreign.ForeignPtr
@@ -189,3 +193,81 @@ loopTailNoPad !lut !dfp !end !dst !src !n
     padN !_ 0 = return ()
     padN !p n = poke @Word8 p 0x3d >> padN (plusPtr p 1) (n - 1)
 {-# INLINE loopTailNoPad #-}
+
+-- ------------------------------------------------------------------------ --
+-- Decoding loops
+
+decodeTail
+    :: Addr#
+    -> ForeignPtr Word8
+    -> Ptr Word8
+    -> Ptr Word8
+    -> Ptr Word8
+    -> Int
+    -> IO (Either Text ByteString)
+decodeTail !lut !dfp !end !dptr !sptr !n = go dptr sptr 0 (0 :: Word64)
+  where
+    lix a = w64 (aix (fromIntegral a) lut)
+    {-# INLINE lix #-}
+
+    ps !m = return (Right (PS dfp 0 m))
+    {-# INLINE ps #-}
+
+    err = return . Left . T.pack
+    {-# INLINE err #-}
+
+    go !dst !src !m !acc
+      | src == end = do
+        poke @Word64 (castPtr dst) (byteSwap64 acc)
+        ps (n + m)
+      | otherwise = do
+        !w <- peek src
+        !used <- return (m + 1)
+        if
+          | w == 0x3d && used <= 2 -> err
+            $ "invalid padding at offset: "
+            ++ show (minusPtr src sptr)
+          | used == 2, w == 0x3d -> fq src 6 >>= \case
+            Right _ -> do
+              poke @Word8 dst (fromIntegral $ unsafeShiftL acc 5)
+              poke @Word8 (plusPtr dst 1) (fromIntegral $ unsafeShiftL acc 10)
+              ps (n + 2)
+            Left t -> return (Left t)
+          | used == 4, w == 0x3d -> fq src 4 >>= \case
+            Right _ -> do
+              poke @Word8 dst (fromIntegral $ unsafeShiftL acc 5)
+              poke @Word8 (plusPtr dst 1) (fromIntegral $unsafeShiftL acc 10)
+              poke @Word8 (plusPtr dst 2) (fromIntegral $ unsafeShiftL acc 15)
+              poke @Word8 (plusPtr dst 3) (fromIntegral $ unsafeShiftL acc 20)
+              ps (n + 4)
+            Left t -> return (Left t)
+          | used == 5, w == 0x3d -> fq src 5 >>= \case
+            Right _ -> do
+              poke @Word8 dst (fromIntegral $ unsafeShiftL acc 5)
+              poke @Word8 (plusPtr dst 1) (fromIntegral $ unsafeShiftL acc 10)
+              poke @Word8 (plusPtr dst 2) (fromIntegral $ unsafeShiftL acc 15)
+              poke @Word8 (plusPtr dst 3) (fromIntegral $ unsafeShiftL acc 20)
+              poke @Word8 (plusPtr dst 4) (fromIntegral $ unsafeShiftL acc 25)
+              ps (n + 5)
+            Left t -> return (Left t)
+          | used == 7, w == 0x3d -> fq src 7 >>= \case
+            Right _ -> do
+              poke @Word8 dst (fromIntegral $ unsafeShiftL acc 5)
+              poke @Word8 (plusPtr dst 1) (fromIntegral $ unsafeShiftL acc 10)
+              poke @Word8 (plusPtr dst 2) (fromIntegral $ unsafeShiftL acc 15)
+              poke @Word8 (plusPtr dst 3) (fromIntegral $ unsafeShiftL acc 20)
+              poke @Word8 (plusPtr dst 4) (fromIntegral $ unsafeShiftL acc 25)
+              poke @Word8 (plusPtr dst 5) (fromIntegral $ unsafeShiftL acc 30)
+              poke @Word8 (plusPtr dst 6) (fromIntegral $ unsafeShiftL acc 35)
+              poke @Word8 (plusPtr dst 7) (fromIntegral $ unsafeShiftL acc 40)
+              ps (n + 7)
+            Left t -> return (Left t)
+          | otherwise -> do
+            go dst (plusPtr src 1) used ((unsafeShiftL acc 5) .|. lix w)
+
+    fq !_ 0 = return $ Right ()
+    fq !src !pads = do
+      a <- peek src
+      if a == 0x3d
+      then fq (plusPtr src 1) (pads - 1)
+      else err $ "invalid padding: " ++ show (minusPtr src sptr)

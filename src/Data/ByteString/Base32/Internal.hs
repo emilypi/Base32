@@ -63,6 +63,3 @@ validateBase32 !alphabet (PS fp off l) =
 
         if f w then go (plusPtr p 1) end else return False
 {-# INLINE validateBase32 #-}
-
--- -------------------------------------------------------------------------- --
--- Decode Base32 (nopad)

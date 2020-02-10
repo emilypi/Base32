@@ -5,11 +5,13 @@
 module Data.ByteString.Base32.Internal.Loop
 ( innerLoop
 , innerLoopNoPad
+, decodeLoop
 ) where
 
 import Data.Bits
 import Data.ByteString (ByteString)
 import Data.ByteString.Base32.Internal.Utils
+import Data.Text (Text)
 
 import Foreign.Ptr
 import Foreign.ForeignPtr
@@ -113,3 +115,42 @@ innerLoopNoPad !lut !dptr !sptr !end finish = go dptr sptr 0
 
 -- ------------------------------------------------------------------------ --
 -- Decoding loops
+
+decodeLoop
+    :: Addr#
+    -> Ptr Word8
+    -> Ptr Word64
+    -> Ptr Word8
+    -> (Ptr Word8 -> Ptr Word8 -> Int -> IO (Either Text ByteString))
+    -> IO (Either Text ByteString)
+decodeLoop !lut !dptr !sptr !end finish = go dptr sptr 0
+  where
+    lix a = w64 (aix (fromIntegral a) lut)
+
+    roll !w !acc = (acc `unsafeShiftL` 5) .|. lix w
+
+    go !dst !src !n
+      | plusPtr src 8 == end = finish dst (castPtr src) n
+      | otherwise = do
+#ifdef WORDS_BIGENDIAN
+        !t <- peek src
+#else
+        !t <- byteSwap64 <$> peek src
+#endif
+        !w <- return
+          $ roll (unsafeShiftR t 0)
+          $ roll (unsafeShiftR t 8)
+          $ roll (unsafeShiftR t 16)
+          $ roll (unsafeShiftR t 24)
+          $ roll (unsafeShiftR t 32)
+          $ roll (unsafeShiftR t 40)
+          $ roll (unsafeShiftR t 48)
+          $ roll (unsafeShiftR t 56)
+          0
+
+        poke @Word8 dst (fromIntegral (w `unsafeShiftR` 32))
+
+        -- BE -> LE per spec
+        poke @Word32 (castPtr (plusPtr dst 1)) (byteSwap32 (fromIntegral w))
+
+        go (plusPtr dst 5) (plusPtr src 8) (n + 8)
