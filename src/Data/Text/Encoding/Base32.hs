@@ -49,7 +49,7 @@ decodeBase32 = fmap T.decodeUtf8 . B32.decodeBase32 . T.encodeUtf8
 -- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
 --
 encodeBase32Unpadded :: Text -> Text
-encodeBase32Unpadded = B32.encodeBase32 . T.encodeUtf8
+encodeBase32Unpadded = B32.encodeBase32Unpadded . T.encodeUtf8
 {-# INLINE encodeBase32Unpadded #-}
 
 -- | Decode an arbitrarily padded Base32-encoded 'Text'
