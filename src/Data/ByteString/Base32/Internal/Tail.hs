@@ -208,7 +208,7 @@ decodeTail
     -> IO (Either Text ByteString)
 decodeTail !lut !dfp !end !dptr !sptr !n = go dptr sptr
   where
-    lix a = aix (fromIntegral a) lut
+    lix a = aix a lut
     {-# INLINE lix #-}
 
     ps !m = return (Right (PS dfp 0 m))
@@ -217,7 +217,7 @@ decodeTail !lut !dfp !end !dptr !sptr !n = go dptr sptr
     err = return . Left . T.pack
     {-# INLINE err #-}
 
-    decodeOctet (a,b,c,d,e,f,g,h) =
+    decodeOctet (!a,!b,!c,!d,!e,!f,!g,!h) =
       case (lix a, lix b, lix c, lix d, lix e, lix f, lix g, lix h) of
         (0xff,_,_,_,_,_,_,_) -> Left (0 :: Int)
         (_,0xff,_,_,_,_,_,_) -> Left 1
@@ -228,11 +228,11 @@ decodeTail !lut !dfp !end !dptr !sptr !n = go dptr sptr
         (_,_,_,_,_,_,0xff,_) -> Left 6
         (_,_,_,_,_,_,_,0xff) -> Left 7
         (ri1,ri2,ri3,ri4,ri5,ri6,ri7,ri8) ->
-            let o1 = (ri1 `unsafeShiftL` 3) .|. (ri2 `unsafeShiftR` 2)
-                o2 = (ri2 `unsafeShiftL` 6) .|. (ri3 `unsafeShiftL` 1) .|. (ri4 `unsafeShiftR` 4)
-                o3 = (ri4 `unsafeShiftL` 4) .|. (ri5 `unsafeShiftR` 1)
-                o4 = (ri5 `unsafeShiftL` 7) .|. (ri6 `unsafeShiftL` 2) .|. (ri7 `unsafeShiftR` 3)
-                o5 = (ri7 `unsafeShiftL` 5) .|. ri8
+            let !o1 = (ri1 `unsafeShiftL` 3) .|. (ri2 `unsafeShiftR` 2)
+                !o2 = (ri2 `unsafeShiftL` 6) .|. (ri3 `unsafeShiftL` 1) .|. (ri4 `unsafeShiftR` 4)
+                !o3 = (ri4 `unsafeShiftL` 4) .|. (ri5 `unsafeShiftR` 1)
+                !o4 = (ri5 `unsafeShiftL` 7) .|. (ri6 `unsafeShiftL` 2) .|. (ri7 `unsafeShiftR` 3)
+                !o5 = (ri7 `unsafeShiftL` 5) .|. ri8
              in Right (o1, o2, o3, o4, o5)
 
     go !dst !src

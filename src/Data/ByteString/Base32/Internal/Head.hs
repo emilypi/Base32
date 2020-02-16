@@ -61,6 +61,8 @@ encodeBase32NoPad_ !lut (PS !sfp !soff !slen)
   where
     !dlen = 8 * ((slen + 4) `div` 5)
 
+-- | Head of the base32 decoding loop - marshal data, assemble loops
+--
 decodeBase32_ :: Bool -> ForeignPtr Word8 -> ByteString -> Either Text ByteString
 decodeBase32_ !pad !alphabet bs@(PS _ _ !slen)
     | r /= 0, pad =

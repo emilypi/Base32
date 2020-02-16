@@ -155,7 +155,6 @@ decodeLoop !lut !dptr !sptr !end finish = go dptr sptr 0
         then do
           poke @Word8 dst (fromIntegral (w `unsafeShiftR` 32))
           poke @Word32 (castPtr (plusPtr dst 1)) (byteSwap32 (fromIntegral w))
-
           go (plusPtr dst 5) (plusPtr src 8) (n + 5)
         else err
           $ "invalid character at offset: "
