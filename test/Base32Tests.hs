@@ -52,32 +52,32 @@ testVectors = testGroup "RFC 4648 Test Vectors"
     testCaseB32 s t =
       testCaseSteps (show $ if s == "" then "empty" else s) $ \step -> do
         let t' = B32.encodeBase32' s
-            -- s' = B32.decodeBase32 t'
+            s' = B32.decodeBase32 t'
 
-        step "compare encoding w/ padding"
+        step "compare encoding + decoding w/ padding"
         t @=? t'
 
-        -- step "compare decoding w/ padding"
-        -- Right s @=? s'
+        step "compare decoding w/ padding"
+        Right s @=? s'
 
     testCaseB32' s t =
       testCaseSteps (show $ if s == "" then "empty" else s) $ \step -> do
         let t' = B32H.encodeBase32' s
-            -- s' = B32H.decodeBase32 t'
-            u = B32H.encodeBase32Unpadded' s
-            -- v = B32H.decodeBase32 u
+            s' = B32H.decodeBase32 t'
+            u = B32H.encodeBase32' s
+            v = B32H.decodeBase32 u
 
-        step "compare url-safe encoding w/ padding"
+        step "compare hex encoding w/ padding"
         t @=? t'
 
-        -- step "compare url-safe decoding w/ padding"
-        -- Right s @=? s'
+        step "compare hex decoding w/ padding"
+        Right s @=? s'
 
-        step "compare url-safe encoding w/o padding"
+        step "compare hex encoding w/o padding"
         t @=? t'
 
-        -- step "compare url-safe decoding w/o padding"
-        -- Right s @=? v
+        step "compare hex decoding w/o padding"
+        Right s @=? v
 
 sanityTests :: TestTree
 sanityTests = testGroup "Sanity tests"
@@ -92,13 +92,13 @@ sanityTests = testGroup "Sanity tests"
         , compare32 1000
         , compare32 100000
         ]
-    -- , testGroup "roundtrip encode/decode"
-    --     [ roundtrip 3
-    --     , roundtrip 4
-    --     , roundtrip 5
-    --     , roundtrip 1000
-    --     , roundtrip 100000
-    --     ]
+    , testGroup "roundtrip encode/decode"
+        [ roundtrip 3
+        , roundtrip 4
+        , roundtrip 5
+        , roundtrip 1000
+        , roundtrip 100000
+        ]
     ]
   where
     chonk = testCase ("Encoding huge bytestrings doesn't result in OOM or segfault") $ do
@@ -110,7 +110,7 @@ sanityTests = testGroup "Sanity tests"
       bs <- random n
       B32.encodeBase32' bs @=? Mem.convertToBase Mem.Base32 bs
 
-    -- roundtrip n = testCase ("Roundtrip encode/decode for " ++ show n ++ "-sized bytestrings") $ do
-    --   bs <- random n
-    --   B32.decodeBase32 (B32.encodeBase32' bs) @=? Right bs
-    --   B32H.decodeBase32 (B32H.encodeBase32' bs) @=? Right bs
+    roundtrip n = testCase ("Roundtrip encode/decode for " ++ show n ++ "-sized bytestrings") $ do
+      bs <- random n
+      B32.decodeBase32 (B32.encodeBase32' bs) @=? Right bs
+      B32H.decodeBase32 (B32H.encodeBase32' bs) @=? Right bs

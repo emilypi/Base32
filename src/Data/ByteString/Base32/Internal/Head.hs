@@ -71,6 +71,7 @@ decodeBase32_ !pad !alphabet bs@(PS _ _ !slen)
         | r == 7 -> go (BS.append bs (BS.replicate 1 0x3d))
         | otherwise -> Left "invalid bytestring size"
     | r /= 0, not pad = Left "invalid padding"
+    | slen == 0 = Right ""
     | otherwise = go bs
   where
     (!q, !r) = slen `divMod` 8

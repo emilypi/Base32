@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Tail
 ( loopTail
@@ -205,9 +206,9 @@ decodeTail
     -> Ptr Word8
     -> Int
     -> IO (Either Text ByteString)
-decodeTail !lut !dfp !end !dptr !sptr !n = go dptr sptr 0 (0 :: Word64)
+decodeTail !lut !dfp !end !dptr !sptr !n = go dptr sptr
   where
-    lix a = w64 (aix (fromIntegral a) lut)
+    lix a = aix (fromIntegral a) lut
     {-# INLINE lix #-}
 
     ps !m = return (Right (PS dfp 0 m))
@@ -216,58 +217,67 @@ decodeTail !lut !dfp !end !dptr !sptr !n = go dptr sptr 0 (0 :: Word64)
     err = return . Left . T.pack
     {-# INLINE err #-}
 
-    go !dst !src !m !acc
-      | src == end = do
-        poke @Word64 (castPtr dst) (byteSwap64 acc)
-        ps (n + m)
-      | otherwise = do
-        !w <- peek src
-        !used <- return (m + 1)
-        if
-          | w == 0x3d && used <= 2 -> err
-            $ "invalid padding at offset: "
-            ++ show (minusPtr src sptr)
-          | used == 2, w == 0x3d -> fq src 6 >>= \case
-            Right _ -> do
-              poke @Word8 dst (fromIntegral $ unsafeShiftL acc 5)
-              poke @Word8 (plusPtr dst 1) (fromIntegral $ unsafeShiftL acc 10)
-              ps (n + 2)
-            Left t -> return (Left t)
-          | used == 4, w == 0x3d -> fq src 4 >>= \case
-            Right _ -> do
-              poke @Word8 dst (fromIntegral $ unsafeShiftL acc 5)
-              poke @Word8 (plusPtr dst 1) (fromIntegral $unsafeShiftL acc 10)
-              poke @Word8 (plusPtr dst 2) (fromIntegral $ unsafeShiftL acc 15)
-              poke @Word8 (plusPtr dst 3) (fromIntegral $ unsafeShiftL acc 20)
-              ps (n + 4)
-            Left t -> return (Left t)
-          | used == 5, w == 0x3d -> fq src 5 >>= \case
-            Right _ -> do
-              poke @Word8 dst (fromIntegral $ unsafeShiftL acc 5)
-              poke @Word8 (plusPtr dst 1) (fromIntegral $ unsafeShiftL acc 10)
-              poke @Word8 (plusPtr dst 2) (fromIntegral $ unsafeShiftL acc 15)
-              poke @Word8 (plusPtr dst 3) (fromIntegral $ unsafeShiftL acc 20)
-              poke @Word8 (plusPtr dst 4) (fromIntegral $ unsafeShiftL acc 25)
-              ps (n + 5)
-            Left t -> return (Left t)
-          | used == 7, w == 0x3d -> fq src 7 >>= \case
-            Right _ -> do
-              poke @Word8 dst (fromIntegral $ unsafeShiftL acc 5)
-              poke @Word8 (plusPtr dst 1) (fromIntegral $ unsafeShiftL acc 10)
-              poke @Word8 (plusPtr dst 2) (fromIntegral $ unsafeShiftL acc 15)
-              poke @Word8 (plusPtr dst 3) (fromIntegral $ unsafeShiftL acc 20)
-              poke @Word8 (plusPtr dst 4) (fromIntegral $ unsafeShiftL acc 25)
-              poke @Word8 (plusPtr dst 5) (fromIntegral $ unsafeShiftL acc 30)
-              poke @Word8 (plusPtr dst 6) (fromIntegral $ unsafeShiftL acc 35)
-              poke @Word8 (plusPtr dst 7) (fromIntegral $ unsafeShiftL acc 40)
-              ps (n + 7)
-            Left t -> return (Left t)
-          | otherwise -> do
-            go dst (plusPtr src 1) used ((unsafeShiftL acc 5) .|. lix w)
+    decodeOctet (a,b,c,d,e,f,g,h) =
+      case (lix a, lix b, lix c, lix d, lix e, lix f, lix g, lix h) of
+        (0xff,_,_,_,_,_,_,_) -> Left (0 :: Int)
+        (_,0xff,_,_,_,_,_,_) -> Left 1
+        (_,_,0xff,_,_,_,_,_) -> Left 2
+        (_,_,_,0xff,_,_,_,_) -> Left 3
+        (_,_,_,_,0xff,_,_,_) -> Left 4
+        (_,_,_,_,_,0xff,_,_) -> Left 5
+        (_,_,_,_,_,_,0xff,_) -> Left 6
+        (_,_,_,_,_,_,_,0xff) -> Left 7
+        (ri1,ri2,ri3,ri4,ri5,ri6,ri7,ri8) ->
+            let o1 = (ri1 `unsafeShiftL` 3) .|. (ri2 `unsafeShiftR` 2)
+                o2 = (ri2 `unsafeShiftL` 6) .|. (ri3 `unsafeShiftL` 1) .|. (ri4 `unsafeShiftR` 4)
+                o3 = (ri4 `unsafeShiftL` 4) .|. (ri5 `unsafeShiftR` 1)
+                o4 = (ri5 `unsafeShiftL` 7) .|. (ri6 `unsafeShiftL` 2) .|. (ri7 `unsafeShiftR` 3)
+                o5 = (ri7 `unsafeShiftL` 5) .|. ri8
+             in Right (o1, o2, o3, o4, o5)
 
-    fq !_ 0 = return $ Right ()
-    fq !src !pads = do
-      a <- peek src
-      if a == 0x3d
-      then fq (plusPtr src 1) (pads - 1)
-      else err $ "invalid padding: " ++ show (minusPtr src sptr)
+    go !dst !src
+      | src == end = ps n
+      | otherwise = do
+        !a <- peek @Word8 src
+        !b <- peek @Word8 (plusPtr src 1)
+        !c <- peek @Word8 (plusPtr src 2)
+        !d <- peek @Word8 (plusPtr src 3)
+        !e <- peek @Word8 (plusPtr src 4)
+        !f <- peek @Word8 (plusPtr src 5)
+        !g <- peek @Word8 (plusPtr src 6)
+        !h <- peek @Word8 (plusPtr src 7)
+
+        let (!m, !c', !d', !e', !f', !g', !h') = case (c,d,e,f,g,h) of
+              (0x3d,0x3d,0x3d,0x3d,0x3d,0x3d) -> (6,0x41,0x41,0x41,0x41,0x41,0x41)
+              (_,0x3d,0x3d,0x3d,0x3d,0x3d) -> (5,c,0x41,0x41,0x41,0x41,0x41)
+              (_,_,0x3d,0x3d,0x3d,0x3d) -> (4,c,d,0x41,0x41,0x41,0x41)
+              (_,_,_,0x3d,0x3d,0x3d) -> (3,c,d,e,0x41,0x41,0x41)
+              (_,_,_,_,0x3d,0x3d) -> (2,c,d,e,f,0x41,0x41)
+              (_,_,_,_,_,0x3d) -> (1,c,d,e,f,g,0x41)
+              _ -> (0 :: Int,c,d,e,f,g,h)
+
+        case decodeOctet (a,b,c',d',e',f',g',h') of
+          Left ofs -> err $ "invalid character at offset: " ++ show (n + ofs)
+          Right (!v,!w,!x,!y,!z) -> do
+            poke dst v
+            poke (plusPtr dst 1) w
+
+            if
+              | m == 0 -> do
+                poke (plusPtr dst 2) x
+                poke (plusPtr dst 3) y
+                poke (plusPtr dst 4) z
+                ps (n + 5)
+              | m < 2 -> do
+                poke (plusPtr dst 2) x
+                poke (plusPtr dst 3) y
+                poke (plusPtr dst 4) z
+                ps (n + 4)
+              | m < 4 -> do
+                poke (plusPtr dst 2) x
+                poke (plusPtr dst 3) y
+                ps (n + 3)
+              | m < 5 -> do
+                poke (plusPtr dst 2) x
+                ps (n + 2)
+              | otherwise -> ps (n + 1)

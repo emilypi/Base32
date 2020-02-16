@@ -12,6 +12,7 @@ import Data.Bits
 import Data.ByteString (ByteString)
 import Data.ByteString.Base32.Internal.Utils
 import Data.Text (Text)
+import qualified Data.Text as T
 
 import Foreign.Ptr
 import Foreign.ForeignPtr
@@ -129,6 +130,8 @@ decodeLoop !lut !dptr !sptr !end finish = go dptr sptr 0
 
     roll !w !acc = (acc `unsafeShiftL` 5) .|. lix w
 
+    err = return . Left . T.pack
+
     go !dst !src !n
       | plusPtr src 8 == end = finish dst (castPtr src) n
       | otherwise = do
@@ -148,9 +151,12 @@ decodeLoop !lut !dptr !sptr !end finish = go dptr sptr 0
           $ roll (unsafeShiftR t 56)
           0
 
-        poke @Word8 dst (fromIntegral (w `unsafeShiftR` 32))
+        if w /= 0xff
+        then do
+          poke @Word8 dst (fromIntegral (w `unsafeShiftR` 32))
+          poke @Word32 (castPtr (plusPtr dst 1)) (byteSwap32 (fromIntegral w))
 
-        -- BE -> LE per spec
-        poke @Word32 (castPtr (plusPtr dst 1)) (byteSwap32 (fromIntegral w))
-
-        go (plusPtr dst 5) (plusPtr src 8) (n + 8)
+          go (plusPtr dst 5) (plusPtr src 8) (n + 5)
+        else err
+          $ "invalid character at offset: "
+          ++ show (src `minusPtr` sptr)
