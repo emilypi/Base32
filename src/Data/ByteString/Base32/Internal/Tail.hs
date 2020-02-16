@@ -266,7 +266,7 @@ decodeTail !lut !dfp !end !dptr !sptr !n = go dptr sptr
                 poke (plusPtr dst 3) y
                 poke (plusPtr dst 4) z
                 ps (n + 5)
-              | m < 2 -> do
+              | m == 1 -> do
                 poke (plusPtr dst 2) x
                 poke (plusPtr dst 3) y
                 poke (plusPtr dst 4) z

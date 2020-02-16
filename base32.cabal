@@ -58,6 +58,7 @@ test-suite tasty
   build-depends:
       base               >=4.10 && <5
     , base32
+    , bytestring
     , memory
     , random-bytestring
     , tasty

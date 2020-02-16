@@ -1,16 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE TypeApplications #-}
 module Main
 ( main
 , tests
 ) where
 
 
+import Data.Bifunctor
+import Data.ByteString (ByteString)
 import "base32" Data.ByteString.Base32 as B32
 import "base32" Data.ByteString.Base32.Hex as B32H
 import "memory" Data.ByteArray.Encoding as Mem
 import Data.ByteString.Random (random)
 import Data.Functor (void)
+import Data.Text (pack)
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -24,7 +28,7 @@ tests :: TestTree
 tests = testGroup "Base32 Tests"
     [ testVectors
     , sanityTests
-    -- , alphabetTests
+    , alphabetTests
     ]
 
 testVectors :: TestTree
@@ -84,7 +88,7 @@ sanityTests = testGroup "Sanity tests"
     [ testGroup "very large bytestrings don't segfault"
         [ chonk
         ]
-    , testGroup "`base32-bytestring` sanity checks"
+    , testGroup "`memory` sanity checks"
         [ compare32 3
         , compare32 4
         , compare32 5
@@ -109,8 +113,36 @@ sanityTests = testGroup "Sanity tests"
     compare32 n = testCase ("Testing " ++ show n ++ "-sized bytestrings") $ do
       bs <- random n
       B32.encodeBase32' bs @=? Mem.convertToBase Mem.Base32 bs
+      B32.decodeBase32 (B32.encodeBase32' bs) @=?
+        first pack (Mem.convertFromBase @ByteString Mem.Base32 (Mem.convertToBase Mem.Base32 bs))
 
     roundtrip n = testCase ("Roundtrip encode/decode for " ++ show n ++ "-sized bytestrings") $ do
       bs <- random n
       B32.decodeBase32 (B32.encodeBase32' bs) @=? Right bs
       B32H.decodeBase32 (B32H.encodeBase32' bs) @=? Right bs
+
+alphabetTests :: TestTree
+alphabetTests = testGroup "Alphabet tests"
+    [ base32Tests 0
+    , base32Tests 4
+    , base32Tests 5
+    , base32Tests 6
+    , base32Tests 100
+    , base32HexTests 0
+    , base32HexTests 4
+    , base32HexTests 5
+    , base32HexTests 6
+    , base32HexTests 100
+    ]
+  where
+    base32Tests n = testCase ("Conforms to Base32 alphabet: " ++ show n) $ do
+      bs <- random n
+      let b = B32.encodeBase32' bs
+      assertBool ("failed validity: " ++ show b) $ B32.isValidBase32 b
+      assertBool ("failed correctness: " ++ show b) $ B32.isBase32 b
+
+    base32HexTests n = testCase ("Conforms to Base32hex alphabet: " ++ show n) $ do
+      bs <- random n
+      let b = B32H.encodeBase32' bs
+      assertBool ("failed validity: " ++ show b) $ B32H.isValidBase32Hex b
+      assertBool ("failed correctness: " ++ show b) $ B32H.isBase32Hex b
