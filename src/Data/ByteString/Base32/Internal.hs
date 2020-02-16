@@ -21,22 +21,12 @@ module Data.ByteString.Base32.Internal
 ) where
 
 
-import Data.Bits
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal
-import Data.Text (Text)
-import qualified Data.Text as T
 
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Storable
-
-import GHC.Exts
-import GHC.ForeignPtr
-import GHC.Word
-
-import System.IO.Unsafe
-
 
 -- -------------------------------------------------------------------------- --
 -- Validating Base64

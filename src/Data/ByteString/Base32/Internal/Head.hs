@@ -18,7 +18,6 @@ import Data.Text (Text)
 
 import Foreign.Ptr
 import Foreign.ForeignPtr
-import Foreign.Storable
 
 import GHC.Exts
 import GHC.ForeignPtr
@@ -64,7 +63,8 @@ encodeBase32NoPad_ !lut (PS !sfp !soff !slen)
 -- | Head of the base32 decoding loop - marshal data, assemble loops
 --
 decodeBase32_ :: Bool -> ForeignPtr Word8 -> ByteString -> Either Text ByteString
-decodeBase32_ !pad !alphabet bs@(PS _ _ !slen)
+decodeBase32_ !pad !alphabet bs@(PS _ _ !l)
+    | l == 0 = Right ""
     | r /= 0, pad =
       if
         | r == 2 -> go (BS.append bs (BS.replicate 6 0x3d))
@@ -73,10 +73,9 @@ decodeBase32_ !pad !alphabet bs@(PS _ _ !slen)
         | r == 7 -> go (BS.append bs (BS.replicate 1 0x3d))
         | otherwise -> Left "invalid bytestring size"
     | r /= 0, not pad = Left "invalid padding"
-    | slen == 0 = Right ""
     | otherwise = go bs
   where
-    (!q, !r) = slen `divMod` 8
+    (!q, !r) = l `divMod` 8
     !dlen = q * 8
 
     go (PS !sfp !soff !slen) = unsafeDupablePerformIO $ do
