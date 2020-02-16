@@ -11,12 +11,12 @@ let
         pname = "base32";
         version = "0.1.0.0";
         src = ./.;
-        libraryHaskellDepends = [ base bytestring deepseq text ];
+        libraryHaskellDepends = [ base bytestring text ];
         testHaskellDepends = [
-          base random-bytestring tasty tasty-hunit text
+          base memory random-bytestring tasty tasty-hunit text
         ];
         benchmarkHaskellDepends = [
-          base criterion deepseq memory random-bytestring text
+          base bytestring criterion deepseq memory random-bytestring text
         ];
         homepage = "https://github.com/emilypi/base32";
         description = "RFC 4648-compliant Base32 encodings/decodings";
