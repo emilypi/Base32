@@ -8,11 +8,8 @@ module Data.ByteString.Base32.Internal.Tables
 
 import Data.ByteString.Base32.Internal.Utils
 
-import Foreign.Ptr
 import Foreign.ForeignPtr
 
-import GHC.Exts
-import GHC.ForeignPtr
 import GHC.Word
 
 

@@ -52,7 +52,7 @@ encodeBase32' :: ByteString -> ByteString
 encodeBase32' = encodeBase32_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 {-# INLINE encodeBase32' #-}
 
--- | Decode an arbitrarily padded Base32-encoded 'ByteString' value.
+-- | Decode a padded Base32-encoded 'ByteString' value.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
 --
@@ -76,7 +76,7 @@ encodeBase32Unpadded' :: ByteString -> ByteString
 encodeBase32Unpadded' = encodeBase32NoPad_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 {-# INLINE encodeBase32Unpadded' #-}
 
--- | Decode an unpadded Base32-encoded 'ByteString' value.
+-- | Decode an arbitarily padded Base32-encoded 'ByteString' value.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
 --
@@ -102,7 +102,7 @@ isBase32 bs = isValidBase32 bs && isRight (decodeBase32 bs)
 
 -- | Tell whether a 'ByteString' value is a valid Base32 format.
 --
--- This will not tell you whether or not this is a correct Base32url representation,
+-- This will not tell you whether or not this is a correct Base32 representation,
 -- only that it conforms to the correct shape. To check whether it is a true
 -- Base32 encoded 'ByteString' value, use 'isBase32'.
 --

@@ -15,7 +15,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 
 import Foreign.Ptr
-import Foreign.ForeignPtr
 import Foreign.Storable
 
 import GHC.Exts

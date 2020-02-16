@@ -8,8 +8,6 @@ module Data.ByteString.Base32.Internal.Utils
 , writeNPlainForeignPtrBytes
 ) where
 
-import Data.ByteString.Internal
-
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Storable

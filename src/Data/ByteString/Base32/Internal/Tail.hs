@@ -104,8 +104,9 @@ loopTail !lut !end !dst !src
   where
     look !n = aix n lut
 
+    padN :: Ptr Word8 -> Int -> IO ()
     padN !_ 0 = return ()
-    padN !p n = poke @Word8 p 0x3d >> padN (plusPtr p 1) (n - 1)
+    padN !p n = poke p 0x3d >> padN (plusPtr p 1) (n - 1)
 {-# INLINE loopTail #-}
 
 -- | Unroll final quantum encoding for base32
@@ -189,10 +190,7 @@ loopTailNoPad !lut !dfp !end !dst !src !n
 
     | otherwise = return (PS dfp 0 n)
   where
-    look !n = aix n lut
-
-    padN !_ 0 = return ()
-    padN !p n = poke @Word8 p 0x3d >> padN (plusPtr p 1) (n - 1)
+    look !i = aix i lut
 {-# INLINE loopTailNoPad #-}
 
 -- ------------------------------------------------------------------------ --
