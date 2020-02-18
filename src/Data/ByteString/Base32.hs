@@ -38,7 +38,7 @@ import qualified Data.Text.Encoding as T
 
 -- | Encode a 'ByteString' value as Base32 'Text' with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 encodeBase32 :: ByteString -> Text
 encodeBase32 = T.decodeUtf8 . encodeBase32'
@@ -46,7 +46,7 @@ encodeBase32 = T.decodeUtf8 . encodeBase32'
 
 -- | Encode a 'ByteString' value as a Base32 'ByteString'  value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 encodeBase32' :: ByteString -> ByteString
 encodeBase32' = encodeBase32_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
@@ -54,7 +54,7 @@ encodeBase32' = encodeBase32_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 
 -- | Decode a padded Base32-encoded 'ByteString' value.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 decodeBase32 :: ByteString -> Either Text ByteString
 decodeBase32 = decodeBase32_ False stdDecodeTable
@@ -62,7 +62,9 @@ decodeBase32 = decodeBase32_ False stdDecodeTable
 
 -- | Encode a 'ByteString' value as a Base32 'Text' value without padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>,
+--      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+--
 --
 encodeBase32Unpadded :: ByteString -> Text
 encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
@@ -70,7 +72,8 @@ encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
 
 -- | Encode a 'ByteString' value as a Base32 'ByteString'  value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>,
+--      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
 --
 encodeBase32Unpadded' :: ByteString -> ByteString
 encodeBase32Unpadded' = encodeBase32NoPad_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
@@ -78,7 +81,8 @@ encodeBase32Unpadded' = encodeBase32NoPad_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 
 -- | Decode an arbitarily padded Base32-encoded 'ByteString' value.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>,
+--      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
 --
 decodeBase32Unpadded :: ByteString -> Either Text ByteString
 decodeBase32Unpadded = decodeBase32_ True stdDecodeTable

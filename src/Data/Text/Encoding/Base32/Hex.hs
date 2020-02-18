@@ -29,7 +29,7 @@ import qualified Data.Text.Encoding as T
 
 -- | Encode a 'Text' value in Base32hex with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 encodeBase32 :: Text -> Text
 encodeBase32 = B32U.encodeBase32 . T.encodeUtf8
@@ -37,7 +37,7 @@ encodeBase32 = B32U.encodeBase32 . T.encodeUtf8
 
 -- | Decode a padded Base32hex-encoded 'Text' value.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 decodeBase32 :: Text -> Either Text Text
 decodeBase32 = fmap T.decodeUtf8 . B32U.decodeBase32 . T.encodeUtf8
@@ -45,7 +45,8 @@ decodeBase32 = fmap T.decodeUtf8 . B32U.decodeBase32 . T.encodeUtf8
 
 -- | Encode a 'Text' value in Base32hex without padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>,
+--      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
 --
 encodeBase32Unpadded :: Text -> Text
 encodeBase32Unpadded = B32U.encodeBase32Unpadded . T.encodeUtf8
@@ -53,7 +54,8 @@ encodeBase32Unpadded = B32U.encodeBase32Unpadded . T.encodeUtf8
 
 -- | Decode an arbitrarily padded Base32hex encoded 'Text' value
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>,
+--      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
 --
 decodeBase32Unpadded :: Text -> Either Text Text
 decodeBase32Unpadded = fmap T.decodeUtf8
