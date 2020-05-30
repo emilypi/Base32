@@ -9,7 +9,6 @@ module Data.ByteString.Base32.Internal.Head
 ) where
 
 
-import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal
 import Data.ByteString.Base32.Internal.Loop
