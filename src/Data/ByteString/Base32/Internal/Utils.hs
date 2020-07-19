@@ -2,11 +2,15 @@
 {-# LANGUAGE MagicHash #-}
 module Data.ByteString.Base32.Internal.Utils
 ( aix
+, padCeilN
 , w32
 , w64
 , w64_32
 , writeNPlainForeignPtrBytes
 ) where
+
+
+import Data.Bits
 
 import Foreign.Ptr
 import Foreign.ForeignPtr
@@ -36,6 +40,14 @@ w64_32 = fromIntegral
 w64 :: Word8 -> Word64
 w64 = fromIntegral
 {-# INLINE w64 #-}
+
+padCeilN :: Int -> Int -> Int
+padCeilN !n !x
+    | r == 0 = x
+    | otherwise = (x - r) + n
+  where
+    r = x .&. (n - 1)
+{-# INLINE padCeilN #-}
 
 -- | Allocate and fill @n@ bytes with some data
 --

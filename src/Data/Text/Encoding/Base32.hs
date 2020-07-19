@@ -17,6 +17,7 @@ module Data.Text.Encoding.Base32
 , decodeBase32
 , encodeBase32Unpadded
 , decodeBase32Unpadded
+, decodeBase32Padded
 -- , decodeBase32Lenient
 , isBase32
 , isValidBase32
@@ -36,12 +37,12 @@ encodeBase32 :: Text -> Text
 encodeBase32 = B32.encodeBase32 . T.encodeUtf8
 {-# INLINE encodeBase32 #-}
 
--- | Decode a padded Base32-encoded 'Text' value
+-- | Decode an arbitrarily padded Base32-encoded 'Text' value
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 decodeBase32 :: Text -> Either Text Text
-decodeBase32 = fmap T.decodeUtf8 . B32.decodeBase32 . T.encodeUtf8
+decodeBase32 = fmap T.decodeLatin1 . B32.decodeBase32 . T.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
 -- | Encode a 'Text' value in Base32 without padding.
@@ -53,16 +54,27 @@ encodeBase32Unpadded :: Text -> Text
 encodeBase32Unpadded = B32.encodeBase32Unpadded . T.encodeUtf8
 {-# INLINE encodeBase32Unpadded #-}
 
--- | Decode an arbitrarily padded Base32-encoded 'Text'
+-- | Decode a strictly unpadded Base32-encoded 'Text'
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>,
 --      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
 --
 decodeBase32Unpadded :: Text -> Either Text Text
-decodeBase32Unpadded = fmap T.decodeUtf8
+decodeBase32Unpadded = fmap T.decodeLatin1
     . B32.decodeBase32Unpadded
     . T.encodeUtf8
 {-# INLINE decodeBase32Unpadded #-}
+
+-- | Decode a strictly padded Base32-encoded 'Text'
+--
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>,
+--      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+--
+decodeBase32Padded :: Text -> Either Text Text
+decodeBase32Padded = fmap T.decodeLatin1
+    . B32.decodeBase32Padded
+    . T.encodeUtf8
+{-# INLINE decodeBase32Padded #-}
 
 -- -- | Leniently decode a Base32-encoded 'Text' value. This function
 -- -- will not generate parse errors. If input data contains padding chars,
