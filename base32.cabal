@@ -1,6 +1,6 @@
 cabal-version:      2.0
 name:               base32
-version:            0.1.1.2
+version:            0.1.1.1
 synopsis:           RFC 4648-compliant Base32 encodings/decodings
 description:
   RFC 4648-compliant Base32 encodings and decodings.
