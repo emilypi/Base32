@@ -16,13 +16,14 @@ module Data.Text.Encoding.Base32.Hex
 , decodeBase32
 , encodeBase32Unpadded
 , decodeBase32Unpadded
+, decodeBase32Padded
 -- , decodeBase32Lenient
 , isBase32Hex
 , isValidBase32Hex
 ) where
 
 
-import qualified Data.ByteString.Base32.Hex as B32U
+import qualified Data.ByteString.Base32.Hex as B32H
 
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
@@ -32,7 +33,7 @@ import qualified Data.Text.Encoding as T
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 encodeBase32 :: Text -> Text
-encodeBase32 = B32U.encodeBase32 . T.encodeUtf8
+encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
 {-# INLINE encodeBase32 #-}
 
 -- | Decode a padded Base32hex-encoded 'Text' value.
@@ -40,7 +41,7 @@ encodeBase32 = B32U.encodeBase32 . T.encodeUtf8
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 decodeBase32 :: Text -> Either Text Text
-decodeBase32 = fmap T.decodeUtf8 . B32U.decodeBase32 . T.encodeUtf8
+decodeBase32 = fmap T.decodeLatin1 . B32H.decodeBase32 . T.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
 -- | Encode a 'Text' value in Base32hex without padding.
@@ -49,7 +50,7 @@ decodeBase32 = fmap T.decodeUtf8 . B32U.decodeBase32 . T.encodeUtf8
 --      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
 --
 encodeBase32Unpadded :: Text -> Text
-encodeBase32Unpadded = B32U.encodeBase32Unpadded . T.encodeUtf8
+encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
 {-# INLINE encodeBase32Unpadded #-}
 
 -- | Decode an arbitrarily padded Base32hex encoded 'Text' value
@@ -58,10 +59,21 @@ encodeBase32Unpadded = B32U.encodeBase32Unpadded . T.encodeUtf8
 --      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
 --
 decodeBase32Unpadded :: Text -> Either Text Text
-decodeBase32Unpadded = fmap T.decodeUtf8
-    . B32U.decodeBase32Unpadded
+decodeBase32Unpadded = fmap T.decodeLatin1
+    . B32H.decodeBase32Unpadded
     . T.encodeUtf8
 {-# INLINE decodeBase32Unpadded #-}
+
+-- | Decode an arbitrarily padded Base32hex encoded 'Text' value
+--
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>,
+--      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+--
+decodeBase32Padded :: Text -> Either Text Text
+decodeBase32Padded = fmap T.decodeLatin1
+    . B32H.decodeBase32Padded
+    . T.encodeUtf8
+{-# INLINE decodeBase32Padded #-}
 
 -- -- -- | Leniently decode an unpadded Base32hex-encoded 'Text'. This function
 -- -- -- will not generate parse errors. If input data contains padding chars,
@@ -71,14 +83,14 @@ decodeBase32Unpadded = fmap T.decodeUtf8
 -- -- --
 -- -- decodeBase32Lenient :: Text -> Text
 -- -- decodeBase32Lenient = T.decodeUtf8
--- --     . B32U.decodeBase32Lenient
+-- --     . B32H.decodeBase32Lenient
 -- --     . T.encodeUtf8
 -- -- {-# INLINE decodeBase32Lenient #-}
 
 -- | Tell whether a 'Text' value is Base32hex-encoded.
 --
 isBase32Hex :: Text -> Bool
-isBase32Hex = B32U.isBase32Hex . T.encodeUtf8
+isBase32Hex = B32H.isBase32Hex . T.encodeUtf8
 {-# INLINE isBase32Hex #-}
 
 -- | Tell whether a 'Text' value is a valid Base32hex format.
@@ -88,5 +100,5 @@ isBase32Hex = B32U.isBase32Hex . T.encodeUtf8
 -- Base32 encoded 'Text' value, use 'isBase32Hex'.
 --
 isValidBase32Hex :: Text -> Bool
-isValidBase32Hex = B32U.isValidBase32Hex . T.encodeUtf8
+isValidBase32Hex = B32H.isValidBase32Hex . T.encodeUtf8
 {-# INLINE isValidBase32Hex #-}
