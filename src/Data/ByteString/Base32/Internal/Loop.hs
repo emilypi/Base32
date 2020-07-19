@@ -38,11 +38,7 @@ innerLoop !lut !dptr !sptr !end finish = go dptr sptr
     go !dst !src
       | plusPtr src 4 >= end = finish (castPtr dst) src
       | otherwise = do
-#ifdef WORDS_BIGENDIAN
-        !t <- peek @Word32 (castPtr src)
-#else
-        !t <- byteSwap32 <$> peek @Word32 (castPtr src)
-#endif
+        !t <- peekWord32BE (castPtr src)
         !u <- w32 <$> peek (plusPtr src 4)
 
         !a <- lix (unsafeShiftR t 27)
@@ -88,11 +84,8 @@ decodeLoop !lut !dptr !sptr !end finish = go dptr sptr 0
     go !dst !src !n
       | plusPtr src 8 == end = finish dst (castPtr src) n
       | otherwise = do
-#ifdef WORDS_BIGENDIAN
-        !t <- peek src
-#else
-        !t <- byteSwap64 <$> peek src
-#endif
+        !t <- peekWord64BE src
+
         !w <- return
           $ roll (unsafeShiftR t 0)
           $ roll (unsafeShiftR t 8)

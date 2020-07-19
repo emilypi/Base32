@@ -28,7 +28,8 @@ import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import "base32" Data.Text.Encoding.Base32 as T32
-import "base32" Data.Text.Encoding.Base32.Hex as T32U
+import "base32" Data.Text.Encoding.Base32.Error (Base32Error)
+import "base32" Data.Text.Encoding.Base32.Hex as T32H
 
 import Test.QuickCheck hiding (label)
 
@@ -37,21 +38,13 @@ import Test.QuickCheck hiding (label)
 
 data Impl
   = B32
-  | B32H
   | T32
-  | T32H
 
 b32 :: Proxy 'B32
 b32 = Proxy
 
 t32 :: Proxy 'T32
 t32 = Proxy
-
-b32H :: Proxy 'B32H
-b32H = Proxy
-
-t32H :: Proxy 'T32H
-t32H = Proxy
 
 -- | This class provides the generic API definition for
 -- the base32 std alphabet
@@ -74,10 +67,8 @@ class
 
   decode :: bs -> Either Text bs
   decodeHex :: bs -> Either Text bs
-
   decodePad :: bs -> Either Text bs
   decodeHexPad :: bs -> Either Text bs
-
   decodeNopad :: bs -> Either Text bs
   decodeHexNopad :: bs -> Either Text bs
 
@@ -118,15 +109,34 @@ instance Harness 'T32 Text where
   decodePad = T32.decodeBase32Padded
   correct = T32.isBase32
 
-  encodeHex = T32U.encodeBase32
-  encodeHexNopad = T32U.encodeBase32Unpadded
-  decodeHex = T32U.decodeBase32
-  decodeHexPad = T32U.decodeBase32Padded
-  decodeHexNopad = T32U.decodeBase32Unpadded
+  encodeHex = T32H.encodeBase32
+  encodeHexNopad = T32H.encodeBase32Unpadded
+  decodeHex = T32H.decodeBase32
+  decodeHexPad = T32H.decodeBase32Padded
+  decodeHexNopad = T32H.decodeBase32Unpadded
 
-  correctHex = T32U.isBase32Hex
-  validateHex = T32U.isValidBase32Hex
+  correctHex = T32H.isBase32Hex
+  validateHex = T32H.isValidBase32Hex
   validate = T32.isValidBase32
+
+class Harness a cs
+  => TextHarness (a :: Impl) cs bs
+  | a -> cs, bs -> cs, cs -> a, cs -> bs where
+  decodeWith_ :: (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  decodePaddedWith_ :: (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  decodeUnpaddedWith_ :: (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  decodeHexWith_ :: (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  decodeHexPaddedWith_ :: (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  decodeHexUnpaddedWith_ :: (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+
+
+instance TextHarness 'T32 Text BS.ByteString where
+  decodeWith_ = T32.decodeBase32With
+  decodePaddedWith_ = T32.decodeBase32PaddedWith
+  decodeUnpaddedWith_ = T32.decodeBase32UnpaddedWith
+  decodeHexWith_ = T32H.decodeBase32With
+  decodeHexPaddedWith_ = T32H.decodeBase32PaddedWith
+  decodeHexUnpaddedWith_ = T32H.decodeBase32UnpaddedWith
 
 -- ------------------------------------------------------------------ --
 -- Quickcheck instances

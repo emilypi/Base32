@@ -29,6 +29,7 @@ import "base32" Data.ByteString.Base32.Hex as B32H
 import qualified "memory" Data.ByteArray.Encoding as Mem
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import Data.Text.Encoding.Base32.Error (Base32Error(..))
 import Data.Word
 
 import Internal
@@ -51,6 +52,7 @@ tests = testGroup "Base32 Tests"
   , mkTree t32
     [ mkPropTree
     , mkUnitTree
+    , mkDecodeTree T.decodeUtf8' b32
     ]
   ]
 
@@ -98,6 +100,22 @@ mkUnitTree
   -> TestTree
 mkUnitTree = mkTests "Unit tests"
   [ rfcVectors
+  ]
+
+-- | Make unit tests for textual 'decode*With' functions
+--
+mkDecodeTree
+  :: forall t a b c e proxy
+  . ( TextHarness a b c
+    , Harness t c
+    , Show e
+    )
+  => (c -> Either e b)
+  -> proxy t
+  -> proxy a
+  -> TestTree
+mkDecodeTree utf8 t = mkTests "Decoding tests"
+  [ decodeWithVectors utf8 t
   ]
 
 -- ---------------------------------------------------------------- --
@@ -211,3 +229,73 @@ rfcVectors _ = testGroup "RFC 4328 Test Vectors"
 
         step "decode is sound"
         Right s @=? decodeHexPad t
+
+-- | Unit test trees for the `decode*With` family of text-valued functions
+--
+decodeWithVectors
+  :: forall t a b c e proxy
+  . ( TextHarness a c b
+    , Harness t b
+    , Show e
+    )
+  => (b -> Either e c)
+    -- ^ utf8
+  -> proxy t
+    -- ^ witness to the bytestring-ey dictionaries
+  -> proxy a
+    -- ^ witness to the text dictionaries
+  -> TestTree
+decodeWithVectors utf8 _ _ = testGroup "DecodeWith* unit tests"
+  [ testGroup "decodeWith negative tests"
+    [ testCase "decodeWith non-utf8 inputs on decodeUtf8" $ do
+      case decodeWith_ @a utf8 "\1079743" of
+        Left (DecodeError _) -> return ()
+        _ -> assertFailure "decoding phase"
+    , testCase "decodeWith valid utf8 inputs on decodeUtf8" $ do
+      case decodeWith_ @a utf8 (encode @t "\1079743") of
+        Left (ConversionError _) -> return ()
+        _ -> assertFailure "conversion phase"
+    , testCase "decodeHexWith non-utf8 inputs on decodeUtf8" $ do
+      case decodeHexWith_ @a utf8 "\1079743" of
+        Left (DecodeError _) -> return ()
+        _ -> assertFailure "decoding phase"
+    , testCase "decodeHexWith valid utf8 inputs on decodeUtf8" $ do
+      case decodeHexWith_ @a utf8 (encodeHex @t "\1079743") of
+        Left (ConversionError _) -> return ()
+        _ -> assertFailure "conversion phase"
+    , testCase "decodeHexPaddedWith non-utf8 inputs on decodeUtf8" $ do
+      case decodeHexPaddedWith_ @a utf8 "\1079743" of
+        Left (DecodeError _) -> return ()
+        _ -> assertFailure "decoding phase"
+    , testCase "decodePaddedWith valid utf8 inputs on decodeUtf8" $ do
+      case decodeHexPaddedWith_ @a utf8 (encodeHex @t "\1079743") of
+        Left (ConversionError _) -> return ()
+        _ -> assertFailure "conversion phase"
+    , testCase "decodeUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
+      case decodeHexUnpaddedWith_ @a utf8 "\1079743" of
+        Left (DecodeError _) -> return ()
+        _ -> assertFailure "decoding phase"
+    , testCase "decodeUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
+      case decodeHexUnpaddedWith_ @a utf8 (encodeHexNopad @t "\1079743") of
+        Left (ConversionError _) -> return ()
+        _ -> assertFailure "conversion phase"
+    ]
+  , testGroup "decodeWith positive tests"
+    [ testCase "decodeWith utf8 inputs on decodeUtf8" $ do
+      a <- either (assertFailure . show) pure $ decode @a "MZXW6YTBOI======"
+      b <- either (assertFailure . show) pure $ decodeWith_ @a utf8 "MZXW6YTBOI======"
+      a @=? b
+    , testCase "decodeHexWith utf8 inputs on decodeUtf8" $ do
+      a <- either (assertFailure . show) pure $ decodeHex @a "CPNMUOJ1E8======"
+      b <- either (assertFailure . show) pure $ decodeHexWith_ @a utf8 "CPNMUOJ1E8======"
+      a @=? b
+    , testCase "decodeHexPaddedWith utf8 inputs on decodeUtf8" $ do
+      a <- either (assertFailure . show) pure $ decodeHexPad @a "CPNMUOJ1E8======"
+      b <- either (assertFailure . show) pure $ decodeHexPaddedWith_ @a utf8 "CPNMUOJ1E8======"
+      a @=? b
+    , testCase "decodeHexUnpaddedWith utf8 inputs on decodeUtf8" $ do
+      a <- either (assertFailure . show) pure $ decodeHexNopad @a "CPNMUOJ1"
+      b <- either (assertFailure . show) pure $ decodeHexUnpaddedWith_ @a utf8 "CPNMUOJ1"
+      a @=? b
+    ]
+  ]
