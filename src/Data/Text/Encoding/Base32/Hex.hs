@@ -54,7 +54,7 @@ decodeBase32 = fmap T.decodeLatin1 . B32H.decodeBase32 . T.encodeUtf8
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -98,7 +98,7 @@ decodeBase32Unpadded = fmap T.decodeLatin1
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 6>
 --
 -- === __Example__:
 --
@@ -133,7 +133,7 @@ decodeBase32Padded = fmap T.decodeLatin1
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Example__:
 --
