@@ -60,7 +60,7 @@ validateBase32 !alphabet (PS fp off l) =
         if f w then go (plusPtr p 1) end else return False
 {-# INLINE validateBase32 #-}
 
--- | This function checks that the last char of a bytestring is '='
+-- | This function checks that the last N-chars of a bytestring are '='
 -- and, if true, fails with a message or completes some io action.
 --
 -- This is necessary to check when decoding permissively (i.e. filling in padding chars).
