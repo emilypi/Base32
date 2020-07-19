@@ -3,6 +3,8 @@
 module Data.ByteString.Base32.Internal.Utils
 ( aix
 , padCeilN
+, peekWord32BE
+, peekWord64BE
 , w32
 , w64
 , w64_32
@@ -16,6 +18,7 @@ import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Storable
 
+import GHC.ByteOrder
 import GHC.Exts
 import GHC.ForeignPtr
 import GHC.Word
@@ -66,3 +69,15 @@ writeNPlainForeignPtrBytes !n as = unsafeDupablePerformIO $ do
     go !_ [] = return ()
     go !p (x:xs) = poke p x >> go (plusPtr p 1) xs
 {-# INLINE writeNPlainForeignPtrBytes #-}
+
+peekWord32BE :: Ptr Word32 -> IO Word32
+peekWord32BE p = case targetByteOrder of
+  LittleEndian -> byteSwap32 <$> peek p
+  BigEndian    -> peek p
+{-# inline peekWord32BE #-}
+
+peekWord64BE :: Ptr Word64 -> IO Word64
+peekWord64BE p = case targetByteOrder of
+  LittleEndian -> byteSwap64 <$> peek p
+  BigEndian    -> peek p
+{-# inline peekWord64BE #-}
