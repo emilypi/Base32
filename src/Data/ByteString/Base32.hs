@@ -72,7 +72,7 @@ decodeBase32 bs@(PS _ _ !l)
   where
     !r = l `rem` 8
     !q = l `quot` 8
-    !dlen = q * 8
+    !dlen = q * 5
 {-# INLINE decodeBase32 #-}
 
 -- | Encode a 'ByteString' value as a Base32 'Text' value without padding.
@@ -111,7 +111,7 @@ decodeBase32Unpadded bs@(PS _ _ !l)
   where
     !q = l `quot` 8
     !r = l `rem` 8
-    !dlen = q * 3
+    !dlen = q * 5
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Decode a padded Base32-encoded 'ByteString' value.
@@ -130,7 +130,7 @@ decodeBase32Padded bs@(PS _ _ !l)
   where
     !q = l `quot` 8
     !r = l `rem` 8
-    !dlen = q * 3
+    !dlen = q * 5
 {-# INLINE decodeBase32Padded #-}
 
 -- -- | Leniently decode an unpadded Base32-encoded 'ByteString' value. This function
