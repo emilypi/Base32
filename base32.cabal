@@ -31,6 +31,7 @@ library
     Data.ByteString.Base32
     Data.ByteString.Base32.Hex
     Data.Text.Encoding.Base32
+    Data.Text.Encoding.Base32.Error
     Data.Text.Encoding.Base32.Hex
 
   other-modules:
@@ -42,9 +43,12 @@ library
     Data.ByteString.Base32.Internal.Utils
 
   build-depends:
-      base        >=4.10 && <5
-    , bytestring  ^>=0.10
-    , text        ^>=1.2
+      base          >=4.10      && <5
+    , bytestring    ^>=0.10
+    , deepseq       >=1.4.3.0   && <1.4.5.0
+    , ghc-byteorder ^>=4.11.0.0
+    , text          ^>=1.2
+    , text-short    ^>=0.1
 
   hs-source-dirs:   src
   default-language: Haskell2010
@@ -67,6 +71,7 @@ test-suite tasty
     , tasty-hunit
     , tasty-quickcheck
     , text
+    , text-short
 
 benchmark bench
   default-language: Haskell2010
