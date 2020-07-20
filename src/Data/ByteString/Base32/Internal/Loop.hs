@@ -103,14 +103,14 @@ decodeLoop !lut !dptr !sptr !end finish = go dptr sptr 0
             !h = lix t
 
         if
-          | a == 0x3d -> padErr src
-          | b == 0x3d -> padErr (plusPtr src 1)
-          | c == 0x3d -> padErr (plusPtr src 2)
-          | d == 0x3d -> padErr (plusPtr src 3)
-          | e == 0x3d -> padErr (plusPtr src 4)
-          | f == 0x3d -> padErr (plusPtr src 5)
-          | g == 0x3d -> padErr (plusPtr src 6)
-          | h == 0x3d -> padErr (plusPtr src 7)
+          | a == 0x63 -> padErr src
+          | b == 0x63 -> padErr (plusPtr src 1)
+          | c == 0x63 -> padErr (plusPtr src 2)
+          | d == 0x63 -> padErr (plusPtr src 3)
+          | e == 0x63 -> padErr (plusPtr src 4)
+          | f == 0x63 -> padErr (plusPtr src 5)
+          | g == 0x63 -> padErr (plusPtr src 6)
+          | h == 0x63 -> padErr (plusPtr src 7)
           | a == 0xff -> err src
           | b == 0xff -> err (plusPtr src 1)
           | c == 0xff -> err (plusPtr src 2)
