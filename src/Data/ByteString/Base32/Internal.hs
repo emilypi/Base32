@@ -38,16 +38,26 @@ import System.IO.Unsafe
 -- Validating Base64
 
 validateBase32 :: ByteString -> ByteString -> Bool
-validateBase32 !alphabet (PS fp off l) =
-    accursedUnutterablePerformIO $ withForeignPtr fp $ \p ->
-      go (plusPtr p off) (plusPtr p (l + off))
+validateBase32 !alphabet bs@(PS _ _ l)
+    | l == 0 = True
+    | r == 0 = f bs
+    | r == 2 = f (BS.append bs "======")
+    | r == 4 = f (BS.append bs "====")
+    | r == 5 = f (BS.append bs "===")
+    | r == 7 = f (BS.append bs "=")
+    | otherwise = False
   where
+    r = l `rem` 8
+
+    f (PS fp o l') = accursedUnutterablePerformIO $ withForeignPtr fp $ \p ->
+      go (plusPtr p o) (plusPtr p (l' + o))
+
     go !p !end
       | p == end = return True
       | otherwise = do
         w <- peek p
 
-        let f a
+        let check a
               | a == 0x3d, plusPtr p 1 == end = True
               | a == 0x3d, plusPtr p 2 == end = True
               | a == 0x3d, plusPtr p 3 == end = True
@@ -57,7 +67,7 @@ validateBase32 !alphabet (PS fp off l) =
               | a == 0x3d = False
               | otherwise = BS.elem a alphabet
 
-        if f w then go (plusPtr p 1) end else return False
+        if check w then go (plusPtr p 1) end else return False
 {-# INLINE validateBase32 #-}
 
 -- | This function checks that the last N-chars of a bytestring are '='
