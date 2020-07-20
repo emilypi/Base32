@@ -22,14 +22,20 @@ module Main
 
 import Prelude hiding (length)
 
+import Data.Bifunctor (second)
+import qualified "memory" Data.ByteArray.Encoding as Mem
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (c2w)
 import "base32" Data.ByteString.Base32 as B32
 import "base32" Data.ByteString.Base32.Hex as B32H
-import qualified "memory" Data.ByteArray.Encoding as Mem
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Short as SBS
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Text.Encoding.Base32.Error (Base32Error(..))
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
+import qualified Data.Text.Short as TS
 import Data.Word
 
 import Internal
@@ -49,10 +55,29 @@ tests = testGroup "Base32 Tests"
     [ mkPropTree
     , mkUnitTree
     ]
+  , mkTree bl32
+    [ mkPropTree
+    , mkUnitTree
+    ]
+  , mkTree bs32
+    [ mkPropTree
+    , mkUnitTree
+    ]
   , mkTree t32
     [ mkPropTree
     , mkUnitTree
     , mkDecodeTree T.decodeUtf8' b32
+    ]
+  , mkTree tl32
+    [ mkPropTree
+    , mkUnitTree
+    , mkDecodeTree TL.decodeUtf8' bl32
+    ]
+  , mkTree ts32
+    [ mkPropTree
+    , mkUnitTree
+    , mkDecodeTree
+      (second TS.fromText . T.decodeUtf8' . SBS.fromShort) bs32
     ]
   ]
 

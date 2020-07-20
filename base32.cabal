@@ -30,9 +30,17 @@ library
   exposed-modules:
     Data.ByteString.Base32
     Data.ByteString.Base32.Hex
+    Data.ByteString.Lazy.Base32
+    Data.ByteString.Lazy.Base32.Hex
+    Data.ByteString.Short.Base32
+    Data.ByteString.Short.Base32.Hex
     Data.Text.Encoding.Base32
     Data.Text.Encoding.Base32.Error
     Data.Text.Encoding.Base32.Hex
+    Data.Text.Lazy.Encoding.Base32
+    Data.Text.Lazy.Encoding.Base32.Hex
+    Data.Text.Short.Encoding.Base32
+    Data.Text.Short.Encoding.Base32.Hex
 
   other-modules:
     Data.ByteString.Base32.Internal
