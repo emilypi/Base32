@@ -286,6 +286,22 @@ decodeWithVectors utf8 _ _ = testGroup "DecodeWith* unit tests"
       case decodeHexWith_ @a utf8 "\1079743" of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
+    , testCase "decodePaddedWith non-utf8 inputs on decodeUtf8" $ do
+      case decodePaddedWith_ @a utf8 "\1079743" of
+        Left (DecodeError _) -> return ()
+        _ -> assertFailure "decoding phase"
+    , testCase "decodePaddedWith valid utf8 inputs on decodeUtf8" $ do
+      case decodePaddedWith_ @a utf8 (encode @t "\1079743") of
+        Left (ConversionError _) -> return ()
+        _ -> assertFailure "conversion phase"
+    , testCase "decodeUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
+      case decodeUnpaddedWith_ @a utf8 "\1079743" of
+        Left (DecodeError _) -> return ()
+        _ -> assertFailure "decoding phase"
+    , testCase "decodeUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
+      case decodeUnpaddedWith_ @a utf8 (encodeNopad @t "\1079743") of
+        Left (ConversionError _) -> return ()
+        _ -> assertFailure "conversion phase"
     , testCase "decodeHexWith valid utf8 inputs on decodeUtf8" $ do
       case decodeHexWith_ @a utf8 (encodeHex @t "\1079743") of
         Left (ConversionError _) -> return ()
@@ -294,15 +310,15 @@ decodeWithVectors utf8 _ _ = testGroup "DecodeWith* unit tests"
       case decodeHexPaddedWith_ @a utf8 "\1079743" of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
-    , testCase "decodePaddedWith valid utf8 inputs on decodeUtf8" $ do
+    , testCase "decodeHexPaddedWith valid utf8 inputs on decodeUtf8" $ do
       case decodeHexPaddedWith_ @a utf8 (encodeHex @t "\1079743") of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
-    , testCase "decodeUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
+    , testCase "decodeHexUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
       case decodeHexUnpaddedWith_ @a utf8 "\1079743" of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
-    , testCase "decodeUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
+    , testCase "decodeHexUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
       case decodeHexUnpaddedWith_ @a utf8 (encodeHexNopad @t "\1079743") of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
@@ -311,6 +327,14 @@ decodeWithVectors utf8 _ _ = testGroup "DecodeWith* unit tests"
     [ testCase "decodeWith utf8 inputs on decodeUtf8" $ do
       a <- either (assertFailure . show) pure $ decode @a "MZXW6YTBOI======"
       b <- either (assertFailure . show) pure $ decodeWith_ @a utf8 "MZXW6YTBOI======"
+      a @=? b
+    , testCase "decodePaddedWith utf8 inputs on decodeUtf8" $ do
+      a <- either (assertFailure . show) pure $ decodePad @a "MZXW6YTBOI======"
+      b <- either (assertFailure . show) pure $ decodePaddedWith_ @a utf8 "MZXW6YTBOI======"
+      a @=? b
+    , testCase "decodeUnpaddedWith utf8 inputs on decodeUtf8" $ do
+      a <- either (assertFailure . show) pure $ decodeNopad @a "MZXW6YTBOI"
+      b <- either (assertFailure . show) pure $ decodeUnpaddedWith_ @a utf8 "MZXW6YTBOI"
       a @=? b
     , testCase "decodeHexWith utf8 inputs on decodeUtf8" $ do
       a <- either (assertFailure . show) pure $ decodeHex @a "CPNMUOJ1E8======"
