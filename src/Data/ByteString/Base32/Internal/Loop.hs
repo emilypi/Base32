@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Loop
 ( innerLoop
@@ -77,31 +78,58 @@ decodeLoop !lut !dptr !sptr !end finish = go dptr sptr 0
   where
     lix a = w64 (aix (fromIntegral a) lut)
 
-    roll !w !acc = (acc `unsafeShiftL` 5) .|. lix w
+    err :: Ptr Word64 -> IO (Either Text ByteString)
+    err p = return . Left . T.pack
+      $ "invalid character at offset: "
+      ++ show (p `minusPtr` sptr)
 
-    err = return . Left . T.pack
+    padErr :: Ptr Word64 -> IO (Either Text ByteString)
+    padErr p =  return . Left . T.pack
+      $ "invalid padding at offset: "
+      ++ show (p `minusPtr` sptr)
 
     go !dst !src !n
-      | plusPtr src 8 == end = finish dst (castPtr src) n
+      | plusPtr src 8 >= end = finish dst (castPtr src) n
       | otherwise = do
         !t <- peekWord64BE src
 
-        !w <- return
-          $ roll (unsafeShiftR t 0)
-          $ roll (unsafeShiftR t 8)
-          $ roll (unsafeShiftR t 16)
-          $ roll (unsafeShiftR t 24)
-          $ roll (unsafeShiftR t 32)
-          $ roll (unsafeShiftR t 40)
-          $ roll (unsafeShiftR t 48)
-          $ roll (unsafeShiftR t 56)
-          0
+        let !a = lix (unsafeShiftR t 56)
+            !b = lix (unsafeShiftR t 48)
+            !c = lix (unsafeShiftR t 40)
+            !d = lix (unsafeShiftR t 32)
+            !e = lix (unsafeShiftR t 24)
+            !f = lix (unsafeShiftR t 16)
+            !g = lix (unsafeShiftR t 8)
+            !h = lix t
 
-        if w /= 0xff
-        then do
-          poke @Word8 dst (fromIntegral (w `unsafeShiftR` 32))
-          poke @Word32 (castPtr (plusPtr dst 1)) (byteSwap32 (fromIntegral w))
-          go (plusPtr dst 5) (plusPtr src 8) (n + 5)
-        else err
-          $ "invalid character at offset: "
-          ++ show (src `minusPtr` sptr)
+        if
+          | a == 0x3d -> padErr src
+          | b == 0x3d -> padErr (plusPtr src 1)
+          | c == 0x3d -> padErr (plusPtr src 2)
+          | d == 0x3d -> padErr (plusPtr src 3)
+          | e == 0x3d -> padErr (plusPtr src 4)
+          | f == 0x3d -> padErr (plusPtr src 5)
+          | g == 0x3d -> padErr (plusPtr src 6)
+          | h == 0x3d -> padErr (plusPtr src 7)
+          | a == 0xff -> err src
+          | b == 0xff -> err (plusPtr src 1)
+          | c == 0xff -> err (plusPtr src 2)
+          | d == 0xff -> err (plusPtr src 3)
+          | e == 0xff -> err (plusPtr src 4)
+          | f == 0xff -> err (plusPtr src 5)
+          | g == 0xff -> err (plusPtr src 6)
+          | h == 0xff -> err (plusPtr src 7)
+          | otherwise -> do
+
+            let !w = ((unsafeShiftL a 35)
+                  .|. (unsafeShiftL b 30)
+                  .|. (unsafeShiftL c 25)
+                  .|. (unsafeShiftL d 20)
+                  .|. (unsafeShiftL e 15)
+                  .|. (unsafeShiftL f 10)
+                  .|. (unsafeShiftL g 5)
+                  .|. h) :: Word64
+
+            poke @Word32 (castPtr dst) (byteSwap32 (fromIntegral (unsafeShiftR w 8)))
+            poke @Word8 (plusPtr dst 4) (fromIntegral w)
+            go (plusPtr dst 5) (plusPtr src 8) (n + 5)
