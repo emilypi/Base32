@@ -125,6 +125,8 @@ mkUnitTree
   -> TestTree
 mkUnitTree = mkTests "Unit tests"
   [ rfcVectors
+  , offsetVectors
+  , validityTests
   ]
 
 -- | Make unit tests for textual 'decode*With' functions
@@ -218,7 +220,7 @@ prop_mem_coherence = testGroup "prop_mem_coherence"
 -- | RFC 4328 test vectors
 --
 rfcVectors :: forall a b proxy. Harness a b => proxy a -> TestTree
-rfcVectors _ = testGroup "RFC 4328 Test Vectors"
+rfcVectors _ = testGroup "RFC 4648 Test Vectors"
     [ testGroup "std alphabet"
       [ testCaseStd "" ""
       , testCaseStd "f" "MY======"
@@ -284,6 +286,22 @@ decodeWithVectors utf8 _ _ = testGroup "DecodeWith* unit tests"
       case decodeHexWith_ @a utf8 "\1079743" of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
+    , testCase "decodePaddedWith non-utf8 inputs on decodeUtf8" $ do
+      case decodePaddedWith_ @a utf8 "\1079743" of
+        Left (DecodeError _) -> return ()
+        _ -> assertFailure "decoding phase"
+    , testCase "decodePaddedWith valid utf8 inputs on decodeUtf8" $ do
+      case decodePaddedWith_ @a utf8 (encode @t "\1079743") of
+        Left (ConversionError _) -> return ()
+        _ -> assertFailure "conversion phase"
+    , testCase "decodeUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
+      case decodeUnpaddedWith_ @a utf8 "\1079743" of
+        Left (DecodeError _) -> return ()
+        _ -> assertFailure "decoding phase"
+    , testCase "decodeUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
+      case decodeUnpaddedWith_ @a utf8 (encodeNopad @t "\1079743") of
+        Left (ConversionError _) -> return ()
+        _ -> assertFailure "conversion phase"
     , testCase "decodeHexWith valid utf8 inputs on decodeUtf8" $ do
       case decodeHexWith_ @a utf8 (encodeHex @t "\1079743") of
         Left (ConversionError _) -> return ()
@@ -292,15 +310,15 @@ decodeWithVectors utf8 _ _ = testGroup "DecodeWith* unit tests"
       case decodeHexPaddedWith_ @a utf8 "\1079743" of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
-    , testCase "decodePaddedWith valid utf8 inputs on decodeUtf8" $ do
+    , testCase "decodeHexPaddedWith valid utf8 inputs on decodeUtf8" $ do
       case decodeHexPaddedWith_ @a utf8 (encodeHex @t "\1079743") of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
-    , testCase "decodeUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
+    , testCase "decodeHexUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
       case decodeHexUnpaddedWith_ @a utf8 "\1079743" of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
-    , testCase "decodeUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
+    , testCase "decodeHexUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
       case decodeHexUnpaddedWith_ @a utf8 (encodeHexNopad @t "\1079743") of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
@@ -309,6 +327,14 @@ decodeWithVectors utf8 _ _ = testGroup "DecodeWith* unit tests"
     [ testCase "decodeWith utf8 inputs on decodeUtf8" $ do
       a <- either (assertFailure . show) pure $ decode @a "MZXW6YTBOI======"
       b <- either (assertFailure . show) pure $ decodeWith_ @a utf8 "MZXW6YTBOI======"
+      a @=? b
+    , testCase "decodePaddedWith utf8 inputs on decodeUtf8" $ do
+      a <- either (assertFailure . show) pure $ decodePad @a "MZXW6YTBOI======"
+      b <- either (assertFailure . show) pure $ decodePaddedWith_ @a utf8 "MZXW6YTBOI======"
+      a @=? b
+    , testCase "decodeUnpaddedWith utf8 inputs on decodeUtf8" $ do
+      a <- either (assertFailure . show) pure $ decodeNopad @a "MZXW6YTBOI"
+      b <- either (assertFailure . show) pure $ decodeUnpaddedWith_ @a utf8 "MZXW6YTBOI"
       a @=? b
     , testCase "decodeHexWith utf8 inputs on decodeUtf8" $ do
       a <- either (assertFailure . show) pure $ decodeHex @a "CPNMUOJ1E8======"
@@ -322,5 +348,118 @@ decodeWithVectors utf8 _ _ = testGroup "DecodeWith* unit tests"
       a <- either (assertFailure . show) pure $ decodeHexNopad @a "CPNMUOJ1"
       b <- either (assertFailure . show) pure $ decodeHexUnpaddedWith_ @a utf8 "CPNMUOJ1"
       a @=? b
+    ]
+  ]
+
+-- | Validity unit tests for the URL workflow
+--
+validityTests :: forall a b proxy. Harness a b => proxy a -> TestTree
+validityTests _ = testGroup "Validity and correctness unit tests"
+  [ testGroup "Validity unit tests"
+    [ testCase "Hex padding tests" $ do
+      not (validateHex @a "C") @? "C"
+      validateHex @a "CO" @? "CO"
+      validateHex @a "CPNG" @? "CPNG"
+      validateHex @a "CPNMU" @? "CPNMU"
+      validateHex @a "CPNMUOG" @? "CPNMUOG"
+      validateHex @a "CPNMUOJ1" @? "CPNMUOJ1"
+      validateHex @a "CPNMUOJ1E8" @? "CPNMUOJ1E8"
+      validateHex @a "CO======" @? "CO======"
+      validateHex @a "CPNG====" @? "CPNG===="
+      validateHex @a "CPNMU===" @? "CPNMU==="
+      validateHex @a "CPNMUOG=" @? "CPNMUOG="
+      validateHex @a "CPNMUOJ1" @? "CPNMUOJ1"
+      validateHex @a "CPNMUOJ1E8======" @? "CPNMUOJ1E8======"
+    , testCase "Std padding tests" $ do
+      not (validate @a "M") @? "M"
+      validate @a "MY" @? "MY"
+      validate @a "MZXQ" @? "MZXQ"
+      validate @a "MZXW6" @? "MZXW6"
+      validate @a "MZXW6YQ" @? "MZXW6YQ"
+      validate @a "MZXW6YTB" @? "MZXW6YTB"
+      validate @a "MZXW6YTBOI" @? "MZXW6YTBOI"
+      validate @a "MY======" @? "MY======"
+      validate @a "MZXQ====" @? "MZXQ===="
+      validate @a "MZXW6===" @? "MZXW6==="
+      validate @a "MZXW6YQ=" @? "MZXW6YQ="
+      validate @a "MZXW6YTB" @? "MZXW6YTB"
+      validate @a "MZXW6YTBOI======" @? "MZXW6YTBOI======"
+    ]
+  , testGroup "Correctness unit tests"
+    [ testCase "Hex tests" $ do
+      not (correctHex @a "C") @? "C"
+      correctHex @a "CO" @? "CO"
+      correctHex @a "CPNG" @? "CPNG"
+      correctHex @a "CPNMU" @? "CPNMU"
+      correctHex @a "CPNMUOG" @? "CPNMUOG"
+      correctHex @a "CPNMUOJ1" @? "CPNMUOJ1"
+      correctHex @a "CPNMUOJ1E8" @? "CPNMUOJ1E8"
+      correctHex @a "CO======" @? "CO======"
+      correctHex @a "CPNG====" @? "CPNG===="
+      correctHex @a "CPNMU===" @? "CPNMU==="
+      correctHex @a "CPNMUOG=" @? "CPNMUOG="
+      correctHex @a "CPNMUOJ1" @? "CPNMUOJ1"
+      correctHex @a "CPNMUOJ1E8======" @? "CPNMUOJ1E8======"
+    , testCase "Std tests" $ do
+      not (correct @a "M") @? "M"
+      correct @a "MY" @? "MY"
+      correct @a "MZXQ" @? "MZXQ"
+      correct @a "MZXW6" @? "MZXW6"
+      correct @a "MZXW6YQ" @? "MZXW6YQ"
+      correct @a "MZXW6YTB" @? "MZXW6YTB"
+      correct @a "MZXW6YTBOI" @? "MZXW6YTBOI"
+      correct @a "MY======" @? "MY======"
+      correct @a "MZXQ====" @? "MZXQ===="
+      correct @a "MZXW6===" @? "MZXW6==="
+      correct @a "MZXW6YQ=" @? "MZXW6YQ="
+      correct @a "MZXW6YTB" @? "MZXW6YTB"
+      correct @a "MZXW6YTBOI======" @? "MZXW6YTBOI======"
+    ]
+  ]
+
+-- | Offset test vectors. This stresses the invalid char + incorrect padding
+-- offset error messages
+--
+offsetVectors :: forall a b proxy. Harness a b => proxy a -> TestTree
+offsetVectors _ = testGroup "Offset tests"
+  [ testGroup "Hex - Invalid padding"
+    [ testCase "Invalid staggered padding" $ do
+      decodeHex @a "=PNMUOJ1E8======" @?= Left "invalid padding at offset: 0"
+      decodeHex @a "C=NMUOJ1E8======" @?= Left "invalid padding at offset: 1"
+      decodeHex @a "CP=MUOJ1E8======" @?= Left "invalid padding at offset: 2"
+      decodeHex @a "CPN=UOJ1E8======" @?= Left "invalid padding at offset: 3"
+      decodeHex @a "CPNM=OJ1E8======" @?= Left "invalid padding at offset: 4"
+      decodeHex @a "CPNMU=J1E8======" @?= Left "invalid padding at offset: 5"
+      decodeHex @a "CPNMUO=1E8======" @?= Left "invalid padding at offset: 6"
+      decodeHex @a "CPNMUOJ=E8======" @?= Left "invalid padding at offset: 7"
+    , testCase "Invalid character coverage" $ do
+      decodeHex @a "%PNMUOJ1E8======" @?= Left "invalid character at offset: 0"
+      decodeHex @a "C%NMUOJ1E8======" @?= Left "invalid character at offset: 1"
+      decodeHex @a "CP%MUOJ1E8======" @?= Left "invalid character at offset: 2"
+      decodeHex @a "CPN%UOJ1E8======" @?= Left "invalid character at offset: 3"
+      decodeHex @a "CPNM%OJ1E8======" @?= Left "invalid character at offset: 4"
+      decodeHex @a "CPNMU%J1E8======" @?= Left "invalid character at offset: 5"
+      decodeHex @a "CPNMUO%1E8======" @?= Left "invalid character at offset: 6"
+      decodeHex @a "CPNMUOJ%E8======" @?= Left "invalid character at offset: 7"
+    ]
+  , testGroup "Std - Invalid padding"
+    [ testCase "Invalid staggered padding" $ do
+      decode @a "=ZXW6YTBOI======" @?= Left "invalid padding at offset: 0"
+      decode @a "M=XW6YTBOI======" @?= Left "invalid padding at offset: 1"
+      decode @a "MZ=W6YTBOI======" @?= Left "invalid padding at offset: 2"
+      decode @a "MZX=6YTBOI======" @?= Left "invalid padding at offset: 3"
+      decode @a "MZXW=YTBOI======" @?= Left "invalid padding at offset: 4"
+      decode @a "MZXW6=TBOI======" @?= Left "invalid padding at offset: 5"
+      decode @a "MZXW6Y=BOI======" @?= Left "invalid padding at offset: 6"
+      decode @a "MZXW6YT=OI======" @?= Left "invalid padding at offset: 7"
+    , testCase "Invalid character coverage" $ do
+      decode @a "%ZXW6YTBOI======" @?= Left "invalid character at offset: 0"
+      decode @a "M%XW6YTBOI======" @?= Left "invalid character at offset: 1"
+      decode @a "MZ%W6YTBOI======" @?= Left "invalid character at offset: 2"
+      decode @a "MZX%6YTBOI======" @?= Left "invalid character at offset: 3"
+      decode @a "MZXW%YTBOI======" @?= Left "invalid character at offset: 4"
+      decode @a "MZXW6%TBOI======" @?= Left "invalid character at offset: 5"
+      decode @a "MZXW6Y%BOI======" @?= Left "invalid character at offset: 6"
+      decode @a "MZXW6YT%OI======" @?= Left "invalid character at offset: 7"
     ]
   ]
