@@ -42,7 +42,7 @@ import qualified Data.Text.Lazy.Encoding as TL
 
 -- | Encode a 'TL.Text' value in Base32hex with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7  RFC-4648 section 7>
 --
 -- === __Examples__:
 --

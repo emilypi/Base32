@@ -42,12 +42,12 @@ import qualified Data.Text.Lazy.Encoding as TL
 
 -- | Encode a 'TL.Text' value in Base32 with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32 :: TL.Text -> TL.Text
 encodeBase32 = BL32.encodeBase32 . TL.encodeUtf8

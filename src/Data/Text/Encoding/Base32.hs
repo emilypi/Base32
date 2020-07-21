@@ -98,7 +98,7 @@ decodeBase32Unpadded = fmap T.decodeLatin1
     . T.encodeUtf8
 {-# INLINE decodeBase32Unpadded #-}
 
--- | Attempt to decode an unpadded 'ByteString' value as Base32url, converting from
+-- | Attempt to decode an unpadded 'ByteString' value as Base32, converting from
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
@@ -133,7 +133,7 @@ decodeBase32Padded = fmap T.decodeLatin1
     . T.encodeUtf8
 {-# INLINE decodeBase32Padded #-}
 
--- | Attempt to decode a padded 'ByteString' value as Base32url, converting from
+-- | Attempt to decode a padded 'ByteString' value as Base32, converting from
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --

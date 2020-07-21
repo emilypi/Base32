@@ -90,7 +90,7 @@ encodeBase32' = fromChunks
 -- Right "Sun"
 --
 -- >>> decodeBase32 "KN2W==="
--- Left "Base64-encoded bytestring has invalid padding"
+-- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32 :: ByteString -> Either T.Text ByteString
 decodeBase32 = fmap (fromChunks . (:[]))
@@ -146,7 +146,7 @@ encodeBase32Unpadded' = fromChunks
 -- Right "Sun"
 --
 -- >>> decodeBase32Unpadded "ADQMS==="
--- Left "Base64-encoded bytestring has invalid padding"
+-- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ByteString -> Either T.Text ByteString
 decodeBase32Unpadded = fmap (fromChunks . (:[]))

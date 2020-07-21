@@ -35,7 +35,7 @@ import GHC.Word
 import System.IO.Unsafe
 
 -- -------------------------------------------------------------------------- --
--- Validating Base64
+-- Validating Base32
 
 validateBase32 :: ByteString -> ByteString -> Bool
 validateBase32 !alphabet bs@(PS _ _ l)
@@ -101,7 +101,7 @@ validateLastNPads
     -> IO (Either Text ByteString)
     -> Either Text ByteString
 validateLastNPads !n (PS !fp !o !l) io
-    | not valid = Left "Base64-encoded bytestring has invalid padding"
+    | not valid = Left "Base32-encoded bytestring has invalid padding"
     | otherwise = unsafeDupablePerformIO io
   where
     !lo = l + o

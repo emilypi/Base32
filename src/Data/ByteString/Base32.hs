@@ -84,7 +84,7 @@ encodeBase32' = encodeBase32_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 -- Right "Sun"
 --
 -- >>> decodeBase32 "KN2W==="
--- Left "Base64-encoded bytestring has invalid padding"
+-- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32 :: ByteString -> Either Text ByteString
 decodeBase32 bs@(PS _ _ !l)
@@ -137,7 +137,7 @@ encodeBase32Unpadded' = encodeBase32NoPad_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 -- Right "Sun"
 --
 -- >>> decodeBase32Unpadded "KN2W4==="
--- Left "Base64-encoded bytestring has invalid padding"
+-- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ByteString -> Either Text ByteString
 decodeBase32Unpadded bs@(PS _ _ !l)

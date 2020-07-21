@@ -1,6 +1,6 @@
 {-# LANGUAGE Trustworthy #-}
 -- |
--- Module       : Data.ByteString.Short.Base32.Hex
+-- Module       : Data.ByteString.Short.Base32
 -- Copyright    : (c) 2019-2020 Emily Pillmore
 -- License      : BSD-style
 --
@@ -39,7 +39,7 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 
 -- | Encode a 'ShortByteString' value as a Base32 'Text' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -52,7 +52,7 @@ encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
 
 -- | Encode a 'ShortByteString' as a Base32 'ShortByteString' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -68,7 +68,7 @@ encodeBase32' = toShort . B32.encodeBase32' . fromShort
 --
 -- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -79,7 +79,7 @@ encodeBase32' = toShort . B32.encodeBase32' . fromShort
 -- Right "Sun"
 --
 -- >>> decodeBase32 "KN2W==="
--- Left "Base64-encoded bytestring has invalid padding"
+-- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32 :: ShortByteString -> Either Text ShortByteString
 decodeBase32 = fmap toShort . B32.decodeBase32 . fromShort
@@ -90,7 +90,7 @@ decodeBase32 = fmap toShort . B32.decodeBase32 . fromShort
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -105,7 +105,7 @@ encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -122,7 +122,7 @@ encodeBase32Unpadded' = toShort . B32.encodeBase32Unpadded' . fromShort
 -- In general, unless unpadded Base32 is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -130,7 +130,7 @@ encodeBase32Unpadded' = toShort . B32.encodeBase32Unpadded' . fromShort
 -- Right "Sun"
 --
 -- >>> decodeBase32Unpadded "KN2W4==="
--- Left "Base64-encoded bytestring has invalid padding"
+-- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ShortByteString -> Either Text ShortByteString
 decodeBase32Unpadded = fmap toShort . B32.decodeBase32Unpadded . fromShort
@@ -143,7 +143,7 @@ decodeBase32Unpadded = fmap toShort . B32.decodeBase32Unpadded . fromShort
 -- In general, unless padded Base32 is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --

@@ -78,7 +78,7 @@ encodeBase32' = toShort . B32H.encodeBase32' . fromShort
 -- Right "Sun"
 --
 -- >>> decodeBase32 "ADQM==="
--- Left "Base64-encoded bytestring has invalid padding"
+-- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32 :: ShortByteString -> Either Text ShortByteString
 decodeBase32 = fmap toShort . B32H.decodeBase32 . fromShort
@@ -131,7 +131,7 @@ encodeBase32Unpadded' = toShort . B32H.encodeBase32Unpadded' . fromShort
 -- Right "Sun"
 --
 -- >>> decodeBase32Unpadded "ADQMS==="
--- Left "Base64-encoded bytestring has invalid padding"
+-- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ShortByteString -> Either Text ShortByteString
 decodeBase32Unpadded = fmap toShort . B32H.decodeBase32Unpadded . fromShort

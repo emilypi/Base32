@@ -43,7 +43,7 @@ import Data.Text.Short.Unsafe
 
 -- | Encode a 'ShortText' value in Base32 with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-5 RFC-4328 section 5>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
