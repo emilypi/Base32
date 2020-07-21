@@ -20,54 +20,54 @@ main =
       bgroup "encode"
       [ bgroup "25"
         [ bench "memory" $ whnf ctob bs25
-        , bench "base64" $ whnf B32.encodeBase32' bs25
+        , bench "base32" $ whnf B32.encodeBase32' bs25
         ]
       , bgroup "100"
         [ bench "memory" $ whnf ctob bs100
-        , bench "base64" $ whnf B32.encodeBase32' bs100
+        , bench "base32" $ whnf B32.encodeBase32' bs100
         ]
       , bgroup "1k"
         [ bench "memory" $ whnf ctob bs1k
-        , bench "base64" $ whnf B32.encodeBase32' bs1k
+        , bench "base32" $ whnf B32.encodeBase32' bs1k
         ]
       , bgroup "10k"
         [ bench "memory" $ whnf ctob bs10k
-        , bench "base64" $ whnf B32.encodeBase32' bs10k
+        , bench "base32" $ whnf B32.encodeBase32' bs10k
         ]
       , bgroup "100k"
         [ bench "memory" $ whnf ctob bs100k
-        , bench "base64" $ whnf B32.encodeBase32' bs100k
+        , bench "base32" $ whnf B32.encodeBase32' bs100k
         ]
       , bgroup "1mm"
         [ bench "memory" $ whnf ctob bs1mm
-        , bench "base64" $ whnf B32.encodeBase32' bs1mm
+        , bench "base32" $ whnf B32.encodeBase32' bs1mm
         ]
       ]
     , env bs' $ \ ~(bs25,bs100,bs1k,bs10k,bs100k,bs1mm) ->
       bgroup "decode"
       [ bgroup "25"
         [ bench "memory" $ whnf btoc bs25
-        , bench "base64" $ whnf B32.decodeBase32 bs25
+        , bench "base32" $ whnf B32.decodeBase32 bs25
         ]
       , bgroup "100"
         [ bench "memory" $ whnf btoc bs100
-        , bench "base64" $ whnf B32.decodeBase32 bs100
+        , bench "base32" $ whnf B32.decodeBase32 bs100
         ]
       , bgroup "1k"
         [ bench "memory" $ whnf btoc bs1k
-        , bench "base64" $ whnf B32.decodeBase32 bs1k
+        , bench "base32" $ whnf B32.decodeBase32 bs1k
         ]
       , bgroup "10k"
         [ bench "memory" $ whnf btoc bs10k
-        , bench "base64" $ whnf B32.decodeBase32 bs10k
+        , bench "base32" $ whnf B32.decodeBase32 bs10k
         ]
       , bgroup "100k"
         [ bench "memory" $ whnf btoc bs100k
-        , bench "base64" $ whnf B32.decodeBase32 bs100k
+        , bench "base32" $ whnf B32.decodeBase32 bs100k
         ]
       , bgroup "1mm"
         [ bench "memory" $ whnf btoc bs1mm
-        , bench "base64" $ whnf B32.decodeBase32 bs1mm
+        , bench "base32" $ whnf B32.decodeBase32 bs1mm
         ]
       ]
     ]
