@@ -10,7 +10,7 @@
 --
 -- This module contains 'Data.Text.Lazy.Text'-valued combinators for
 -- implementing the RFC 4648 specification of the Base32
--- encoding format. This includes strictly padded/unpadded and lenient decoding
+-- encoding format. This includes strictly padded/unpadded decoding
 -- variants, as well as internal and external validation for canonicity.
 --
 module Data.Text.Lazy.Encoding.Base32
@@ -42,44 +42,39 @@ import qualified Data.Text.Lazy.Encoding as TL
 
 -- | Encode a 'TL.Text' value in Base32 with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32 :: TL.Text -> TL.Text
 encodeBase32 = BL32.encodeBase32 . TL.encodeUtf8
 {-# INLINE encodeBase32 #-}
 
--- | Decode a padded Base32-encoded 'TL.Text' value. If its length is not a multiple
+-- | Decode an arbitrarily padded Base32-encoded 'TL.Text' value. If its length is not a multiple
 -- of 4, then padding chars will be added to fill out the input to a multiple of
 -- 4 for safe decoding as base32 encodings are optionally padded.
 --
--- For a decoder that fails on unpadded input, use 'decodeBase32Unpadded'.
---
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'TL.decodeLatin1'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32With`
 -- and pass in a custom decode function.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw-Pg="
+-- >>> decodeBase32 "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
--- >>> decodeBase32 "PDw-Pg"
--- Right "<<>>"
 --
 decodeBase32 :: TL.Text -> Either T.Text TL.Text
 decodeBase32 = fmap TL.decodeLatin1 . BL32.decodeBase32 . TL.encodeUtf8
@@ -87,9 +82,9 @@ decodeBase32 = fmap TL.decodeLatin1 . BL32.decodeBase32 . TL.encodeUtf8
 
 -- | Attempt to decode a lazy 'ByteString' value as Base32, converting from
 -- 'ByteString' to 'TL.Text' according to some encoding function. In practice,
--- This is something like 'decodeUtf8'', which may produce an error.
+-- This is something like 'TL.decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -113,12 +108,12 @@ decodeBase32With f t = case BL32.decodeBase32 t of
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded :: TL.Text -> TL.Text
 encodeBase32Unpadded = BL32.encodeBase32Unpadded . TL.encodeUtf8
@@ -127,19 +122,19 @@ encodeBase32Unpadded = BL32.encodeBase32Unpadded . TL.encodeUtf8
 -- | Decode an unpadded Base32 encoded 'TL.Text' value.
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'TL.decodeLatin1'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32WUnpaddedWith`
 -- and pass in a custom decode function.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32Unpadded "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32Unpadded "PDw_Pj4="
+-- >>> decodeBase32Unpadded "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: TL.Text -> Either T.Text TL.Text
@@ -150,9 +145,9 @@ decodeBase32Unpadded = fmap TL.decodeLatin1
 
 -- | Attempt to decode an unpadded lazy 'ByteString' value as Base32, converting from
 -- 'ByteString' to 'TL.Text' according to some encoding function. In practice,
--- This is something like 'decodeUtf8'', which may produce an error.
+-- This is something like 'TL.decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -175,19 +170,19 @@ decodeBase32UnpaddedWith f t = case BL32.decodeBase32Unpadded t of
 -- | Decode an padded Base32 encoded 'TL.Text' value
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'TL.decodeLatin1'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32PaddedWith`
 -- and pass in a custom decode function.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32Padded "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32Padded "PDw_Pj4"
+-- >>> decodeBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: TL.Text -> Either T.Text TL.Text
@@ -198,14 +193,14 @@ decodeBase32Padded = fmap TL.decodeLatin1
 
 -- | Attempt to decode a padded lazy 'ByteString' value as Base32, converting from
 -- 'ByteString' to 'TL.Text' according to some encoding function. In practice,
--- This is something like 'decodeUtf8'', which may produce an error.
+-- This is something like 'TL.decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Example__:
 --
 -- @
--- 'decodeBase32PaddedWith' 'T.decodeUtf8''
+-- 'decodeBase32PaddedWith' 'TL.decodeUtf8''
 --   :: 'ByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'Text'
 -- @
 --
@@ -244,13 +239,13 @@ decodeBase32PaddedWith f t = case BL32.decodeBase32Padded t of
 --
 -- === __Examples__:
 --
--- >>> isBase32 "PDw_Pj4="
+-- >>> isBase32 "KN2W4"
 -- True
 --
--- >>> isBase32 "PDw_Pj4"
+-- >>> isBase32 "KN2W4==="
 -- True
 --
--- >>> isBase32 "PDw_Pj"
+-- >>> isBase32 "KN2W4=="
 -- False
 --
 isBase32 :: TL.Text -> Bool
@@ -265,13 +260,13 @@ isBase32 = BL32.isBase32 . TL.encodeUtf8
 --
 -- === __Examples__:
 --
--- >>> isValidBase32 "PDw_Pj4="
+-- >>> isValidBase32 "KN2W4"
 -- True
 --
--- >>> isValidBase32 "PDw_Pj"
--- True
+-- >>> isValidBase32 "KN2W4="
+-- False
 --
--- >>> isValidBase32 "%"
+-- >>> isValidBase32 "KN2W4%"
 -- False
 --
 isValidBase32 :: TL.Text -> Bool

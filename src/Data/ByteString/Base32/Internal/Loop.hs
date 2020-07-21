@@ -52,7 +52,7 @@ innerLoop !lut !dptr !sptr !end finish = go dptr sptr
             !g = lix ((unsafeShiftL t 3) .|. (unsafeShiftR u 5))
             !h = lix u
 
-        let w = a
+        let !w = a
              .|. (unsafeShiftL b 8)
              .|. (unsafeShiftL c 16)
              .|. (unsafeShiftL d 24)
