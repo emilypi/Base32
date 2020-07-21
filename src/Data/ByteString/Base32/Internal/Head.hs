@@ -73,4 +73,4 @@ decodeBase32_ !dlen !dtfp (PS !sfp !soff !slen) =
       dfp <- mallocPlainForeignPtrBytes dlen
       withForeignPtr dfp $ \dptr -> do
         let !end = plusPtr sptr (soff + slen)
-        decodeLoop dtable dptr (plusPtr sptr soff) end (decodeTail dtable dfp end)
+        decodeLoop dtable dfp dptr (plusPtr sptr soff) end
