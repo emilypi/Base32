@@ -86,8 +86,7 @@ decodeBase32 = fmap toShort . B32H.decodeBase32 . fromShort
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32hex and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>,
---      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -102,8 +101,7 @@ encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32hex and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>,
---      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -120,8 +118,7 @@ encodeBase32Unpadded' = toShort . B32H.encodeBase32Unpadded' . fromShort
 -- In general, unless unpadded Base32hex is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>,
---      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -142,8 +139,7 @@ decodeBase32Unpadded = fmap toShort . B32H.decodeBase32Unpadded . fromShort
 -- In general, unless padded Base32hex is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>,
---      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --

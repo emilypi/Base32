@@ -104,8 +104,7 @@ decodeBase32With f t = case B32.decodeBase32 t of
 
 -- | Encode a 'Text' value in Base32 without padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>,
---      <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --

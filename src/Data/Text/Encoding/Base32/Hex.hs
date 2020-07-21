@@ -105,7 +105,7 @@ decodeBase32With f t = case B32H.decodeBase32 t of
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32hex and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --

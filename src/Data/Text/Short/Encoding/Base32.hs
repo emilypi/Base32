@@ -13,7 +13,7 @@
 -- encoding format. This includes strictly padded/unpadded decoding
 -- variants, and external + internal validations for canonicity.
 --
-Module Data.Text.Short.Encoding.Base32
+module Data.Text.Short.Encoding.Base32
 ( -- * Encoding
   encodeBase32
 , encodeBase32Unpadded
@@ -111,7 +111,7 @@ decodeBase32With f t = case BS32.decodeBase32 t of
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-3.2 RFC-4328 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --

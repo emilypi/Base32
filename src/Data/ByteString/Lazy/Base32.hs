@@ -19,7 +19,7 @@ module Data.ByteString.Lazy.Base32
 ( -- * Encoding
   encodeBase32
 , encodeBase32'
-, encodeBase32UnpAdded
+, encodeBase32Unpadded
 , encodeBase32Unpadded'
   -- * Decoding
 , decodeBase32
@@ -47,7 +47,7 @@ import qualified Data.Text.Lazy.Encoding as TL
 
 -- | Encode a 'ByteString' value as a Base32 'Text' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -60,7 +60,7 @@ encodeBase32 = TL.decodeUtf8 . encodeBase32'
 
 -- | Encode a 'ByteString' as a Base32 'ByteString' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -77,7 +77,7 @@ encodeBase32' = fromChunks
 -- of 4, then padding chars will be added to fill out the input to a multiple of
 -- 4 for safe decoding as Base32-encoded values are optionally padded.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -101,7 +101,7 @@ decodeBase32 = fmap (fromChunks . (:[]))
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -116,7 +116,7 @@ encodeBase32Unpadded = TL.decodeUtf8 . encodeBase32Unpadded'
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -136,7 +136,7 @@ encodeBase32Unpadded' = fromChunks
 -- In general, unless unpadded Base32 is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
@@ -160,7 +160,7 @@ decodeBase32Unpadded = fmap (fromChunks . (:[]))
 -- In general, unless padded Base32 is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --

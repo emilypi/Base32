@@ -44,7 +44,7 @@ import System.IO.Unsafe (unsafeDupablePerformIO)
 
 -- | Encode a 'ByteString' value as a Base32hex 'Text' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -57,7 +57,7 @@ encodeBase32 = T.decodeUtf8 . encodeBase32'
 
 -- | Encode a 'ByteString' value as a Base32hex 'ByteString' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -73,7 +73,7 @@ encodeBase32' = encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 -- input to a multiple of 8 for safe decoding, as Base32hex-encoded values are
 -- optionally padded.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -103,7 +103,7 @@ decodeBase32 bs@(PS _ _ !l)
 
 -- | Encode a 'ByteString' value as a Base32hex 'Text' value without padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -116,7 +116,7 @@ encodeBase32Unpadded = T.decodeUtf8 . encodeBase32Unpadded'
 
 -- | Encode a 'ByteString' value as a Base32hex 'ByteString' value without padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -129,7 +129,7 @@ encodeBase32Unpadded' = encodeBase32NoPad_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 
 -- | Decode an unpadded Base32hex-encoded 'ByteString' value.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -156,7 +156,7 @@ decodeBase32Unpadded bs@(PS _ _ !l)
 
 -- | Decode a padded Base32hex-encoded 'ByteString' value.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --

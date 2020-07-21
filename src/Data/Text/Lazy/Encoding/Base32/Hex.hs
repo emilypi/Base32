@@ -76,7 +76,7 @@ encodeBase32 = BL32H.encodeBase32 . TL.encodeUtf8
 -- >>> decodeBase32 "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
-decodeBase32 :: TL.Text -> Either TL.Text TL.Text
+decodeBase32 :: TL.Text -> Either T.Text TL.Text
 decodeBase32 = fmap TL.decodeLatin1 . BL32H.decodeBase32 . TL.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
@@ -108,7 +108,7 @@ decodeBase32With f t = case BL32H.decodeBase32 t of
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32hex and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
@@ -137,7 +137,7 @@ encodeBase32Unpadded = BL32H.encodeBase32Unpadded . TL.encodeUtf8
 -- >>> decodeBase32Unpadded "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
-decodeBase32Unpadded :: TL.Text -> Either TL.Text TL.Text
+decodeBase32Unpadded :: TL.Text -> Either T.Text TL.Text
 decodeBase32Unpadded = fmap TL.decodeLatin1
     . BL32H.decodeBase32Unpadded
     . TL.encodeUtf8
@@ -185,7 +185,7 @@ decodeBase32UnpaddedWith f t = case BL32H.decodeBase32Unpadded t of
 -- >>> decodeBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
-decodeBase32Padded :: TL.Text -> Either TL.Text TL.Text
+decodeBase32Padded :: TL.Text -> Either T.Text TL.Text
 decodeBase32Padded = fmap TL.decodeLatin1
     . BL32H.decodeBase32Padded
     . TL.encodeUtf8
