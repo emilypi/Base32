@@ -1,6 +1,6 @@
 {-# LANGUAGE Trustworthy #-}
 -- |
--- Module       : Data.ByteString.Short.Base32.Hex
+-- Module       : Data.ByteString.Short.Base32
 -- Copyright    : (c) 2019-2020 Emily Pillmore
 -- License      : BSD-style
 --
@@ -10,7 +10,7 @@
 --
 -- This module contains 'Data.ByteString.Short.ShortByteString'-valued combinators for
 -- implementing the RFC 4648 specification of the Base32
--- encoding format. This includes strictly padded/unpadded and lenient decoding
+-- encoding format. This includes strictly padded/unpadded decoding
 -- variants, as well as internal and external validation for canonicity.
 --
 module Data.ByteString.Short.Base32
@@ -39,12 +39,12 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 
 -- | Encode a 'ShortByteString' value as a Base32 'Text' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32 :: ShortByteString -> ShortText
 encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
@@ -52,37 +52,32 @@ encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
 
 -- | Encode a 'ShortByteString' as a Base32 'ShortByteString' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-5 RFC-4648 section 5>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32' "Sun"
+-- "KN2W4==="
 --
 encodeBase32' :: ShortByteString -> ShortByteString
 encodeBase32' = toShort . B32.encodeBase32' . fromShort
 
--- | Decode a padded Base32 encoded 'ShortByteString' value. If its length is not a multiple
+-- | Decode an arbitrarily padded Base32 encoded 'ShortByteString' value. If its length is not a multiple
 -- of 4, then padding chars will be added to fill out the input to a multiple of
 -- 4 for safe decoding as Base32-encoded values are optionally padded.
 --
--- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw-Pg="
+-- >>> decodeBase32 "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
--- >>> decodeBase32 "PDw-Pg"
--- Right "<<>>"
 --
 decodeBase32 :: ShortByteString -> Either Text ShortByteString
 decodeBase32 = fmap toShort . B32.decodeBase32 . fromShort
@@ -93,12 +88,12 @@ decodeBase32 = fmap toShort . B32.decodeBase32 . fromShort
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded :: ShortByteString -> ShortText
 encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
@@ -108,12 +103,12 @@ encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded' "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded' :: ShortByteString -> ShortByteString
 encodeBase32Unpadded' = toShort . B32.encodeBase32Unpadded' . fromShort
@@ -125,14 +120,14 @@ encodeBase32Unpadded' = toShort . B32.encodeBase32Unpadded' . fromShort
 -- In general, unless unpadded Base32 is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32Unpadded "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32Unpadded "PDw_Pj4="
+-- >>> decodeBase32Unpadded "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ShortByteString -> Either Text ShortByteString
@@ -146,14 +141,14 @@ decodeBase32Unpadded = fmap toShort . B32.decodeBase32Unpadded . fromShort
 -- In general, unless padded Base32 is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-4 RFC-4648 section 4>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32Padded "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32Padded "PDw_Pj4"
+-- >>> decodeBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: ShortByteString -> Either Text ShortByteString
@@ -182,13 +177,13 @@ decodeBase32Padded = fmap toShort . B32.decodeBase32Padded . fromShort
 --
 -- === __Examples__:
 --
--- >>> isBase32 "PDw_Pj4="
+-- >>> isBase32 "KN2W4"
 -- True
 --
--- >>> isBase32 "PDw_Pj4"
+-- >>> isBase32 "KN2W4==="
 -- True
 --
--- >>> isBase32 "PDw_Pj"
+-- >>> isBase32 "KN2W4=="
 -- False
 --
 isBase32 :: ShortByteString -> Bool
@@ -203,13 +198,13 @@ isBase32 = B32.isBase32 . fromShort
 --
 -- === __Examples__:
 --
--- >>> isValidBase32 "PDw_Pj4="
+-- >>> isValidBase32 "KN2W4"
 -- True
 --
--- >>> isValidBase32 "PDw_Pj"
--- True
+-- >>> isValidBase32 "KN2W4="
+-- False
 --
--- >>> isValidBase32 "%"
+-- >>> isValidBase32 "KN2W4%"
 -- False
 --
 isValidBase32 :: ShortByteString -> Bool

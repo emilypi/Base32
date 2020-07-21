@@ -7,16 +7,21 @@ Padded and unpadded base32 and base32hex encoding and decoding for `Text` and `B
 
 For the companion optics and pattern synonyms, see [base32-lens](https://hackage.haskell.org/package/base32-lens).
 
-
 ### Summary
 
-What does this library provide? Here is the summary:
+The following types are supported for both padded and unpadded std and extended hex alphabets:
 
-- Support for padded and unpadded Base32 and Base32hex
-- Support for `Text` encodings and decodings
+- `Data.ByteString`
+- `Data.ByteString.Lazy`
+- `Data.ByteString.Short`
+- `Data.Text`
+- `Data.Text.Lazy`
+- `Data.Text.Short`
+
+Additionally this library has
+
+- Better performance than `memory` for encode and decode 3-4x.
 - Optics for handling more complex structures with Base32 representations via the `base32-lens` package
-- Checks for both valid Base32 and correct Base32 and Base32hex encodings
+- Checks for both validity and correctness of Base32 and Base32hex encodings
 
-There are no dependencies aside from those bundled with GHC:
-
-![base32 dependencies](https://i.imgur.com/8CdVsey.png)
+There are no dependencies aside from those bundled with GHC, `text-short`, and the `ghc-byteorder` re-export.

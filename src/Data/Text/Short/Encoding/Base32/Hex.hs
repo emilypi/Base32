@@ -10,7 +10,7 @@
 --
 -- This module contains 'Data.Text.Short.ShortText'-valued combinators
 -- implementing the RFC 4648 specification for the Base32hex
--- encoding format. This includes strictly padded/unpadded and lenient
+-- encoding format. This includes strictly padded/unpadded
 -- decoding variants, and external + internal validations for canonicity.
 --
 module Data.Text.Short.Encoding.Base32.Hex
@@ -47,8 +47,8 @@ import Data.Text.Short.Unsafe
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "ADQMS==="
 --
 encodeBase32 :: ShortText -> ShortText
 encodeBase32 = fromByteStringUnsafe
@@ -56,14 +56,12 @@ encodeBase32 = fromByteStringUnsafe
   . toByteString
 {-# INLINE encodeBase32 #-}
 
--- | Decode a padded Base32hex-encoded 'ShortText' value. If its length is not a multiple
+-- | Decode an arbitrarily padded Base32hex-encoded 'ShortText' value. If its length is not a multiple
 -- of 4, then padding chars will be added to fill out the input to a multiple of
 -- 4 for safe decoding as base32hex encodings are optionally padded.
 --
--- For a decoder that fails on unpadded input, use 'decodeBase32Unpadded'.
---
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'Data.Text.Encoding.decodeLatin1'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32With`
 -- and pass in a custom decode function.
@@ -72,17 +70,14 @@ encodeBase32 = fromByteStringUnsafe
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32 "ADQMS==="
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32 "ADQMS"
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw-Pg="
+-- >>> decodeBase32 "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
--- >>> decodeBase32 "PDw-Pg"
--- Right "<<>>"
 --
 decodeBase32 :: ShortText -> Either Text ShortText
 decodeBase32 = fmap fromText . B32TH.decodeBase32 . toText
@@ -97,13 +92,13 @@ decodeBase32 = fmap fromText . B32TH.decodeBase32 . toText
 -- === __Examples__:
 --
 -- @
--- 'decodeBase32With' 'T.decodeUtf8''
+-- 'decodeBase32With' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
 --   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
 -- @
 --
 decodeBase32With
     :: (ShortByteString -> Either err ShortText)
-      -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
+      -- ^ convert a bytestring to text (e.g. '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)')
     -> ShortByteString
       -- ^ Input text to decode
     -> Either (Base32Error err) ShortText
@@ -116,12 +111,12 @@ decodeBase32With f t = case BS32H.decodeBase32 t of
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32hex and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded "Sun"
+-- "ADQMS"
 --
 encodeBase32Unpadded :: ShortText -> ShortText
 encodeBase32Unpadded = fromByteStringUnsafe
@@ -132,7 +127,7 @@ encodeBase32Unpadded = fromByteStringUnsafe
 -- | Decode an unpadded Base32hex encoded 'ShortText' value.
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'Data.Text.Encoding.decodeLatin1'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32UnpaddedWith`
 -- and pass in a custom decode function.
@@ -141,10 +136,10 @@ encodeBase32Unpadded = fromByteStringUnsafe
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32Unpadded "ADQMS"
+-- Right "Sun"
 --
--- >>> decodeBase32Unpadded "PDw_Pj4="
+-- >>> decodeBase32Unpadded "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ShortText -> Either Text ShortText
@@ -160,13 +155,13 @@ decodeBase32Unpadded = fmap fromText . B32TH.decodeBase32Unpadded . toText
 -- === __Examples__:
 --
 -- @
--- 'decodeBase32UnpaddedWith' 'T.decodeUtf8''
+-- 'decodeBase32UnpaddedWith' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
 --   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
 -- @
 --
 decodeBase32UnpaddedWith
     :: (ShortByteString -> Either err ShortText)
-      -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
+      -- ^ convert a bytestring to text (e.g. '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)')
     -> ShortByteString
       -- ^ Input text to decode
     -> Either (Base32Error err) ShortText
@@ -178,7 +173,7 @@ decodeBase32UnpaddedWith f t = case BS32H.decodeBase32Unpadded t of
 -- | Decode an padded Base32hex encoded 'ShortText' value
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'Data.Text.Encoding.decodeLatin1'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32PaddedWith`
 -- and pass in a custom decode function.
@@ -187,10 +182,10 @@ decodeBase32UnpaddedWith f t = case BS32H.decodeBase32Unpadded t of
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32Padded "ADQMS==="
+-- Right "Sun"
 --
--- >>> decodeBase32Padded "PDw_Pj4"
+-- >>> decodeBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: ShortText -> Either Text ShortText
@@ -206,13 +201,13 @@ decodeBase32Padded = fmap fromText . B32TH.decodeBase32Padded . toText
 -- === __Examples__:
 --
 -- @
--- 'decodeBase32With' 'T.decodeUtf8''
+-- 'decodeBase32With' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
 --   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
 -- @
 --
 decodeBase32PaddedWith
     :: (ShortByteString -> Either err ShortText)
-      -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
+      -- ^ convert a bytestring to text (e.g. 'Data.Text.Encoding.decodeUtf8'')
     -> ShortByteString
       -- ^ Input text to decode
     -> Either (Base32Error err) ShortText
@@ -243,13 +238,13 @@ decodeBase32PaddedWith f t = case BS32H.decodeBase32Padded t of
 --
 -- === __Examples__:
 --
--- >>> isBase32Hex "PDw_Pj4="
+-- >>> isBase32Hex "ADQMS"
 -- True
 --
--- >>> isBase32Hex "PDw_Pj4"
+-- >>> isBase32Hex "ADQMS==="
 -- True
 --
--- >>> isBase32Hex "PDw_Pj"
+-- >>> isBase32Hex "ADQMS=="
 -- False
 --
 isBase32Hex :: ShortText -> Bool
@@ -264,13 +259,13 @@ isBase32Hex = B32H.isBase32Hex . toByteString
 --
 -- === __Examples__:
 --
--- >>> isValidBase32Hex "PDw_Pj4="
+-- >>> isValidBase32Hex "ADQMS"
 -- True
 --
--- >>> isValidBase32Hex "PDw_Pj"
--- True
+-- >>> isValidBase32Hex "ADQMS="
+-- False
 --
--- >>> isValidBase32Hex "%"
+-- >>> isValidBase32Hex "ADQMS%"
 -- False
 --
 isValidBase32Hex :: ShortText -> Bool

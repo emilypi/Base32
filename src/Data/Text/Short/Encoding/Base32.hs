@@ -9,9 +9,9 @@
 -- Portability  : non-portable
 --
 -- This module contains 'Data.Text.Short.ShortText'-valued combinators
--- implementing the RFC 4328 specification for the Base32
--- encoding format. This includes strictly padded/unpadded and lenient
--- decoding variants, and external + internal validations for canonicity.
+-- implementing the RFC 4648 specification for the Base32
+-- encoding format. This includes strictly padded/unpadded decoding
+-- variants, and external + internal validations for canonicity.
 --
 module Data.Text.Short.Encoding.Base32
 ( -- * Encoding
@@ -43,12 +43,12 @@ import Data.Text.Short.Unsafe
 
 -- | Encode a 'ShortText' value in Base32 with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-5 RFC-4328 section 5>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32 :: ShortText -> ShortText
 encodeBase32 = fromByteStringUnsafe
@@ -56,33 +56,28 @@ encodeBase32 = fromByteStringUnsafe
   . toByteString
 {-# INLINE encodeBase32 #-}
 
--- | Decode a padded Base32-encoded 'ShortText' value. If its length is not a multiple
+-- | Decode an arbitrarily padded Base32-encoded 'ShortText' value. If its length is not a multiple
 -- of 4, then padding chars will be added to fill out the input to a multiple of
 -- 4 for safe decoding as base32 encodings are optionally padded.
 --
--- For a decoder that fails on unpadded input, use 'decodeBase32Unpadded'.
---
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'Data.Text.decodeLatin1'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32With`
 -- and pass in a custom decode function.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-7 RFC-4328 section 7>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw-Pg="
+-- >>> decodeBase32 "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
--- >>> decodeBase32 "PDw-Pg"
--- Right "<<>>"
 --
 decodeBase32 :: ShortText -> Either Text ShortText
 decodeBase32 = fmap fromText . B32T.decodeBase32 . toText
@@ -92,12 +87,12 @@ decodeBase32 = fmap fromText . B32T.decodeBase32 . toText
 -- 'ByteString' to 'ShortText' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-7 RFC-4328 section 7>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
 -- @
--- 'decodeBase32With' 'T.decodeUtf8''
+-- 'decodeBase32With' '(fmap fromText . T.decodeUtf8' . toText)'
 --   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
 -- @
 --
@@ -116,12 +111,12 @@ decodeBase32With f t = case BS32.decodeBase32 t of
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-3.2 RFC-4328 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded :: ShortText -> ShortText
 encodeBase32Unpadded = fromByteStringUnsafe
@@ -137,14 +132,14 @@ encodeBase32Unpadded = fromByteStringUnsafe
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32UnpaddedWith`
 -- and pass in a custom decode function.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-7 RFC-4328 section 7>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32Unpadded "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32Unpadded "PDw_Pj4="
+-- >>> decodeBase32Unpadded "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ShortText -> Either Text ShortText
@@ -155,12 +150,12 @@ decodeBase32Unpadded = fmap fromText . B32T.decodeBase32Unpadded . toText
 -- 'ShortByteString' to 'ShortText' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-7 RFC-4328 section 7>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
 -- @
--- 'decodeBase32UnpaddedWith' 'T.decodeUtf8''
+-- 'decodeBase32UnpaddedWith' '(fmap fromText . T.decodeUtf8' . toText)'
 --   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
 -- @
 --
@@ -183,14 +178,14 @@ decodeBase32UnpaddedWith f t = case BS32.decodeBase32Unpadded t of
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32PaddedWith`
 -- and pass in a custom decode function.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-7 RFC-4328 section 7>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32Padded "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32Padded "PDw_Pj4"
+-- >>> decodeBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: ShortText -> Either Text ShortText
@@ -201,12 +196,12 @@ decodeBase32Padded = fmap fromText . B32T.decodeBase32Padded . toText
 -- 'ByteString' to 'ShortText' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
--- See: <https://tools.ietf.org/html/rfc4328#section-7 RFC-4328 section 7>
+-- See: <https://tools.ietf.org/html/rfc4328#section-6 RFC-4328 section 6>
 --
 -- === __Examples__:
 --
 -- @
--- 'decodeBase32With' 'T.decodeUtf8''
+-- 'decodeBase32With' '(fmap fromText . T.decodeUtf8' . toText)'
 --   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
 -- @
 --
@@ -243,13 +238,13 @@ decodeBase32PaddedWith f t = case BS32.decodeBase32Padded t of
 --
 -- === __Examples__:
 --
--- >>> isBase32 "PDw_Pj4="
+-- >>> isBase32 "KN2W4"
 -- True
 --
--- >>> isBase32 "PDw_Pj4"
+-- >>> isBase32 "KN2W4==="
 -- True
 --
--- >>> isBase32 "PDw_Pj"
+-- >>> isBase32 "KN2W4=="
 -- False
 --
 isBase32 :: ShortText -> Bool
@@ -264,13 +259,13 @@ isBase32 = B32.isBase32 . toByteString
 --
 -- === __Examples__:
 --
--- >>> isValidBase32 "PDw_Pj4="
+-- >>> isValidBase32 "KN2W4"
 -- True
 --
--- >>> isValidBase32 "PDw_Pj"
--- True
+-- >>> isValidBase32 "KN2W4="
+-- False
 --
--- >>> isValidBase32 "%"
+-- >>> isValidBase32 "KN2W4%"
 -- False
 --
 isValidBase32 :: ShortText -> Bool

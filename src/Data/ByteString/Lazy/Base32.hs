@@ -12,7 +12,7 @@
 --
 -- This module contains 'Data.ByteString.Lazy.ByteString'-valued combinators for
 -- implementing the RFC 4648 specification of the Base32
--- encoding format. This includes strictly padded/unpadded and lenient
+-- encoding format. This includes strictly padded/unpadded
 -- decoding variants, as well as internal and external validation for canonicity.
 --
 module Data.ByteString.Lazy.Base32
@@ -47,12 +47,12 @@ import qualified Data.Text.Lazy.Encoding as TL
 
 -- | Encode a 'ByteString' value as a Base32 'Text' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32 :: ByteString -> TL.Text
 encodeBase32 = TL.decodeUtf8 . encodeBase32'
@@ -60,12 +60,12 @@ encodeBase32 = TL.decodeUtf8 . encodeBase32'
 
 -- | Encode a 'ByteString' as a Base32 'ByteString' value with padding.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32' :: ByteString -> ByteString
 encodeBase32' = fromChunks
@@ -73,27 +73,22 @@ encodeBase32' = fromChunks
   . reChunkN 5
   . toChunks
 
--- | Decode a padded Base32 encoded 'ByteString' value. If its length is not a multiple
+-- | Decode an arbitrarily padded Base32 encoded 'ByteString' value. If its length is not a multiple
 -- of 4, then padding chars will be added to fill out the input to a multiple of
 -- 4 for safe decoding as Base32-encoded values are optionally padded.
 --
--- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
---
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw-Pg="
+-- >>> decodeBase32 "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
--- >>> decodeBase32 "PDw-Pg"
--- Right "<<>>"
 --
 decodeBase32 :: ByteString -> Either T.Text ByteString
 decodeBase32 = fmap (fromChunks . (:[]))
@@ -106,12 +101,12 @@ decodeBase32 = fmap (fromChunks . (:[]))
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded :: ByteString -> TL.Text
 encodeBase32Unpadded = TL.decodeUtf8 . encodeBase32Unpadded'
@@ -121,12 +116,12 @@ encodeBase32Unpadded = TL.decodeUtf8 . encodeBase32Unpadded'
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32 and stripping padding chars from the output.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-3.2 RFC-4648 section 3.2>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded' "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded' :: ByteString -> ByteString
 encodeBase32Unpadded' = fromChunks
@@ -141,14 +136,14 @@ encodeBase32Unpadded' = fromChunks
 -- In general, unless unpadded Base32 is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32Unpadded "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32Unpadded "PDw_Pj4="
+-- >>> decodeBase32Unpadded "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ByteString -> Either T.Text ByteString
@@ -165,14 +160,14 @@ decodeBase32Unpadded = fmap (fromChunks . (:[]))
 -- In general, unless padded Base32 is explicitly required, it is
 -- safer to call 'decodeBase32'.
 --
--- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
+-- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32Padded "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32Padded "PDw_Pj4"
+-- >>> decodeBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: ByteString -> Either T.Text ByteString
@@ -208,13 +203,13 @@ decodeBase32Padded = fmap (fromChunks . (:[]))
 --
 -- === __Examples__:
 --
--- >>> isBase32 "PDw_Pj4="
+-- >>> isBase32 "KN2W4"
 -- True
 --
--- >>> isBase32 "PDw_Pj4"
+-- >>> isBase32 "KN2W4==="
 -- True
 --
--- >>> isBase32 "PDw_Pj"
+-- >>> isBase32 "KN2W4=="
 -- False
 --
 isBase32 :: ByteString -> Bool
@@ -229,13 +224,13 @@ isBase32 bs = isValidBase32 bs && isRight (decodeBase32 bs)
 --
 -- === __Examples__:
 --
--- >>> isValidBase32 "PDw_Pj4="
+-- >>> isValidBase32 "KN2W4"
 -- True
 --
--- >>> isValidBase32 "PDw_Pj"
--- True
+-- >>> isValidBase32 "KN2W4="
+-- False
 --
--- >>> isValidBase32 "%"
+-- >>> isValidBase32 "KN2W4%"
 -- False
 --
 isValidBase32 :: ByteString -> Bool
