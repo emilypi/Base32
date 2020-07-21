@@ -62,11 +62,9 @@ encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
 encodeBase32' :: ShortByteString -> ShortByteString
 encodeBase32' = toShort . B32.encodeBase32' . fromShort
 
--- | Decode a padded Base32 encoded 'ShortByteString' value. If its length is not a multiple
+-- | Decode an arbitrarily padded Base32 encoded 'ShortByteString' value. If its length is not a multiple
 -- of 4, then padding chars will be added to fill out the input to a multiple of
 -- 4 for safe decoding as Base32-encoded values are optionally padded.
---
--- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --

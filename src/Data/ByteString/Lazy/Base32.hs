@@ -12,7 +12,7 @@
 --
 -- This module contains 'Data.ByteString.Lazy.ByteString'-valued combinators for
 -- implementing the RFC 4648 specification of the Base32
--- encoding format. This includes strictly padded/unpadded and lenient
+-- encoding format. This includes strictly padded/unpadded
 -- decoding variants, as well as internal and external validation for canonicity.
 --
 module Data.ByteString.Lazy.Base32
@@ -73,11 +73,9 @@ encodeBase32' = fromChunks
   . reChunkN 5
   . toChunks
 
--- | Decode a padded Base32 encoded 'ByteString' value. If its length is not a multiple
+-- | Decode an arbitrarily padded Base32 encoded 'ByteString' value. If its length is not a multiple
 -- of 4, then padding chars will be added to fill out the input to a multiple of
 -- 4 for safe decoding as Base32-encoded values are optionally padded.
---
--- For a decoder that fails on unpadded input of incorrect size, use 'decodeBase32Unpadded'.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
