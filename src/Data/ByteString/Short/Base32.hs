@@ -10,7 +10,7 @@
 --
 -- This module contains 'Data.ByteString.Short.ShortByteString'-valued combinators for
 -- implementing the RFC 4648 specification of the Base32
--- encoding format. This includes strictly padded/unpadded and lenient decoding
+-- encoding format. This includes strictly padded/unpadded decoding
 -- variants, as well as internal and external validation for canonicity.
 --
 module Data.ByteString.Short.Base32
@@ -43,8 +43,8 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32 :: ShortByteString -> ShortText
 encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
@@ -56,8 +56,8 @@ encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32' "Sun"
+-- "KN2W4==="
 --
 encodeBase32' :: ShortByteString -> ShortByteString
 encodeBase32' = toShort . B32.encodeBase32' . fromShort
@@ -72,17 +72,14 @@ encodeBase32' = toShort . B32.encodeBase32' . fromShort
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw-Pg="
--- Left "Base32-encoded bytestring has invalid padding"
---
--- >>> decodeBase32 "PDw-Pg"
--- Right "<<>>"
+-- >>> decodeBase32 "KN2W==="
+-- Left "Base64-encoded bytestring has invalid padding"
 --
 decodeBase32 :: ShortByteString -> Either Text ShortByteString
 decodeBase32 = fmap toShort . B32.decodeBase32 . fromShort
@@ -97,8 +94,8 @@ decodeBase32 = fmap toShort . B32.decodeBase32 . fromShort
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded :: ShortByteString -> ShortText
 encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
@@ -112,8 +109,8 @@ encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded' "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded' :: ShortByteString -> ShortByteString
 encodeBase32Unpadded' = toShort . B32.encodeBase32Unpadded' . fromShort
@@ -129,11 +126,11 @@ encodeBase32Unpadded' = toShort . B32.encodeBase32Unpadded' . fromShort
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32Unpadded "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32Unpadded "PDw_Pj4="
--- Left "Base32-encoded bytestring has invalid padding"
+-- >>> decodeBase32Unpadded "KN2W4==="
+-- Left "Base64-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ShortByteString -> Either Text ShortByteString
 decodeBase32Unpadded = fmap toShort . B32.decodeBase32Unpadded . fromShort
@@ -150,10 +147,10 @@ decodeBase32Unpadded = fmap toShort . B32.decodeBase32Unpadded . fromShort
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32Padded "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32Padded "PDw_Pj4"
+-- >>> decodeBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: ShortByteString -> Either Text ShortByteString
@@ -182,13 +179,13 @@ decodeBase32Padded = fmap toShort . B32.decodeBase32Padded . fromShort
 --
 -- === __Examples__:
 --
--- >>> isBase32 "PDw_Pj4="
+-- >>> isBase32 "KN2W4"
 -- True
 --
--- >>> isBase32 "PDw_Pj4"
+-- >>> isBase32 "KN2W4==="
 -- True
 --
--- >>> isBase32 "PDw_Pj"
+-- >>> isBase32 "KN2W4=="
 -- False
 --
 isBase32 :: ShortByteString -> Bool
@@ -203,13 +200,13 @@ isBase32 = B32.isBase32 . fromShort
 --
 -- === __Examples__:
 --
--- >>> isValidBase32 "PDw_Pj4="
+-- >>> isValidBase32 "KN2W4"
 -- True
 --
--- >>> isValidBase32 "PDw_Pj"
--- True
+-- >>> isValidBase32 "KN2W4="
+-- False
 --
--- >>> isValidBase32 "%"
+-- >>> isValidBase32 "KN2W4%"
 -- False
 --
 isValidBase32 :: ShortByteString -> Bool

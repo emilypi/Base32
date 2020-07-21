@@ -51,8 +51,8 @@ import qualified Data.Text.Lazy.Encoding as TL
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32 :: ByteString -> TL.Text
 encodeBase32 = TL.decodeUtf8 . encodeBase32'
@@ -64,8 +64,8 @@ encodeBase32 = TL.decodeUtf8 . encodeBase32'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "KN2W4==="
 --
 encodeBase32' :: ByteString -> ByteString
 encodeBase32' = fromChunks
@@ -83,17 +83,14 @@ encodeBase32' = fromChunks
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32 "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw-Pg="
--- Left "Base32-encoded bytestring has invalid padding"
---
--- >>> decodeBase32 "PDw-Pg"
--- Right "<<>>"
+-- >>> decodeBase32 "KN2W==="
+-- Left "Base64-encoded bytestring has invalid padding"
 --
 decodeBase32 :: ByteString -> Either T.Text ByteString
 decodeBase32 = fmap (fromChunks . (:[]))
@@ -110,8 +107,8 @@ decodeBase32 = fmap (fromChunks . (:[]))
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded :: ByteString -> TL.Text
 encodeBase32Unpadded = TL.decodeUtf8 . encodeBase32Unpadded'
@@ -125,8 +122,8 @@ encodeBase32Unpadded = TL.decodeUtf8 . encodeBase32Unpadded'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded' "Sun"
+-- "KN2W4"
 --
 encodeBase32Unpadded' :: ByteString -> ByteString
 encodeBase32Unpadded' = fromChunks
@@ -145,11 +142,11 @@ encodeBase32Unpadded' = fromChunks
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32Unpadded "KN2W4"
+-- Right "Sun"
 --
--- >>> decodeBase32Unpadded "PDw_Pj4="
--- Left "Base32-encoded bytestring has invalid padding"
+-- >>> decodeBase32Unpadded "KN2W4==="
+-- Left "Base64-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ByteString -> Either T.Text ByteString
 decodeBase32Unpadded = fmap (fromChunks . (:[]))
@@ -169,10 +166,10 @@ decodeBase32Unpadded = fmap (fromChunks . (:[]))
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32Padded "KN2W4==="
+-- Right "Sun"
 --
--- >>> decodeBase32Padded "PDw_Pj4"
+-- >>> decodeBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: ByteString -> Either T.Text ByteString
@@ -208,13 +205,13 @@ decodeBase32Padded = fmap (fromChunks . (:[]))
 --
 -- === __Examples__:
 --
--- >>> isBase32 "PDw_Pj4="
+-- >>> isBase32 "KN2W4"
 -- True
 --
--- >>> isBase32 "PDw_Pj4"
+-- >>> isBase32 "KN2W4==="
 -- True
 --
--- >>> isBase32 "PDw_Pj"
+-- >>> isBase32 "KN2W4=="
 -- False
 --
 isBase32 :: ByteString -> Bool
@@ -229,13 +226,13 @@ isBase32 bs = isValidBase32 bs && isRight (decodeBase32 bs)
 --
 -- === __Examples__:
 --
--- >>> isValidBase32 "PDw_Pj4="
+-- >>> isValidBase32 "KN2W4"
 -- True
 --
--- >>> isValidBase32 "PDw_Pj"
--- True
+-- >>> isValidBase32 "KN2W4="
+-- False
 --
--- >>> isValidBase32 "%"
+-- >>> isValidBase32 "KN2W4%"
 -- False
 --
 isValidBase32 :: ByteString -> Bool

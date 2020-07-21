@@ -9,9 +9,9 @@
 -- Portability  : non-portable
 --
 -- This module contains 'Data.Text.Short.ShortText'-valued combinators
--- implementing the RFC 4328 specification for the Base32
--- encoding format. This includes strictly padded/unpadded and lenient
--- decoding variants, and external + internal validations for canonicity.
+-- implementing the RFC 4648 specification for the Base32
+-- encoding format. This includes strictly padded/unpadded decoding
+-- variants, and external + internal validations for canonicity.
 --
 module Data.Text.Short.Encoding.Base32
 ( -- * Encoding

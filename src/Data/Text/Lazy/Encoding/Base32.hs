@@ -10,7 +10,7 @@
 --
 -- This module contains 'Data.Text.Lazy.Text'-valued combinators for
 -- implementing the RFC 4648 specification of the Base32
--- encoding format. This includes strictly padded/unpadded and lenient decoding
+-- encoding format. This includes strictly padded/unpadded decoding
 -- variants, as well as internal and external validation for canonicity.
 --
 module Data.Text.Lazy.Encoding.Base32

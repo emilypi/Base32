@@ -10,7 +10,7 @@
 --
 -- This module contains 'Data.Text.Short.ShortText'-valued combinators
 -- implementing the RFC 4648 specification for the Base32hex
--- encoding format. This includes strictly padded/unpadded and lenient
+-- encoding format. This includes strictly padded/unpadded
 -- decoding variants, and external + internal validations for canonicity.
 --
 module Data.Text.Short.Encoding.Base32.Hex

@@ -10,7 +10,7 @@
 --
 -- This module contains 'Data.ByteString.Short.ShortByteString'-valued combinators for
 -- implementing the RFC 4648 specification of the Base32hex
--- encoding format. This includes strictly padded/unpadded and lenient decoding
+-- encoding format. This includes strictly padded/unpadded and decoding
 -- variants, as well as internal and external validation for canonicity.
 --
 module Data.ByteString.Short.Base32.Hex
@@ -42,8 +42,8 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32 "Sun"
+-- "ADQMS==="
 --
 encodeBase32 :: ShortByteString -> ShortText
 encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
@@ -55,8 +55,8 @@ encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' "<<?>>"
--- "PDw_Pj4="
+-- >>> encodeBase32' "Sun"
+-- "ADQMS==="
 --
 encodeBase32' :: ShortByteString -> ShortByteString
 encodeBase32' = toShort . B32H.encodeBase32' . fromShort
@@ -71,21 +71,17 @@ encodeBase32' = toShort . B32H.encodeBase32' . fromShort
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32 "ADQMS==="
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32 "ADQMS"
+-- Right "Sun"
 --
--- >>> decodeBase32 "PDw-Pg="
--- Left "Base32-encoded bytestring has invalid padding"
---
--- >>> decodeBase32 "PDw-Pg"
--- Right "<<>>"
+-- >>> decodeBase32 "ADQM==="
+-- Left "Base64-encoded bytestring has invalid padding"
 --
 decodeBase32 :: ShortByteString -> Either Text ShortByteString
 decodeBase32 = fmap toShort . B32H.decodeBase32 . fromShort
-
 {-# INLINE decodeBase32 #-}
 
 -- | Encode a 'ShortByteString' value as Base32hex 'Text' without padding. Note that for Base32hex,
@@ -97,8 +93,8 @@ decodeBase32 = fmap toShort . B32H.decodeBase32 . fromShort
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded' "Sun"
+-- "ADQMS"
 --
 encodeBase32Unpadded :: ShortByteString -> ShortText
 encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
@@ -113,8 +109,8 @@ encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "<<?>>"
--- "PDw_Pj4"
+-- >>> encodeBase32Unpadded' "Sun"
+-- "ADQMS"
 --
 encodeBase32Unpadded' :: ShortByteString -> ShortByteString
 encodeBase32Unpadded' = toShort . B32H.encodeBase32Unpadded' . fromShort
@@ -131,11 +127,11 @@ encodeBase32Unpadded' = toShort . B32H.encodeBase32Unpadded' . fromShort
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "PDw_Pj4"
--- Right "<<?>>"
+-- >>> decodeBase32Unpadded "ADQMS"
+-- Right "Sun"
 --
--- >>> decodeBase32Unpadded "PDw_Pj4="
--- Left "Base32-encoded bytestring has invalid padding"
+-- >>> decodeBase32Unpadded "ADQMS==="
+-- Left "Base64-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ShortByteString -> Either Text ShortByteString
 decodeBase32Unpadded = fmap toShort . B32H.decodeBase32Unpadded . fromShort
@@ -153,10 +149,10 @@ decodeBase32Unpadded = fmap toShort . B32H.decodeBase32Unpadded . fromShort
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "PDw_Pj4="
--- Right "<<?>>"
+-- >>> decodeBase32Padded "ADQMS==="
+-- Right "Sun"
 --
--- >>> decodeBase32Padded "PDw_Pj4"
+-- >>> decodeBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: ShortByteString -> Either Text ShortByteString
@@ -185,13 +181,13 @@ decodeBase32Padded = fmap toShort . B32H.decodeBase32Padded . fromShort
 --
 -- === __Examples__:
 --
--- >>> isBase32Hex "PDw_Pj4="
+-- >>> isBase32Hex "ADQMS"
 -- True
 --
--- >>> isBase32Hex "PDw_Pj4"
+-- >>> isBase32Hex "ADQMS==="
 -- True
 --
--- >>> isBase32Hex "PDw_Pj"
+-- >>> isBase32Hex "ADQMS=="
 -- False
 --
 isBase32Hex :: ShortByteString -> Bool
@@ -206,13 +202,13 @@ isBase32Hex = B32H.isBase32Hex . fromShort
 --
 -- === __Examples__:
 --
--- >>> isValidBase32Hex "PDw_Pj4="
+-- >>> isValidBase32Hex "ADQMS"
 -- True
 --
--- >>> isValidBase32Hex "PDw_Pj"
--- True
+-- >>> isValidBase32Hex "ADQMS="
+-- False
 --
--- >>> isValidBase32Hex "%"
+-- >>> isValidBase32Hex "ADQMS%"
 -- False
 --
 isValidBase32Hex :: ShortByteString -> Bool

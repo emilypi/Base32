@@ -13,8 +13,6 @@ module Data.ByteString.Base32.Internal.Tail
 import Data.Bits
 import Data.ByteString.Internal
 import Data.ByteString.Base32.Internal.Utils
-import Data.Text (Text)
-import qualified Data.Text as T
 
 import Foreign.Ptr
 import Foreign.ForeignPtr

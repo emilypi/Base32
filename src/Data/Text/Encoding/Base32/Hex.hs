@@ -1,16 +1,19 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Safe #-}
 -- |
 -- Module       : Data.Text.Encoding.Base32.Hex
--- Copyright 	: (c) 2019 Emily Pillmore
--- License	: BSD-style
+-- Copyright    : (c) 2019-2020 Emily Pillmore
+-- License      : BSD-style
 --
--- Maintainer	: Emily Pillmore <emilypi@cohomolo.gy>
--- Stability	: Experimental
--- Portability	: portable
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : stable
+-- Portability  : non-portable
 --
--- This module contains the combinators implementing the
--- RFC 4648 specification for the Base32-Hex encoding including
--- unpadded and lenient variants
+-- This module contains 'Data.Text.Text'-valued combinators for
+-- implementing the RFC 4648 specification of the Base32hex
+-- encoding format. This includes strictly padded and unpadded
+-- decoding variants, as well as internal and external validation
+-- for canonicity.
+--
 module Data.Text.Encoding.Base32.Hex
 ( encodeBase32
 , decodeBase32
@@ -50,7 +53,7 @@ decodeBase32 :: Text -> Either Text Text
 decodeBase32 = fmap T.decodeLatin1 . B32H.decodeBase32 . T.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
--- | Attempt to decode a 'ByteString' value as Base32url, converting from
+-- | Attempt to decode a 'ByteString' value as Base32hex, converting from
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
@@ -94,7 +97,7 @@ decodeBase32Unpadded = fmap T.decodeLatin1
     . T.encodeUtf8
 {-# INLINE decodeBase32Unpadded #-}
 
--- | Attempt to decode an unpadded 'ByteString' value as Base32url, converting from
+-- | Attempt to decode an unpadded 'ByteString' value as Base32hex, converting from
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
@@ -129,7 +132,7 @@ decodeBase32Padded = fmap T.decodeLatin1
     . T.encodeUtf8
 {-# INLINE decodeBase32Padded #-}
 
--- | Attempt to decode a padded 'ByteString' value as Base32url, converting from
+-- | Attempt to decode a padded 'ByteString' value as Base32hex, converting from
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
 -- This is something like 'decodeUtf8'', which may produce an error.
 --
