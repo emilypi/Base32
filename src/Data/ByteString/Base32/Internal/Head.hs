@@ -65,9 +65,8 @@ encodeBase32NoPad_ !lut (PS !sfp !o !l) = unsafeDupablePerformIO $ do
 -- bytestring, allocates the correct number of bytes that will be written,
 -- and executes the inner decoding loop against that data.
 --
-decodeBase32_ :: ForeignPtr Word8 -> ByteString -> IO (Either Text ByteString)
-decodeBase32_ !dtfp (PS !sfp !soff !slen) =
-    withForeignPtr dtfp $ \(Ptr dtable) ->
+decodeBase32_ :: Ptr Word8 -> ByteString -> IO (Either Text ByteString)
+decodeBase32_ (Ptr !dtable) (PS !sfp !soff !slen) =
     withForeignPtr sfp $ \sptr -> do
       dfp <- mallocPlainForeignPtrBytes dlen
       withForeignPtr dfp $ \dptr -> do

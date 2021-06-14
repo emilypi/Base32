@@ -8,7 +8,7 @@ module Data.ByteString.Base32.Internal.Utils
 , w32
 , w64
 , w64_32
-, writeNPlainForeignPtrBytes
+, writeNPlainPtrBytes
 ) where
 
 
@@ -16,15 +16,14 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 
 import Foreign.Ptr
-import Foreign.ForeignPtr
 import Foreign.Storable
 
 import GHC.ByteOrder
 import GHC.Exts
-import GHC.ForeignPtr
 import GHC.Word
 
 import System.IO.Unsafe
+import Foreign.Marshal.Alloc (mallocBytes)
 
 
 -- | Read 'Word8' index off alphabet addr
@@ -47,32 +46,30 @@ w64 = fromIntegral
 
 -- | Allocate and fill @n@ bytes with some data
 --
-writeNPlainForeignPtrBytes
-    :: ( Storable a
-       , Storable b
-       )
-    => Int
-    -> [a]
-    -> ForeignPtr b
-writeNPlainForeignPtrBytes !n as = unsafeDupablePerformIO $ do
-    fp <- mallocPlainForeignPtrBytes n
-    withForeignPtr fp $ \p -> go p as
-    return (castForeignPtr fp)
+writeNPlainPtrBytes
+  :: Storable a
+  => Int
+  -> [a]
+  -> Ptr a
+writeNPlainPtrBytes !n as = unsafeDupablePerformIO $ do
+    p <- mallocBytes n
+    go p as
+    return p
   where
     go !_ [] = return ()
     go !p (x:xs) = poke p x >> go (plusPtr p 1) xs
-{-# INLINE writeNPlainForeignPtrBytes #-}
+{-# INLINE writeNPlainPtrBytes #-}
 
 peekWord32BE :: Ptr Word32 -> IO Word32
 peekWord32BE p = case targetByteOrder of
   LittleEndian -> byteSwap32 <$> peek p
-  BigEndian    -> peek p
+  BigEndian -> peek p
 {-# inline peekWord32BE #-}
 
 peekWord64BE :: Ptr Word64 -> IO Word64
 peekWord64BE p = case targetByteOrder of
   LittleEndian -> byteSwap64 <$> peek p
-  BigEndian    -> peek p
+  BigEndian -> peek p
 {-# inline peekWord64BE #-}
 
 -- | Rechunk a list of bytestrings in multiples of @n@
