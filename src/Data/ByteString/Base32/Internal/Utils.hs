@@ -2,7 +2,6 @@
 {-# LANGUAGE MagicHash #-}
 module Data.ByteString.Base32.Internal.Utils
 ( aix
-, padCeilN
 , peekWord32BE
 , peekWord64BE
 , reChunkN
@@ -13,7 +12,6 @@ module Data.ByteString.Base32.Internal.Utils
 ) where
 
 
-import Data.Bits
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 
@@ -46,14 +44,6 @@ w64_32 = fromIntegral
 w64 :: Word8 -> Word64
 w64 = fromIntegral
 {-# INLINE w64 #-}
-
-padCeilN :: Int -> Int -> Int
-padCeilN !n !x
-    | r == 0 = x
-    | otherwise = (x - r) + n
-  where
-    r = x .&. (n - 1)
-{-# INLINE padCeilN #-}
 
 -- | Allocate and fill @n@ bytes with some data
 --

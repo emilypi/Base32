@@ -49,17 +49,17 @@ innerLoop !lut !dptr !sptr !end finish = go dptr sptr
             !d = lix (unsafeShiftR t 12)
             !e = lix (unsafeShiftR t 7)
             !f = lix (unsafeShiftR t 2)
-            !g = lix ((unsafeShiftL t 3) .|. (unsafeShiftR u 5))
+            !g = lix (unsafeShiftL t 3 .|. unsafeShiftR u 5)
             !h = lix u
 
         let !w = a
-             .|. (unsafeShiftL b 8)
-             .|. (unsafeShiftL c 16)
-             .|. (unsafeShiftL d 24)
-             .|. (unsafeShiftL e 32)
-             .|. (unsafeShiftL f 40)
-             .|. (unsafeShiftL g 48)
-             .|. (unsafeShiftL h 56)
+             .|. unsafeShiftL b 8
+             .|. unsafeShiftL c 16
+             .|. unsafeShiftL d 24
+             .|. unsafeShiftL e 32
+             .|. unsafeShiftL f 40
+             .|. unsafeShiftL g 48
+             .|. unsafeShiftL h 56
 
         poke dst w
         go (plusPtr dst 8) (plusPtr src 5)
@@ -194,13 +194,13 @@ decodeLoop !lut !dfp !dptr !sptr !end = go dptr sptr
       | h == 0xff = err (plusPtr src 7)
       | otherwise = do
 
-        let !w = ((unsafeShiftL a 35)
-              .|. (unsafeShiftL b 30)
-              .|. (unsafeShiftL c 25)
-              .|. (unsafeShiftL d 20)
-              .|. (unsafeShiftL e 15)
-              .|. (unsafeShiftL f 10)
-              .|. (unsafeShiftL g 5)
+        let !w = (unsafeShiftL a 35
+              .|. unsafeShiftL b 30
+              .|. unsafeShiftL c 25
+              .|. unsafeShiftL d 20
+              .|. unsafeShiftL e 15
+              .|. unsafeShiftL f 10
+              .|. unsafeShiftL g 5
               .|. h) :: Word64
 
         poke @Word32 (castPtr dst) (byteSwap32 (fromIntegral (unsafeShiftR w 8)))

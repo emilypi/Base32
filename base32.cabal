@@ -20,7 +20,7 @@ extra-source-files:
   README.md
 
 tested-with:
-  GHC ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.3 || ==8.10.1
+  GHC ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.4
 
 source-repository head
   type:     git
@@ -30,6 +30,7 @@ library
   exposed-modules:
     Data.ByteString.Base32
     Data.ByteString.Base32.Hex
+    Data.ByteString.Base32.Internal
     Data.ByteString.Lazy.Base32
     Data.ByteString.Lazy.Base32.Hex
     Data.ByteString.Short.Base32
@@ -43,7 +44,6 @@ library
     Data.Text.Short.Encoding.Base32.Hex
 
   other-modules:
-    Data.ByteString.Base32.Internal
     Data.ByteString.Base32.Internal.Head
     Data.ByteString.Base32.Internal.Loop
     Data.ByteString.Base32.Internal.Tables

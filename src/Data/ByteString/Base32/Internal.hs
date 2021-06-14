@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 -- |
@@ -17,13 +16,17 @@
 -- processes and tables.
 --
 module Data.ByteString.Base32.Internal
-( validateBase32
+( encodeBase32_
+, encodeBase32NoPad_
+, decodeBase32_
+, validateBase32
 , validateLastNPads
 ) where
 
 
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal
+import Data.ByteString.Base32.Internal.Head
 import Data.Text (Text)
 
 import Foreign.ForeignPtr
@@ -37,6 +40,8 @@ import System.IO.Unsafe
 -- -------------------------------------------------------------------------- --
 -- Validating Base32
 
+-- | Validate a base32-encoded bytestring against some alphabet.
+--
 validateBase32 :: ByteString -> ByteString -> Bool
 validateBase32 !alphabet bs@(PS _ _ l)
     | l == 0 = True
@@ -76,16 +81,16 @@ validateBase32 !alphabet bs@(PS _ _ l)
 -- This is necessary to check when decoding permissively (i.e. filling in padding chars).
 -- Consider the following 8 cases of a string of length l:
 --
--- l = 0 mod 8: No pad chars are added, since the input is assumed to be good.
--- l = 1 mod 8: Never an admissible length in base32
--- l = 2 mod 8: 6 padding chars are added. If padding chars are present in the string, they will fail as to decode as final quanta
--- l = 3 mod 8: Never an admissible length in base32
--- l = 4 mod 8: 4 padding chars are added. If 2 padding chars are present in the string this can be "completed" in the sense that
+-- - @l = 0 mod 8@: No pad chars are added, since the input is assumed to be good.
+-- - @l = 1 mod 8@: Never an admissible length in base32
+-- - @l = 2 mod 8@: 6 padding chars are added. If padding chars are present in the string, they will fail as to decode as final quanta
+-- - @l = 3 mod 8@: Never an admissible length in base32
+-- - @l = 4 mod 8@: 4 padding chars are added. If 2 padding chars are present in the string this can be "completed" in the sense that
 --              it now acts like a string `l == 2 mod 8` with 6 padding chars, and could potentially form corrupted data.
--- l = 5 mod 8: 3 padding chars are added. If 3 padding chars are present in the string, this could form corrupted data like in the
+-- - @l = 5 mod 8@: 3 padding chars are added. If 3 padding chars are present in the string, this could form corrupted data like in the
 --              previous case.
--- l = 6 mod 8: Never an admissible length in base32
--- l = 7 mod 8: 1 padding char is added. If 5 padding chars are present in the string, this could form corrupted data like the
+-- - @l = 6 mod 8@: Never an admissible length in base32
+-- - @l = 7 mod 8@: 1 padding char is added. If 5 padding chars are present in the string, this could form corrupted data like the
 --              previous cases.
 --
 -- Hence, permissive decodes should only fill in padding chars when it makes sense to add them. That is,
