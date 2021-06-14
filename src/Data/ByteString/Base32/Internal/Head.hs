@@ -1,7 +1,6 @@
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE OverloadedStrings #-}
 module Data.ByteString.Base32.Internal.Head
 ( encodeBase32_
 , encodeBase32NoPad_
@@ -12,7 +11,6 @@ module Data.ByteString.Base32.Internal.Head
 import Data.ByteString.Internal
 import Data.ByteString.Base32.Internal.Loop
 import Data.ByteString.Base32.Internal.Tail
-import Data.ByteString.Base32.Internal.Utils
 import Data.Text (Text)
 
 import Foreign.Ptr
@@ -25,52 +23,54 @@ import GHC.Word
 import System.IO.Unsafe
 
 
--- | Head of the base32 encoding loop - marshal data, assemble loops
+-- | Head of the padded base32 encoding loop.
+--
+-- This function takes an alphabet in the form of an unboxed 'Addr#',
+-- allocates the correct number of bytes that will be written, and
+-- executes the inner encoding loop against that data.
 --
 encodeBase32_ :: Addr# -> ByteString -> ByteString
-encodeBase32_ !lut (PS !sfp !o !l) =
-    unsafeDupablePerformIO $ do
-      dfp <- mallocPlainForeignPtrBytes dlen
-      withForeignPtr dfp $ \dptr ->
-        withForeignPtr sfp $ \sptr -> do
-          let !end = plusPtr sptr (l + o)
-          innerLoop
-            lut
-            (castPtr dptr)
-            (plusPtr sptr o)
-            end
-            (loopTail lut dfp dptr end)
+encodeBase32_ !lut (PS !sfp !o !l) = unsafeDupablePerformIO $ do
+    dfp <- mallocPlainForeignPtrBytes dlen
+    withForeignPtr dfp $ \dptr ->
+      withForeignPtr sfp $ \sptr -> do
+        let !end = plusPtr sptr (l + o)
+        innerLoop lut
+          (castPtr dptr) (plusPtr sptr o)
+          end (loopTail lut dfp dptr end)
   where
-    !q = (l * 8) `quot` 5
-    !r = (l * 8) `rem` 5
-    !dlen = padCeilN 8 (q + if r == 0 then 0 else 1)
+    !dlen = ceiling (fromIntegral @_ @Double l / 5) * 8
 
--- | Head of the unpadded base32 encoding loop - marshal data, assemble loops
+-- | Head of the unpadded base32 encoding loop.
+--
+-- This function takes an alphabet in the form of an unboxed 'Addr#',
+-- allocates the correct number of bytes that will be written, and
+-- executes the inner encoding loop against that data.
 --
 encodeBase32NoPad_ :: Addr# -> ByteString -> ByteString
-encodeBase32NoPad_ !lut (PS !sfp !o !l) =
-    unsafeDupablePerformIO $ do
-      !dfp <- mallocPlainForeignPtrBytes dlen
-      withForeignPtr dfp $ \dptr ->
-        withForeignPtr sfp $ \sptr -> do
-          let !end = plusPtr sptr (l + o)
-          innerLoop lut
-            (castPtr dptr)
-            (plusPtr sptr o)
-            end
-            (loopTailNoPad lut dfp dptr end)
+encodeBase32NoPad_ !lut (PS !sfp !o !l) = unsafeDupablePerformIO $ do
+    !dfp <- mallocPlainForeignPtrBytes dlen
+    withForeignPtr dfp $ \dptr ->
+      withForeignPtr sfp $ \sptr -> do
+        let !end = plusPtr sptr (l + o)
+        innerLoop lut
+          (castPtr dptr) (plusPtr sptr o)
+          end (loopTailNoPad lut dfp dptr end)
   where
-    !q = (l * 8) `quot` 5
-    !r = (l * 8) `rem` 5
-    !dlen = padCeilN 8 (q + if r == 0 then 0 else 1)
+    !dlen = ceiling (fromIntegral @_ @Double l / 5) * 8
 
--- | Head of the base32 decoding loop - marshal data, assemble loops
+-- | Head of the base32 decoding loop.
 --
-decodeBase32_ :: Int -> ForeignPtr Word8 -> ByteString -> IO (Either Text ByteString)
-decodeBase32_ !dlen !dtfp (PS !sfp !soff !slen) =
-    withForeignPtr dtfp $ \(Ptr dtable) ->
+-- This function takes a base32-decoding lookup table and base32-encoded
+-- bytestring, allocates the correct number of bytes that will be written,
+-- and executes the inner decoding loop against that data.
+--
+decodeBase32_ :: Ptr Word8 -> ByteString -> IO (Either Text ByteString)
+decodeBase32_ (Ptr !dtable) (PS !sfp !soff !slen) =
     withForeignPtr sfp $ \sptr -> do
       dfp <- mallocPlainForeignPtrBytes dlen
       withForeignPtr dfp $ \dptr -> do
         let !end = plusPtr sptr (soff + slen)
         decodeLoop dtable dfp dptr (plusPtr sptr soff) end
+  where
+    !dlen = ceiling (fromIntegral @_ @Double slen / 1.6)

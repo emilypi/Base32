@@ -17,14 +17,17 @@
 -- internal and external validation for canonicity.
 --
 module Data.ByteString.Base32.Hex
-( encodeBase32
+( -- * Encoding
+  encodeBase32
 , encodeBase32'
-, decodeBase32
 , encodeBase32Unpadded
 , encodeBase32Unpadded'
+  -- * Decoding
+, decodeBase32
 , decodeBase32Unpadded
 , decodeBase32Padded
 -- , decodeBase32Lenient
+  -- * Validation
 , isBase32Hex
 , isValidBase32Hex
 ) where
@@ -33,7 +36,6 @@ module Data.ByteString.Base32.Hex
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (ByteString(..))
 import Data.ByteString.Base32.Internal
-import Data.ByteString.Base32.Internal.Head
 import Data.ByteString.Base32.Internal.Tables
 import Data.Either (isRight)
 import Data.Text (Text)
@@ -89,16 +91,14 @@ encodeBase32' = encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 decodeBase32 :: ByteString -> Either Text ByteString
 decodeBase32 bs@(PS _ _ !l)
     | l == 0 = Right bs
-    | r == 0 = unsafeDupablePerformIO $ decodeBase32_ dlen hexDecodeTable bs
-    | r == 2 = unsafeDupablePerformIO $ decodeBase32_ dlen hexDecodeTable (BS.append bs "======")
-    | r == 4 = validateLastNPads 2 bs $ decodeBase32_ dlen hexDecodeTable (BS.append bs "====")
-    | r == 5 = validateLastNPads 3 bs $ decodeBase32_ dlen hexDecodeTable (BS.append bs "===")
-    | r == 7 = validateLastNPads 5 bs $ decodeBase32_ dlen hexDecodeTable (BS.append bs "=")
+    | r == 0 = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable bs
+    | r == 2 = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable (BS.append bs "======")
+    | r == 4 = validateLastNPads 2 bs $ decodeBase32_ hexDecodeTable (BS.append bs "====")
+    | r == 5 = validateLastNPads 3 bs $ decodeBase32_ hexDecodeTable (BS.append bs "===")
+    | r == 7 = validateLastNPads 5 bs $ decodeBase32_ hexDecodeTable (BS.append bs "=")
     | otherwise = Left "Base32-encoded bytestring has invalid size"
   where
     !r = l `rem` 8
-    !q = l `quot` 8
-    !dlen = q * 8
 {-# INLINE decodeBase32 #-}
 
 -- | Encode a 'ByteString' value as a Base32hex 'Text' value without padding.
@@ -142,16 +142,14 @@ encodeBase32Unpadded' = encodeBase32NoPad_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 decodeBase32Unpadded :: ByteString -> Either Text ByteString
 decodeBase32Unpadded bs@(PS _ _ !l)
     | l == 0 = Right bs
-    | r == 0 = validateLastNPads 1 bs $ decodeBase32_ dlen hexDecodeTable bs
-    | r == 2 = unsafeDupablePerformIO $ decodeBase32_ dlen hexDecodeTable (BS.append bs "======")
-    | r == 4 = validateLastNPads 1 bs $ decodeBase32_ dlen hexDecodeTable (BS.append bs "====")
-    | r == 5 = validateLastNPads 1 bs $ decodeBase32_ dlen hexDecodeTable (BS.append bs "===")
-    | r == 7 = validateLastNPads 1 bs $ decodeBase32_ dlen hexDecodeTable (BS.append bs "=")
+    | r == 0 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable bs
+    | r == 2 = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable (BS.append bs "======")
+    | r == 4 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable (BS.append bs "====")
+    | r == 5 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable (BS.append bs "===")
+    | r == 7 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable (BS.append bs "=")
     | otherwise = Left "Base32-encoded bytestring has invalid size"
   where
-    !q = l `quot` 8
     !r = l `rem` 8
-    !dlen = q * 5
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Decode a padded Base32hex-encoded 'ByteString' value.
@@ -173,11 +171,9 @@ decodeBase32Padded bs@(PS _ _ !l)
     | r == 3 = Left "Base32-encoded bytestring has invalid size"
     | r == 6 = Left "Base32-encoded bytestring has invalid size"
     | r /= 0 = Left "Base32-encoded bytestring requires padding"
-    | otherwise = unsafeDupablePerformIO $ decodeBase32_ dlen hexDecodeTable bs
+    | otherwise = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable bs
   where
-    !q = l `quot` 8
     !r = l `rem` 8
-    !dlen = q * 5
 {-# INLINE decodeBase32Padded #-}
 
 -- | Tell whether a 'ByteString' value is encoded in padded or unpadded Base32hex format
