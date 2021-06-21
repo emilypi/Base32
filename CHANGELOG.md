@@ -1,5 +1,14 @@
 # Revision history for base32
 
+## 0.2.1.0
+
+* Expose `Data.ByteString.Base32.Internal` API
+* Use closed-form encoding/decoding length calculations, reducing branching and improving performance
+* Update tests:
+  * Migrate to using lower heap-footprint concrete dict passing
+  * Support for 8.10.5 testing
+
+
 ## 0.2.0.0
 
 * Bugfix: fix unpadded base32 encoding ([#4](https://github.com/emilypi/Base32/pull/4))
