@@ -3,8 +3,11 @@
 ## 0.2.1.0
 
 * Expose `Data.ByteString.Base32.Internal` API
-* Switched to using a closed-form for length calculations, reducing branching and improving performance
-*
+* Use closed-form encoding/decoding length calculations, reducing branching and improving performance
+* Update tests:
+  * Migrate to using lower heap-footprint concrete dict passing
+  * Support for 8.10.5 testing
+
 
 ## 0.2.0.0
 
