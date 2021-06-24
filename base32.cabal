@@ -51,9 +51,9 @@ library
     Data.ByteString.Base32.Internal.Utils
 
   build-depends:
-      base           >=4.10     && <5
+      base           >=4.10     && <4.16
     , bytestring     ^>=0.10
-    , deepseq        >=1.4.3.0  && <1.4.5.0
+    , deepseq        >=1.4.3.0  && <1.4.6.0
     , ghc-byteorder  ^>=4.11.0.0
     , text           ^>=1.2
     , text-short     ^>=0.1
