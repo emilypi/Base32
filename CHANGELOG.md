@@ -1,5 +1,12 @@
 # Revision history for base32
 
+## 0.2.2.0
+
+* Add support for GHC 9.2.x
+* Drop support for GHC <8.10
+* Drop dependency on `ghc-byteorder`
+* Bump bounds for `deepseq`
+
 ## 0.2.1.0
 
 * Expose `Data.ByteString.Base32.Internal` API
