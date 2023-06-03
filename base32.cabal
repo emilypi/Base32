@@ -51,10 +51,10 @@ library
     Data.ByteString.Base32.Internal.Utils
 
   build-depends:
-      base           >=4.14     && <4.17
+      base           >=4.14     && <4.19
     , bytestring     >=0.10     && <0.12
     , deepseq        ^>=1.4
-    , text           ^>=1.2
+    , text           ^>=2.0
     , text-short     ^>=0.1
 
   hs-source-dirs:   src
@@ -68,7 +68,7 @@ test-suite tasty
   other-modules:    Internal
   main-is:          Main.hs
   build-depends:
-      base               >=4.14 && <4.17
+      base               >=4.14 && <4.19
     , base32
     , bytestring
     , memory
@@ -86,7 +86,7 @@ benchmark bench
   hs-source-dirs:   benchmarks
   main-is:          Base32Bench.hs
   build-depends:
-      base               >=4.14 && <4.17
+      base               >=4.14 && <4.19
     , base32
     , bytestring
     , criterion
