@@ -24,4 +24,4 @@ Additionally this library has
 - Optics for handling more complex structures with Base32 representations via the `base32-lens` package
 - Checks for both validity and correctness of Base32 and Base32hex encodings
 
-There are no dependencies aside from those bundled with GHC, `text-short`, and the `ghc-byteorder` re-export.
+There are no dependencies aside from those bundled with GHC, `text-short`.
