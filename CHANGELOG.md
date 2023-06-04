@@ -1,5 +1,11 @@
 # Revision history for base32
 
+## 0.3
+
+* Bump lower bounds for `bytestring` and `text` to latest significant major/major version
+* Update CI for 8.10.x thru 9.6 coverage
+* Correct the update the latin1 decode default for text modules to `utf8` (which is now pure for `text-2.0`).
+
 ## 0.2.2.0
 
 * Add support for GHC 9.2.x
