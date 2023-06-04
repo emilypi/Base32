@@ -1,5 +1,10 @@
 # Revision history for base32
 
+## 0.3.1.0
+
+* Small bug fix
+* Doc updates
+
 ## 0.3
 
 * Bump lower bounds for `bytestring` and `text` to latest significant major/major version
