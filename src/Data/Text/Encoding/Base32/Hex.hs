@@ -1,7 +1,7 @@
 {-# LANGUAGE Safe #-}
 -- |
 -- Module       : Data.Text.Encoding.Base32.Hex
--- Copyright    : (c) 2019-2020 Emily Pillmore
+-- Copyright    : (c) 2019-2023 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -55,7 +55,7 @@ encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
 -- 4 for safe decoding as base32hex encodings are optionally padded.
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'T.decodeUtf8'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32With`
 -- and pass in a custom decode function.
@@ -74,7 +74,7 @@ encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32 :: Text -> Either Text Text
-decodeBase32 = fmap T.decodeLatin1 . B32H.decodeBase32 . T.encodeUtf8
+decodeBase32 = fmap T.decodeUtf8 . B32H.decodeBase32 . T.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
 -- | Attempt to decode a 'ByteString' value as Base32hex, converting from
@@ -120,7 +120,7 @@ encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
 -- | Decode an unpadded Base32hex encoded 'Text' value.
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'T.decodeUtf8'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32WUnpaddedWith`
 -- and pass in a custom decode function.
@@ -136,7 +136,7 @@ encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: Text -> Either Text Text
-decodeBase32Unpadded = fmap T.decodeLatin1
+decodeBase32Unpadded = fmap T.decodeUtf8
     . B32H.decodeBase32Unpadded
     . T.encodeUtf8
 {-# INLINE decodeBase32Unpadded #-}
@@ -170,7 +170,7 @@ decodeBase32UnpaddedWith f t = case B32H.decodeBase32Unpadded t of
 -- | Decode an padded Base32hex encoded 'Text' value
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'T.decodeUtf8'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32PaddedWith`
 -- and pass in a custom decode function.
@@ -186,7 +186,7 @@ decodeBase32UnpaddedWith f t = case B32H.decodeBase32Unpadded t of
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: Text -> Either Text Text
-decodeBase32Padded = fmap T.decodeLatin1
+decodeBase32Padded = fmap T.decodeUtf8
     . B32H.decodeBase32Padded
     . T.encodeUtf8
 {-# INLINE decodeBase32Padded #-}
