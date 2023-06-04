@@ -8,7 +8,7 @@
 {-# LANGUAGE RecordWildCards #-}
 -- |
 -- Module       : Main
--- Copyright    : (c) 2019-2020 Emily Pillmore
+-- Copyright    : (c) 2019-2023 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -170,35 +170,35 @@ prop_correctness Harness{..} = testGroup "prop_validity"
 prop_padding_invariants :: C a => Harness a -> TestTree
 prop_padding_invariants Harness{..} = testGroup "prop_padding_invariants"
   [ testProperty "prop_hex_nopad_roundtrip" $ \(bs :: b) ->
-      Right (encodeHexNopad bs)
-        == decodeHexNopad (encodeHexNopad (encodeHexNopad bs))
+      Right bs
+        == decodeHexNopad (encodeHexNopad bs)
 
   , testProperty "prop_hex_pad_roundtrip" $ \(bs :: b) ->
-      Right (encodeHex bs) == decodeHexPad (encodeHex (encodeHex bs))
+      Right bs == decodeHexPad (encodeHex bs)
 
   , testProperty "prop_hex_decode_invariant" $ \(bs :: b) ->
-      ( decodeHexNopad (encodeHexNopad (encodeHex bs))
-      == decodeHex (encodeHex (encodeHex bs))
+      ( decodeHexNopad (encodeHexNopad bs)
+      == decodeHex (encodeHex bs)
       ) ||
-      ( decodeHexPad (encodeHex (encodeHex bs))
-      == decodeHex (encodeHex (encodeHex bs))
+      ( decodeHexPad (encodeHex bs)
+      == decodeHex (encodeHex bs)
       )
 
   , testProperty "prop_std_decode_invariant" $ \(bs :: b) ->
-      ( decodeNopad (encodeNopad (encode bs))
-      == decode (encode (encode bs))
+      ( decodeNopad (encodeNopad bs)
+      == decode (encode bs)
       ) ||
-      ( decodePad (encode (encode bs))
-      == decode (encode (encode bs))
+      ( decodePad (encode bs)
+      == decode (encode bs)
       )
 
   , testProperty "prop_hex_padding_coherence" $ \(bs :: b) ->
-      Right (encodeHex bs) == decodeHex (encodeHex (encodeHex bs))
-      && Right (encodeHex bs) == decodeHexPad (encodeHex (encodeHex bs))
+      Right bs == decodeHex (encodeHex bs)
+      && Right bs == decodeHexPad (encodeHex bs)
 
   , testProperty "prop_hex_nopadding_coherence" $ \(bs :: b) ->
-      Right (encodeHexNopad bs) == decodeHexNopad (encodeHexNopad (encodeHexNopad bs))
-      && Right (encodeHexNopad bs) == decodeHex (encodeHexNopad (encodeHexNopad bs))
+      Right bs == decodeHexNopad (encodeHexNopad bs)
+      && Right bs == decodeHex (encodeHexNopad bs)
   ]
 
 -- | just a sanity check against `memory`

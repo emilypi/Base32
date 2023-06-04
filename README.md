@@ -1,6 +1,6 @@
 # Base32
 
-[![Build Status](https://travis-ci.com/emilypi/base32.svg?branch=master)](https://travis-ci.com/emilypi/base32)
+![Build Status](https://github.com/emilypi/base32/workflows/ci/badge.svg)
 [![Hackage](https://img.shields.io/hackage/v/base32.svg)](https://hackage.haskell.org/package/base32)
 
 Padded and unpadded base32 and base32hex encoding and decoding for `Text` and `ByteString` values.

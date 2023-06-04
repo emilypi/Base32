@@ -1,7 +1,7 @@
 {-# LANGUAGE Trustworthy #-}
 -- |
 -- Module       : Data.Text.Short.Encoding.Base32
--- Copyright    : (c) 2019-2020 Emily Pillmore
+-- Copyright    : (c) 2019-2023 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -61,7 +61,7 @@ encodeBase32 = fromByteStringUnsafe
 -- 4 for safe decoding as base32 encodings are optionally padded.
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'Data.Text.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'Data.Text.decodeUtf8'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32With`
 -- and pass in a custom decode function.
@@ -127,7 +127,7 @@ encodeBase32Unpadded = fromByteStringUnsafe
 -- | Decode an unpadded Base32 encoded 'ShortText' value.
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'T.decodeUtf8'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32UnpaddedWith`
 -- and pass in a custom decode function.
@@ -173,7 +173,7 @@ decodeBase32UnpaddedWith f t = case BS32.decodeBase32Unpadded t of
 -- | Decode an padded Base32 encoded 'ShortText' value
 --
 -- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeLatin1'. This will always round trip for any valid Base32-encoded
+-- 'T.decodeUtf8'. This will always round trip for any valid Base32-encoded
 -- text value, but it may not round trip for bad inputs. The onus is on the
 -- caller to make sure inputs are valid. If unsure, defer to `decodeBase32PaddedWith`
 -- and pass in a custom decode function.
