@@ -70,43 +70,41 @@ decodeLoop
     :: Addr#
     -> ForeignPtr Word8
     -> Ptr Word8
-    -> Ptr Word64
+    -> Ptr Word8
     -> Ptr Word8
     -> IO (Either Text ByteString)
 decodeLoop !lut !dfp !dptr !sptr !end = go dptr sptr
   where
     lix a = w64 (aix (fromIntegral a) lut)
 
-    err :: Ptr Word64 -> IO (Either Text ByteString)
+    err :: Ptr Word8 -> IO (Either Text ByteString)
     err p = return . Left . T.pack
       $ "invalid character at offset: "
       ++ show (p `minusPtr` sptr)
 
-    padErr :: Ptr Word64 -> IO (Either Text ByteString)
+    padErr :: Ptr Word8 -> IO (Either Text ByteString)
     padErr p =  return . Left . T.pack
       $ "invalid padding at offset: "
       ++ show (p `minusPtr` sptr)
 
     look :: Ptr Word8 -> IO Word64
-    look !p = lix . w64 <$> peek @Word8 p
+    look !p = lix <$> peek @Word8 p
 
     go !dst !src
       | plusPtr src 8 >= end = do
 
-        let src' = castPtr src
-
-        a <- look src'
-        b <- look (plusPtr src' 1)
-        c <- look (plusPtr src' 2)
-        d <- look (plusPtr src' 3)
-        e <- look (plusPtr src' 4)
-        f <- look (plusPtr src' 5)
-        g <- look (plusPtr src' 6)
-        h <- look (plusPtr src' 7)
+        a <- look src
+        b <- look (plusPtr src 1)
+        c <- look (plusPtr src 2)
+        d <- look (plusPtr src 3)
+        e <- look (plusPtr src 4)
+        f <- look (plusPtr src 5)
+        g <- look (plusPtr src 6)
+        h <- look (plusPtr src 7)
         finalChunk dst src a b c d e f g h
 
       | otherwise = do
-        !t <- peekWord64BE src
+        !t <- peekWord64BE (castPtr src)
 
         let a = lix (unsafeShiftR t 56)
             b = lix (unsafeShiftR t 48)

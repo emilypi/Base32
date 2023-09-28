@@ -71,7 +71,6 @@ decodeBase32_ (Ptr !dtable) (BS !sfp !slen) =
       dfp <- mallocPlainForeignPtrBytes dlen
       withForeignPtr dfp $ \dptr -> do
         let !end = plusPtr sptr slen
-            !sptr64 = castPtr sptr
-        decodeLoop dtable dfp dptr sptr64 end
+        decodeLoop dtable dfp dptr sptr end
   where
     !dlen = ceiling (fromIntegral @_ @Double slen / 1.6)
