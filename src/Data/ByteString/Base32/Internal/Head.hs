@@ -1,6 +1,6 @@
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Head
 ( encodeBase32_
 , encodeBase32NoPad_

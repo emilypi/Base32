@@ -1,4 +1,3 @@
-{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Tables
 ( stdDecodeTable
