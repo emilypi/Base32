@@ -46,7 +46,7 @@ loopTail !lut !dfp !dptr !end !dst !src
       !b <- peek (plusPtr src 1)
 
       let !t = look (unsafeShiftR (a .&. 0xf8) 3)
-          !u = look ((unsafeShiftL (a .&. 0x07) 2) .|. (unsafeShiftR (b .&. 0xc0) 6))
+          !u = look (unsafeShiftL (a .&. 0x07) 2 .|. unsafeShiftR (b .&. 0xc0) 6)
           !v = look (unsafeShiftR (b .&. 0x3e) 1)
           !w = look (unsafeShiftL (b .&. 0x01) 4)
 
@@ -63,9 +63,9 @@ loopTail !lut !dfp !dptr !end !dst !src
       !c <- peek (plusPtr src 2)
 
       let !t = look (unsafeShiftR (a .&. 0xf8) 3)
-          !u = look ((unsafeShiftL (a .&. 0x07) 2) .|. (unsafeShiftR (b .&. 0xc0) 6))
+          !u = look (unsafeShiftL (a .&. 0x07) 2 .|. unsafeShiftR (b .&. 0xc0) 6)
           !v = look (unsafeShiftR (b .&. 0x3e) 1)
-          !w = look ((unsafeShiftL (b .&. 0x01) 4) .|. (unsafeShiftR (c .&. 0xf0) 4))
+          !w = look (unsafeShiftL (b .&. 0x01) 4 .|. unsafeShiftR (c .&. 0xf0) 4)
           !x = look (unsafeShiftL (c .&. 0x0f) 1)
 
       poke dst t
@@ -83,10 +83,10 @@ loopTail !lut !dfp !dptr !end !dst !src
       !d <- peek (plusPtr src 3)
 
       let !t = look (unsafeShiftR (a .&. 0xf8) 3)
-          !u = look ((unsafeShiftL (a .&. 0x07) 2) .|. (unsafeShiftR (b .&. 0xc0) 6))
+          !u = look (unsafeShiftL (a .&. 0x07) 2 .|. unsafeShiftR (b .&. 0xc0) 6)
           !v = look (unsafeShiftR (b .&. 0x3e) 1)
-          !w = look ((unsafeShiftL (b .&. 0x01) 4) .|. (unsafeShiftR (c .&. 0xf0) 4))
-          !x = look ((unsafeShiftL (c .&. 0x0f) 1) .|. (unsafeShiftR (d .&. 0x80) 7))
+          !w = look (unsafeShiftL (b .&. 0x01) 4 .|. unsafeShiftR (c .&. 0xf0) 4)
+          !x = look (unsafeShiftL (c .&. 0x0f) 1 .|. unsafeShiftR (d .&. 0x80) 7)
           !y = look (unsafeShiftR (d .&. 0x7c) 2)
           !z = look (unsafeShiftL (d .&. 0x03) 3)
 
@@ -135,7 +135,7 @@ loopTailNoPad !lut !dfp !dptr !end !dst !src
       !b <- peek (plusPtr src 1)
 
       let !t = look (unsafeShiftR (a .&. 0xf8) 3)
-          !u = look ((unsafeShiftL (a .&. 0x07) 2) .|. (unsafeShiftR (b .&. 0xc0) 6))
+          !u = look (unsafeShiftL (a .&. 0x07) 2 .|. unsafeShiftR (b .&. 0xc0) 6)
           !v = look (unsafeShiftR (b .&. 0x3e) 1)
           !w = look (unsafeShiftL (b .&. 0x01) 4)
 
@@ -152,9 +152,9 @@ loopTailNoPad !lut !dfp !dptr !end !dst !src
       !c <- peek (plusPtr src 2)
 
       let !t = look (unsafeShiftR (a .&. 0xf8) 3)
-          !u = look ((unsafeShiftL (a .&. 0x07) 2) .|. (unsafeShiftR (b .&. 0xc0) 6))
+          !u = look (unsafeShiftL (a .&. 0x07) 2 .|. unsafeShiftR (b .&. 0xc0) 6)
           !v = look (unsafeShiftR (b .&. 0x3e) 1)
-          !w = look ((unsafeShiftL (b .&. 0x01) 4) .|. (unsafeShiftR (c .&. 0xf0) 4))
+          !w = look (unsafeShiftL (b .&. 0x01) 4 .|. unsafeShiftR (c .&. 0xf0) 4)
           !x = look (unsafeShiftL (c .&. 0x0f) 1)
 
       poke dst t
@@ -171,10 +171,10 @@ loopTailNoPad !lut !dfp !dptr !end !dst !src
       !d <- peek (plusPtr src 3)
 
       let !t = look (unsafeShiftR (a .&. 0xf8) 3)
-          !u = look ((unsafeShiftL (a .&. 0x07) 2) .|. (unsafeShiftR (b .&. 0xc0) 6))
+          !u = look (unsafeShiftL (a .&. 0x07) 2 .|. unsafeShiftR (b .&. 0xc0) 6)
           !v = look (unsafeShiftR (b .&. 0x3e) 1)
-          !w = look ((unsafeShiftL (b .&. 0x01) 4) .|. (unsafeShiftR (c .&. 0xf0) 4))
-          !x = look ((unsafeShiftL (c .&. 0x0f) 1) .|. (unsafeShiftR (d .&. 0x80) 7))
+          !w = look (unsafeShiftL (b .&. 0x01) 4 .|. unsafeShiftR (c .&. 0xf0) 4)
+          !x = look (unsafeShiftL (c .&. 0x0f) 1 .|. unsafeShiftR (d .&. 0x80) 7)
           !y = look (unsafeShiftR (d .&. 0x7c) 2)
           !z = look (unsafeShiftL (d .&. 0x03) 3)
 

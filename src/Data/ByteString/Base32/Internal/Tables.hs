@@ -5,9 +5,9 @@ module Data.ByteString.Base32.Internal.Tables
 ) where
 
 
-import Data.ByteString.Base32.Internal.Utils
+import Data.ByteString.Base32.Internal.Utils (writeNPlainPtrBytes)
 
-import GHC.Word
+import GHC.Word (Word8)
 import GHC.Ptr (Ptr)
 
 
