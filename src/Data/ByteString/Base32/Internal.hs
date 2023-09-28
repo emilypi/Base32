@@ -43,7 +43,7 @@ import System.IO.Unsafe
 -- | Validate a base32-encoded bytestring against some alphabet.
 --
 validateBase32 :: ByteString -> ByteString -> Bool
-validateBase32 !alphabet bs@(PS _ _ l)
+validateBase32 !alphabet bs@(BS _ l)
     | l == 0 = True
     | r == 0 = f bs
     | r == 2 = f (BS.append bs "======")
@@ -54,8 +54,8 @@ validateBase32 !alphabet bs@(PS _ _ l)
   where
     r = l `rem` 8
 
-    f (PS fp o l') = accursedUnutterablePerformIO $ withForeignPtr fp $ \p ->
-      go (plusPtr p o) (plusPtr p (l' + o))
+    f (BS fp l') = accursedUnutterablePerformIO $ withForeignPtr fp $ \p ->
+      go p (plusPtr p l')
 
     go !p !end
       | p == end = return True
@@ -105,13 +105,12 @@ validateLastNPads
     -> ByteString
     -> IO (Either Text ByteString)
     -> Either Text ByteString
-validateLastNPads !n (PS !fp !o !l) io
+validateLastNPads !n (BS !fp !l) io
     | not valid = Left "Base32-encoded bytestring has invalid padding"
     | otherwise = unsafeDupablePerformIO io
   where
-    !lo = l + o
     valid = accursedUnutterablePerformIO $ withForeignPtr fp $ \p -> do
-      let end = plusPtr p lo
+      let end = plusPtr p l
 
       let go :: Ptr Word8 -> IO Bool
           go !q
@@ -120,5 +119,5 @@ validateLastNPads !n (PS !fp !o !l) io
               a <- peek q
               if a == 0x3d then return False else go (plusPtr q 1)
 
-      go (plusPtr p (lo - n))
+      go (plusPtr p (l - n))
 {-# INLINE validateLastNPads #-}

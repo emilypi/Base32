@@ -89,7 +89,7 @@ encodeBase32' = encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32 :: ByteString -> Either Text ByteString
-decodeBase32 bs@(PS _ _ !l)
+decodeBase32 bs@(BS _ !l)
     | l == 0 = Right bs
     | r == 0 = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable bs
     | r == 2 = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable (BS.append bs "======")
@@ -140,7 +140,7 @@ encodeBase32Unpadded' = encodeBase32NoPad_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Unpadded :: ByteString -> Either Text ByteString
-decodeBase32Unpadded bs@(PS _ _ !l)
+decodeBase32Unpadded bs@(BS _ !l)
     | l == 0 = Right bs
     | r == 0 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable bs
     | r == 2 = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable (BS.append bs "======")
@@ -165,7 +165,7 @@ decodeBase32Unpadded bs@(PS _ _ !l)
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32Padded :: ByteString -> Either Text ByteString
-decodeBase32Padded bs@(PS _ _ !l)
+decodeBase32Padded bs@(BS _ !l)
     | l == 0 = Right bs
     | r == 1 = Left "Base32-encoded bytestring has invalid size"
     | r == 3 = Left "Base32-encoded bytestring has invalid size"

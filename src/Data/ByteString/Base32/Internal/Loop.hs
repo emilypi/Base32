@@ -149,18 +149,18 @@ decodeLoop !lut !dfp !dptr !sptr !end = go dptr sptr
 
         case (c,d,e,f,g,h) of
           (0x63,0x63,0x63,0x63,0x63,0x63) ->
-            return (Right (PS dfp 0 (1 + minusPtr dst dptr)))
+            return (Right (BS dfp (1 + minusPtr dst dptr)))
           (0x63,_,_,_,_,_) -> padErr (plusPtr src 3)
           (_,0x63,0x63,0x63,0x63,0x63) -> padErr (plusPtr src 3)
           (_,0x63,_,_,_,_) -> padErr (plusPtr src 4)
           (_,_,0x63,0x63,0x63,0x63) -> do
             poke @Word8 (plusPtr dst 2) o3
-            return (Right (PS dfp 0 (2 + minusPtr dst dptr)))
+            return (Right (BS dfp (2 + minusPtr dst dptr)))
           (_,_,0x63,_,_,_) -> padErr (plusPtr src 5)
           (_,_,_,0x63,0x63,0x63) -> do
             poke @Word8 (plusPtr dst 2) o3
             poke @Word8 (plusPtr dst 3) o4
-            return (Right (PS dfp 0 (3 + minusPtr dst dptr)))
+            return (Right (BS dfp (3 + minusPtr dst dptr)))
           (_,_,_,0x63,_,_) -> padErr (plusPtr src 6)
           (_,_,_,_,0x63,0x63) -> padErr (plusPtr src 6)
           (_,_,_,_,0x63,_) -> padErr (plusPtr src 7)
@@ -168,12 +168,12 @@ decodeLoop !lut !dfp !dptr !sptr !end = go dptr sptr
             poke @Word8 (plusPtr dst 2) o3
             poke @Word8 (plusPtr dst 3) o4
             poke @Word8 (plusPtr dst 4) o5
-            return (Right (PS dfp 0 (4 + minusPtr dst dptr)))
+            return (Right (BS dfp (4 + minusPtr dst dptr)))
           (_,_,_,_,_,_) -> do
             poke @Word8 (plusPtr dst 2) o3
             poke @Word8 (plusPtr dst 3) o4
             poke @Word8 (plusPtr dst 4) o5
-            return (Right (PS dfp 0 (5 + minusPtr dst dptr)))
+            return (Right (BS dfp (5 + minusPtr dst dptr)))
 
     decodeChunk !dst !src !a !b !c !d !e !f !g !h
       | a == 0x63 = padErr src

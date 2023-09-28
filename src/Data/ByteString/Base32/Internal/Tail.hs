@@ -33,7 +33,7 @@ loopTail
     -> Ptr Word8
     -> IO ByteString
 loopTail !lut !dfp !dptr !end !dst !src
-    | src == end = return (PS dfp 0 (minusPtr dst dptr))
+    | src == end = return (BS dfp (minusPtr dst dptr))
     | plusPtr src 1 == end = do -- 2 6
       !a <- peek src
 
@@ -44,7 +44,7 @@ loopTail !lut !dfp !dptr !end !dst !src
       poke (plusPtr dst 1) u
       padN (plusPtr dst 2) 6
 
-      return (PS dfp 0 (8 + minusPtr dst dptr))
+      return (BS dfp (8 + minusPtr dst dptr))
     | plusPtr src 2 == end = do -- 4 4
       !a <- peek src
       !b <- peek (plusPtr src 1)
@@ -60,7 +60,7 @@ loopTail !lut !dfp !dptr !end !dst !src
       poke (plusPtr dst 3) w
       padN (plusPtr dst 4) 4
 
-      return (PS dfp 0 (8 + minusPtr dst dptr))
+      return (BS dfp (8 + minusPtr dst dptr))
     | plusPtr src 3 == end = do -- 5 3
       !a <- peek src
       !b <- peek (plusPtr src 1)
@@ -78,7 +78,7 @@ loopTail !lut !dfp !dptr !end !dst !src
       poke (plusPtr dst 3) w
       poke (plusPtr dst 4) x
       padN (plusPtr dst 5) 3
-      return (PS dfp 0 (8 + minusPtr dst dptr))
+      return (BS dfp (8 + minusPtr dst dptr))
 
     | otherwise = do -- 7 1
       !a <- peek src
@@ -102,7 +102,7 @@ loopTail !lut !dfp !dptr !end !dst !src
       poke (plusPtr dst 5) y
       poke (plusPtr dst 6) z
       padN (plusPtr dst 7) 1
-      return (PS dfp 0 (8 + minusPtr dst dptr))
+      return (BS dfp (8 + minusPtr dst dptr))
   where
     look !n = aix n lut
 
@@ -122,7 +122,7 @@ loopTailNoPad
     -> Ptr Word8
     -> IO ByteString
 loopTailNoPad !lut !dfp !dptr !end !dst !src
-  | src == end = return (PS dfp 0 (minusPtr dst dptr))
+  | src == end = return (BS dfp (minusPtr dst dptr))
   | plusPtr src 1 == end = do -- 2 6
       !a <- peek src
 
@@ -132,7 +132,7 @@ loopTailNoPad !lut !dfp !dptr !end !dst !src
       poke dst t
       poke (plusPtr dst 1) u
 
-      return (PS dfp 0 (2 + minusPtr dst dptr))
+      return (BS dfp (2 + minusPtr dst dptr))
 
     | plusPtr src 2 == end = do -- 4 4
       !a <- peek src
@@ -148,7 +148,7 @@ loopTailNoPad !lut !dfp !dptr !end !dst !src
       poke (plusPtr dst 2) v
       poke (plusPtr dst 3) w
 
-      return (PS dfp 0 (4 + minusPtr dst dptr))
+      return (BS dfp (4 + minusPtr dst dptr))
 
     | plusPtr src 3 == end = do -- 5 3
       !a <- peek src
@@ -166,7 +166,7 @@ loopTailNoPad !lut !dfp !dptr !end !dst !src
       poke (plusPtr dst 2) v
       poke (plusPtr dst 3) w
       poke (plusPtr dst 4) x
-      return (PS dfp 0 (5 + minusPtr dst dptr))
+      return (BS dfp (5 + minusPtr dst dptr))
 
     | otherwise = do -- 7 1
       !a <- peek src
@@ -189,7 +189,7 @@ loopTailNoPad !lut !dfp !dptr !end !dst !src
       poke (plusPtr dst 4) x
       poke (plusPtr dst 5) y
       poke (plusPtr dst 6) z
-      return (PS dfp 0 (7 + minusPtr dst dptr))
+      return (BS dfp (7 + minusPtr dst dptr))
   where
     look !i = aix i lut
 {-# INLINE loopTailNoPad #-}
