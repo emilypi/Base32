@@ -1,5 +1,10 @@
 # Revision history for base32
 
+## 0.4
+
+* Support for GHC 9.8
+* Bump `bytestring` lower bound to 0.11 (thanks @vlix!)
+
 ## 0.3.1.0
 
 * Small bug fix
