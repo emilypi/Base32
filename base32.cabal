@@ -1,6 +1,6 @@
-cabal-version:      2.0
+cabal-version:      3.0
 name:               base32
-version:            0.3.1.0
+version:            0.4
 synopsis:           Fast RFC 4648-compliant Base32 encoding
 description:
   RFC 4648-compliant Base32 encodings and decodings.
@@ -8,7 +8,7 @@ description:
 
 homepage:           https://github.com/emilypi/base32
 bug-reports:        https://github.com/emilypi/base32/issues
-license:            BSD3
+license:            BSD-3-Clause
 license-file:       LICENSE
 author:             Emily Pillmore
 maintainer:         emilypi@cohomolo.gy
@@ -20,7 +20,7 @@ extra-source-files:
   README.md
 
 tested-with:
-  GHC ==8.10.7 || ==9.0.2 || ==9.2.5 || ==9.4.5 || ==9.6.2
+  GHC ==9.2.8 || ==9.4.7 || ==9.6.3 || ==9.8.1
 
 source-repository head
   type:     git
@@ -51,10 +51,10 @@ library
     Data.ByteString.Base32.Internal.Utils
 
   build-depends:
-      base            >=4.14     && <4.19
+      base            >=4.15     && <4.20
     , bytestring     ^>=0.11
-    , deepseq        ^>=1.4.4.0
-    , text           ^>=2.0
+    , deepseq         >=1.4.4.0  && <1.6
+    , text            >=2.0      && <2.2
     , text-short     ^>=0.1
 
   hs-source-dirs:   src
@@ -68,7 +68,7 @@ test-suite tasty
   other-modules:    Internal
   main-is:          Main.hs
   build-depends:
-      base               >=4.14 && <4.19
+      base               >=4.15 && <4.20
     , base32
     , bytestring        ^>=0.11
     , memory
@@ -86,7 +86,7 @@ benchmark bench
   hs-source-dirs:   benchmarks
   main-is:          Base32Bench.hs
   build-depends:
-      base               >=4.14 && <4.19
+      base               >=4.15 && <4.20
     , base32
     , bytestring        ^>=0.11
     , criterion
