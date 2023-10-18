@@ -1,6 +1,6 @@
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Head
 ( encodeBase32_
 , encodeBase32NoPad_
@@ -30,13 +30,13 @@ import System.IO.Unsafe
 -- executes the inner encoding loop against that data.
 --
 encodeBase32_ :: Addr# -> ByteString -> ByteString
-encodeBase32_ !lut (PS !sfp !o !l) = unsafeDupablePerformIO $ do
+encodeBase32_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
     dfp <- mallocPlainForeignPtrBytes dlen
     withForeignPtr dfp $ \dptr ->
       withForeignPtr sfp $ \sptr -> do
-        let !end = plusPtr sptr (l + o)
+        let !end = plusPtr sptr l
         innerLoop lut
-          (castPtr dptr) (plusPtr sptr o)
+          (castPtr dptr) sptr
           end (loopTail lut dfp dptr end)
   where
     !dlen = ceiling (fromIntegral @_ @Double l / 5) * 8
@@ -48,13 +48,13 @@ encodeBase32_ !lut (PS !sfp !o !l) = unsafeDupablePerformIO $ do
 -- executes the inner encoding loop against that data.
 --
 encodeBase32NoPad_ :: Addr# -> ByteString -> ByteString
-encodeBase32NoPad_ !lut (PS !sfp !o !l) = unsafeDupablePerformIO $ do
+encodeBase32NoPad_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
     !dfp <- mallocPlainForeignPtrBytes dlen
     withForeignPtr dfp $ \dptr ->
       withForeignPtr sfp $ \sptr -> do
-        let !end = plusPtr sptr (l + o)
+        let !end = plusPtr sptr l
         innerLoop lut
-          (castPtr dptr) (plusPtr sptr o)
+          (castPtr dptr) sptr
           end (loopTailNoPad lut dfp dptr end)
   where
     !dlen = ceiling (fromIntegral @_ @Double l / 5) * 8
@@ -66,11 +66,11 @@ encodeBase32NoPad_ !lut (PS !sfp !o !l) = unsafeDupablePerformIO $ do
 -- and executes the inner decoding loop against that data.
 --
 decodeBase32_ :: Ptr Word8 -> ByteString -> IO (Either Text ByteString)
-decodeBase32_ (Ptr !dtable) (PS !sfp !soff !slen) =
+decodeBase32_ (Ptr !dtable) (BS !sfp !slen) =
     withForeignPtr sfp $ \sptr -> do
       dfp <- mallocPlainForeignPtrBytes dlen
       withForeignPtr dfp $ \dptr -> do
-        let !end = plusPtr sptr (soff + slen)
-        decodeLoop dtable dfp dptr (plusPtr sptr soff) end
+        let !end = plusPtr sptr slen
+        decodeLoop dtable dfp dptr sptr end
   where
     !dlen = ceiling (fromIntegral @_ @Double slen / 1.6)

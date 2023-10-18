@@ -1,7 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE TypeApplications #-}
 module Data.ByteString.Base32.Internal.Loop
 ( innerLoop
@@ -72,43 +70,41 @@ decodeLoop
     :: Addr#
     -> ForeignPtr Word8
     -> Ptr Word8
-    -> Ptr Word64
+    -> Ptr Word8
     -> Ptr Word8
     -> IO (Either Text ByteString)
 decodeLoop !lut !dfp !dptr !sptr !end = go dptr sptr
   where
     lix a = w64 (aix (fromIntegral a) lut)
 
-    err :: Ptr Word64 -> IO (Either Text ByteString)
+    err :: Ptr Word8 -> IO (Either Text ByteString)
     err p = return . Left . T.pack
       $ "invalid character at offset: "
       ++ show (p `minusPtr` sptr)
 
-    padErr :: Ptr Word64 -> IO (Either Text ByteString)
+    padErr :: Ptr Word8 -> IO (Either Text ByteString)
     padErr p =  return . Left . T.pack
       $ "invalid padding at offset: "
       ++ show (p `minusPtr` sptr)
 
     look :: Ptr Word8 -> IO Word64
-    look !p = lix . w64 <$> peek @Word8 p
+    look !p = lix <$> peek @Word8 p
 
     go !dst !src
       | plusPtr src 8 >= end = do
 
-        let src' = castPtr src
-
-        a <- look src'
-        b <- look (plusPtr src' 1)
-        c <- look (plusPtr src' 2)
-        d <- look (plusPtr src' 3)
-        e <- look (plusPtr src' 4)
-        f <- look (plusPtr src' 5)
-        g <- look (plusPtr src' 6)
-        h <- look (plusPtr src' 7)
+        a <- look src
+        b <- look (plusPtr src 1)
+        c <- look (plusPtr src 2)
+        d <- look (plusPtr src 3)
+        e <- look (plusPtr src 4)
+        f <- look (plusPtr src 5)
+        g <- look (plusPtr src 6)
+        h <- look (plusPtr src 7)
         finalChunk dst src a b c d e f g h
 
       | otherwise = do
-        !t <- peekWord64BE src
+        !t <- peekWord64BE (castPtr src)
 
         let a = lix (unsafeShiftR t 56)
             b = lix (unsafeShiftR t 48)
@@ -149,18 +145,18 @@ decodeLoop !lut !dfp !dptr !sptr !end = go dptr sptr
 
         case (c,d,e,f,g,h) of
           (0x63,0x63,0x63,0x63,0x63,0x63) ->
-            return (Right (PS dfp 0 (1 + minusPtr dst dptr)))
+            return (Right (BS dfp (1 + minusPtr dst dptr)))
           (0x63,_,_,_,_,_) -> padErr (plusPtr src 3)
           (_,0x63,0x63,0x63,0x63,0x63) -> padErr (plusPtr src 3)
           (_,0x63,_,_,_,_) -> padErr (plusPtr src 4)
           (_,_,0x63,0x63,0x63,0x63) -> do
             poke @Word8 (plusPtr dst 2) o3
-            return (Right (PS dfp 0 (2 + minusPtr dst dptr)))
+            return (Right (BS dfp (2 + minusPtr dst dptr)))
           (_,_,0x63,_,_,_) -> padErr (plusPtr src 5)
           (_,_,_,0x63,0x63,0x63) -> do
             poke @Word8 (plusPtr dst 2) o3
             poke @Word8 (plusPtr dst 3) o4
-            return (Right (PS dfp 0 (3 + minusPtr dst dptr)))
+            return (Right (BS dfp (3 + minusPtr dst dptr)))
           (_,_,_,0x63,_,_) -> padErr (plusPtr src 6)
           (_,_,_,_,0x63,0x63) -> padErr (plusPtr src 6)
           (_,_,_,_,0x63,_) -> padErr (plusPtr src 7)
@@ -168,12 +164,12 @@ decodeLoop !lut !dfp !dptr !sptr !end = go dptr sptr
             poke @Word8 (plusPtr dst 2) o3
             poke @Word8 (plusPtr dst 3) o4
             poke @Word8 (plusPtr dst 4) o5
-            return (Right (PS dfp 0 (4 + minusPtr dst dptr)))
+            return (Right (BS dfp (4 + minusPtr dst dptr)))
           (_,_,_,_,_,_) -> do
             poke @Word8 (plusPtr dst 2) o3
             poke @Word8 (plusPtr dst 3) o4
             poke @Word8 (plusPtr dst 4) o5
-            return (Right (PS dfp 0 (5 + minusPtr dst dptr)))
+            return (Right (BS dfp (5 + minusPtr dst dptr)))
 
     decodeChunk !dst !src !a !b !c !d !e !f !g !h
       | a == 0x63 = padErr src
