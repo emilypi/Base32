@@ -57,7 +57,7 @@ jobs:
     - name: Cabal check
       run: |
         cd base32-*/
-        cabal checkhttps://github.com/kadena-io/pact/pull/1274
+        cabal check
 
   bounds-checking:
     needs: build
