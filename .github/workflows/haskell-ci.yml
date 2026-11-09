@@ -1,9 +1,12 @@
 name: ci
 on:
   push:
-    branches:
-      - master
-  pull_request: {} # Validate all PRs
+    branches: [master]
+  pull_request: {}
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
 
 defaults:
   run:
@@ -13,69 +16,94 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ghc: ['9.0', '9.2', '9.4', '9.6', '9.8', '9.10', '9.12']
+        ghc: ['9.6.7', '9.8.4', '9.10.3', '9.12.4', '9.14.1']
+        simd: ['-simd', 'simd']
         include:
-        - os: macOS-latest
-          ghc: 'latest'
+          - os: macos-15
+            ghc: '9.14.1'
+            simd: '-simd'
+          - os: macos-15
+            ghc: '9.14.1'
+            simd: 'simd'
     steps:
-    - uses: actions/checkout@v3
-    - name: Install libncurses5 and libtinfo
-      if: runner.os == 'Linux' && (matrix.ghc == '8.0' || matrix.ghc == '8.2')
-      run: |
-        sudo apt-get install libncurses5 libtinfo5
-    - uses: haskell-actions/setup@v2
-      id: setup-haskell-cabal
-      with:
-        ghc-version: ${{ matrix.ghc }}
-    - name: Update cabal package database
-      run: cabal update
-    - uses: actions/cache@v4
-      name: Cache cabal stuff
-      with:
-        path: |
-          ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-          dist-newstyle
-        key: ${{ runner.os }}-${{ matrix.ghc }}
-    - name: Test
-      run: |
-        cabal sdist -z -o .
-        cabal get base32-*.tar.gz
-        cd base32-*/
-        cabal build base32:tests --enable-tests --enable-benchmarks
-        cabal test --enable-tests --enable-benchmarks --test-show-details=direct all
-    - name: Bench
-      run: |
-        cd base32-*/
-        cabal bench --enable-tests --enable-benchmarks --benchmark-option=-l all
-    - name: Haddock
-      run: |
-        cd base32-*/
-        cabal haddock all
-    - name: Cabal check
-      run: |
-        cd base32-*/
-        cabal check
+      - uses: actions/checkout@v7
+      - uses: haskell-actions/setup@v2.12.1
+        id: setup
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: latest
+      - uses: actions/cache@v6
+        with:
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: >-
+            ${{ runner.os }}-${{ runner.arch }}-ghc-${{ matrix.ghc }}-
+            ${{ matrix.simd }}-${{ hashFiles('**/*.cabal', 'cabal.project') }}
+      - run: cabal update
+      - name: Build and test the source archive
+        env:
+          SIMD: ${{ matrix.simd }}
+        run: |
+          cabal sdist --output-directory=dist-release
+          mkdir "$RUNNER_TEMP/base32-release"
+          tar -xzf dist-release/base32-1.0.tar.gz -C "$RUNNER_TEMP/base32-release"
+          cd "$RUNNER_TEMP/base32-release/base32-1.0"
+          cabal build all --enable-tests --enable-benchmarks --flags="$SIMD"
+          cabal test all --flags="$SIMD" --test-show-details=direct \
+            --test-options='--quickcheck-tests=1000 +RTS -N2 -RTS'
+          cabal bench all --flags="$SIMD" --benchmark-options='--iters 1'
+          cabal haddock all --flags="$SIMD"
+          cabal check
+
+  native:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    env:
+      UBSAN_OPTIONS: halt_on_error=1
+    steps:
+      - uses: actions/checkout@v7
+      - name: Sanitizers and guard pages
+        run: |
+          if [[ "$RUNNER_ARCH" == ARM64 ]]; then expected=2; else expected=3; fi
+          for backend in AUTO SSSE3 SCALAR; do
+            flags=()
+            required="$expected"
+            if [[ "$backend" == SSSE3 ]]; then
+              [[ "$RUNNER_ARCH" == X64 ]] || continue
+              flags=(-DHS_BASE32_SIMD_FORCE_SSSE3)
+              required=1
+            elif [[ "$backend" == SCALAR ]]; then
+              flags=(-DHS_BASE32_SIMD_FORCE_SCALAR)
+              required=0
+            fi
+            cc -std=c99 -D_DEFAULT_SOURCE -O2 -Wall -Wextra -Werror \
+              -fsanitize=address,undefined -fno-omit-frame-pointer \
+              "${flags[@]}" -Icbits cbits/base32_simd.c test/simd-native.c \
+              -o "$RUNNER_TEMP/base32-native"
+            "$RUNNER_TEMP/base32-native" "$required"
+          done
 
   bounds-checking:
-    needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        simd: ['-simd', 'simd']
     steps:
-    - uses: actions/checkout@v3
-    - uses: haskell/actions/setup@v2
-      id: setup-haskell-cabal
-      with:
-        ghc-version: 'latest'
-    - name: Update cabal package database
-      run: cabal update
-    - uses: actions/cache@v4
-      name: Cache cabal stuff
-      with:
-        path: |
-          ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-          dist-newstyle
-        key: ${{ runner.os }}-latest
-    - name: Test
-      run: cabal test --enable-tests --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts'
+      - uses: actions/checkout@v7
+      - uses: haskell-actions/setup@v2.12.1
+        with:
+          ghc-version: '9.14.1'
+          cabal-version: latest
+      - run: cabal update
+      - name: Array bounds and concurrent collection
+        env:
+          SIMD: ${{ matrix.simd }}
+        run: |
+          cabal test all --flags="$SIMD" \
+            --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts' \
+            --test-show-details=direct \
+            --test-options='--quickcheck-tests=1000 +RTS -N2 -A128k -RTS'
