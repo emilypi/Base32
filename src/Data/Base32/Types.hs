@@ -72,8 +72,7 @@ newtype Base32 (alphabet :: Alphabet) a = Base32
   deriving (Eq, Ord, Show, NFData) via a 
   deriving (Functor, Applicative, Monad) via Identity
 
--- | Assert provenance without validation. Prefer a parser for external input.
--- The caller must establish validity; typed decoding performs no validation.
+-- | Assert that a value is Base32-encoded.  
 --
 assertBase32 :: forall alphabet a. a -> Base32 alphabet a
 assertBase32 = Base32
