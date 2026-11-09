@@ -100,11 +100,17 @@ decodeBase32Untyped value =
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32With'
---   (maybe (Left "invalid UTF-8") Right . fromShortByteString)
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'String') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32With utf8 (SBS.toShort (BS8.pack "KN2W4==="))
+-- Right "Sun"
+-- >>> decodeBase32With utf8 (SBS.toShort (BS8.pack "!"))
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> :{
+-- decodeBase32With (const (Left "unsupported encoding"))
+--   (SBS.toShort (BS8.pack "KN2W4==="))
+-- :}
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32With
     :: (ShortByteString -> Either err ShortText)
       -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
@@ -163,11 +169,17 @@ decodeBase32UnpaddedUntyped value =
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32UnpaddedWith'
---   (maybe (Left "invalid UTF-8") Right . fromShortByteString)
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'String') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32UnpaddedWith utf8 (SBS.toShort (BS8.pack "KN2W4"))
+-- Right "Sun"
+-- >>> decodeBase32UnpaddedWith utf8 (SBS.toShort (BS8.pack "!"))
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> :{
+-- decodeBase32UnpaddedWith (const (Left "unsupported encoding"))
+--   (SBS.toShort (BS8.pack "KN2W4"))
+-- :}
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32UnpaddedWith
     :: (ShortByteString -> Either err ShortText)
       -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
@@ -209,11 +221,17 @@ decodeBase32PaddedUntyped value =
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32With'
---   (maybe (Left "invalid UTF-8") Right . fromShortByteString)
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'String') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32PaddedWith utf8 (SBS.toShort (BS8.pack "KN2W4==="))
+-- Right "Sun"
+-- >>> decodeBase32PaddedWith utf8 (SBS.toShort (BS8.pack "!"))
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> :{
+-- decodeBase32PaddedWith (const (Left "unsupported encoding"))
+--   (SBS.toShort (BS8.pack "KN2W4==="))
+-- :}
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32PaddedWith
     :: (ShortByteString -> Either err ShortText)
       -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
@@ -229,6 +247,12 @@ decodeBase32PaddedWith f t = case BS32.decodeBase32PaddedUntyped t of
 -- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32 (encodeBase32 (Text.pack "Sun"))
+-- "Sun"
+-- >>> decodeBase32 (encodeBase32Unpadded (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32 :: StdAlphabet k => Base32 k ShortText -> ShortText
 decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
   . BS32.decodeBase32 . fmap toShortByteString
@@ -239,6 +263,10 @@ decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
 -- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32Padded (encodeBase32 (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32Padded :: Base32 'StdPadded ShortText -> ShortText
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
@@ -246,6 +274,16 @@ decodeBase32Padded = decodeBase32
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
+--
+-- >>> parseBase32Padded (Text.pack "kn2w4===")
+-- Right "kn2w4==="
+-- >>> fmap decodeBase32Padded (parseBase32Padded (Text.pack "KN2W4==="))
+-- Right "Sun"
+-- >>> parseBase32Padded (Text.pack "")
+-- Right ""
+-- >>> parseBase32Padded (Text.pack "KN2W4")
+-- Left "Base32-encoded bytestring requires padding"
+--
 parseBase32Padded :: ShortText -> Either Text (Base32 'StdPadded ShortText)
 parseBase32Padded value = assertBase32 value
   <$ (BS32.decodeBase32PaddedUntyped . toShortByteString) value
@@ -256,6 +294,10 @@ parseBase32Padded value = assertBase32 value
 -- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32Unpadded :: Base32 'StdUnpadded ShortText -> ShortText
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
@@ -263,6 +305,18 @@ decodeBase32Unpadded = decodeBase32
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
+--
+-- >>> parseBase32Unpadded (Text.pack "kn2w4")
+-- Right "kn2w4"
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded (Text.pack "KN2W4"))
+-- Right "Sun"
+-- >>> parseBase32Unpadded (Text.pack "")
+-- Right ""
+-- >>> parseBase32Unpadded (Text.pack "KN2W4===")
+-- Left "Base32-encoded bytestring has invalid padding"
+-- >>> isLeft (parseBase32Unpadded (Text.pack "MZ"))
+-- True
+--
 parseBase32Unpadded :: ShortText -> Either Text (Base32 'StdUnpadded ShortText)
 parseBase32Unpadded value = assertBase32 value
   <$ (BS32.decodeBase32UnpaddedUntyped . toShortByteString) value
@@ -270,3 +324,5 @@ parseBase32Unpadded value = assertBase32 value
 
 -- $setup
 -- >>> import qualified Data.Text.Short as Text
+-- >>> import Data.Either (isLeft)
+-- >>> import qualified Data.ByteString.Char8 as BS8

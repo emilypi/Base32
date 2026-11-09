@@ -83,7 +83,7 @@ encodeBase32 =
 -- >>> decodeBase32Untyped (Text.pack "ADQMS")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped (Text.pack "ADQMS===")
+-- >>> decodeBase32Untyped (Text.pack "ADQM===")
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32Untyped :: ShortText -> Either Text ShortText
 decodeBase32Untyped value =
@@ -100,10 +100,17 @@ decodeBase32Untyped value =
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32With' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'String') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32With utf8 (SBS.toShort (BS8.pack "ADQMS==="))
+-- Right "Sun"
+-- >>> decodeBase32With utf8 (SBS.toShort (BS8.pack "!"))
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> :{
+-- decodeBase32With (const (Left "unsupported encoding"))
+--   (SBS.toShort (BS8.pack "ADQMS==="))
+-- :}
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32With
     :: (ShortByteString -> Either err ShortText)
       -- ^ convert a bytestring to text (e.g. '(fmap fromText .
@@ -163,10 +170,17 @@ decodeBase32UnpaddedUntyped value =
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32UnpaddedWith' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'String') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32UnpaddedWith utf8 (SBS.toShort (BS8.pack "ADQMS"))
+-- Right "Sun"
+-- >>> decodeBase32UnpaddedWith utf8 (SBS.toShort (BS8.pack "!"))
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> :{
+-- decodeBase32UnpaddedWith (const (Left "unsupported encoding"))
+--   (SBS.toShort (BS8.pack "ADQMS"))
+-- :}
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32UnpaddedWith
     :: (ShortByteString -> Either err ShortText)
       -- ^ convert a bytestring to text (e.g. '(fmap fromText .
@@ -209,10 +223,17 @@ decodeBase32PaddedUntyped value =
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32With' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'String') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32PaddedWith utf8 (SBS.toShort (BS8.pack "ADQMS==="))
+-- Right "Sun"
+-- >>> decodeBase32PaddedWith utf8 (SBS.toShort (BS8.pack "!"))
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> :{
+-- decodeBase32PaddedWith (const (Left "unsupported encoding"))
+--   (SBS.toShort (BS8.pack "ADQMS==="))
+-- :}
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32PaddedWith
     :: (ShortByteString -> Either err ShortText)
       -- ^ convert a bytestring to text (e.g. 'Data.Text.Encoding.decodeUtf8'')
@@ -228,6 +249,12 @@ decodeBase32PaddedWith f t = case BS32H.decodeBase32PaddedUntyped t of
 -- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32 (encodeBase32 (Text.pack "Sun"))
+-- "Sun"
+-- >>> decodeBase32 (encodeBase32Unpadded (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32 :: HexAlphabet k => Base32 k ShortText -> ShortText
 decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
   . BS32H.decodeBase32 . fmap toShortByteString
@@ -238,6 +265,10 @@ decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
 -- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32Padded (encodeBase32 (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32Padded :: Base32 'HexPadded ShortText -> ShortText
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
@@ -245,6 +276,16 @@ decodeBase32Padded = decodeBase32
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
+--
+-- >>> parseBase32Padded (Text.pack "adqms===")
+-- Right "adqms==="
+-- >>> fmap decodeBase32Padded (parseBase32Padded (Text.pack "ADQMS==="))
+-- Right "Sun"
+-- >>> parseBase32Padded (Text.pack "")
+-- Right ""
+-- >>> parseBase32Padded (Text.pack "ADQMS")
+-- Left "Base32-encoded bytestring requires padding"
+--
 parseBase32Padded :: ShortText -> Either Text (Base32 'HexPadded ShortText)
 parseBase32Padded value = assertBase32 value
   <$ (BS32H.decodeBase32PaddedUntyped . toShortByteString) value
@@ -255,6 +296,10 @@ parseBase32Padded value = assertBase32 value
 -- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32Unpadded :: Base32 'HexUnpadded ShortText -> ShortText
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
@@ -262,6 +307,18 @@ decodeBase32Unpadded = decodeBase32
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
+--
+-- >>> parseBase32Unpadded (Text.pack "adqms")
+-- Right "adqms"
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded (Text.pack "ADQMS"))
+-- Right "Sun"
+-- >>> parseBase32Unpadded (Text.pack "")
+-- Right ""
+-- >>> parseBase32Unpadded (Text.pack "ADQMS===")
+-- Left "Base32-encoded bytestring has invalid padding"
+-- >>> isLeft (parseBase32Unpadded (Text.pack "CP"))
+-- True
+--
 parseBase32Unpadded :: ShortText -> Either Text (Base32 'HexUnpadded ShortText)
 parseBase32Unpadded value = assertBase32 value
   <$ (BS32H.decodeBase32UnpaddedUntyped . toShortByteString) value
@@ -269,3 +326,5 @@ parseBase32Unpadded value = assertBase32 value
 
 -- $setup
 -- >>> import qualified Data.Text.Short as Text
+-- >>> import Data.Either (isLeft)
+-- >>> import qualified Data.ByteString.Char8 as BS8

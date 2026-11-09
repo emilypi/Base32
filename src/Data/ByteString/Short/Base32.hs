@@ -174,6 +174,12 @@ decodeBase32PaddedUntyped = decodeShort stdDecodeTable RequirePadding
 
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
+--
+-- >>> decodeBase32 (encodeBase32' (SBS.toShort (BS8.pack "Sun")))
+-- "Sun"
+-- >>> decodeBase32 (encodeBase32Unpadded' (SBS.toShort (BS8.pack "Sun")))
+-- "Sun"
+--
 decodeBase32 :: StdAlphabet k => Base32 k ShortByteString -> ShortByteString
 decodeBase32 = decodeShortTyped stdDecodeTable
 {-# INLINE decodeBase32 #-}
@@ -181,6 +187,10 @@ decodeBase32 = decodeShortTyped stdDecodeTable
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' to check the padding policy on external input.
 -- The type establishes the alphabet and padding policy.
+--
+-- >>> decodeBase32Padded (encodeBase32' (SBS.toShort (BS8.pack "Sun")))
+-- "Sun"
+--
 decodeBase32Padded :: Base32 'StdPadded ShortByteString -> ShortByteString
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
@@ -188,6 +198,16 @@ decodeBase32Padded = decodeBase32
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
+--
+-- >>> parseBase32Padded (SBS.toShort (BS8.pack "kn2w4==="))
+-- Right "kn2w4==="
+-- >>> fmap decodeBase32Padded (parseBase32Padded (SBS.toShort (BS8.pack "KN2W4===")))
+-- Right "Sun"
+-- >>> parseBase32Padded (SBS.toShort (BS8.pack ""))
+-- Right ""
+-- >>> parseBase32Padded (SBS.toShort (BS8.pack "KN2W4"))
+-- Left "Base32-encoded bytestring requires padding"
+--
 parseBase32Padded :: ShortByteString -> Either Text (Base32 'StdPadded ShortByteString)
 parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
@@ -196,6 +216,10 @@ parseBase32Padded value = assertBase32 value
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Unpadded' to check the padding policy on external input.
 -- The type establishes the alphabet and padding policy.
+--
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded' (SBS.toShort (BS8.pack "Sun")))
+-- "Sun"
+--
 decodeBase32Unpadded :: Base32 'StdUnpadded ShortByteString -> ShortByteString
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
@@ -203,6 +227,18 @@ decodeBase32Unpadded = decodeBase32
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
+--
+-- >>> parseBase32Unpadded (SBS.toShort (BS8.pack "kn2w4"))
+-- Right "kn2w4"
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded (SBS.toShort (BS8.pack "KN2W4")))
+-- Right "Sun"
+-- >>> parseBase32Unpadded (SBS.toShort (BS8.pack ""))
+-- Right ""
+-- >>> parseBase32Unpadded (SBS.toShort (BS8.pack "KN2W4==="))
+-- Left "Base32-encoded bytestring has invalid padding"
+-- >>> isLeft (parseBase32Unpadded (SBS.toShort (BS8.pack "MZ")))
+-- True
+--
 parseBase32Unpadded
   :: ShortByteString -> Either Text (Base32 'StdUnpadded ShortByteString)
 parseBase32Unpadded value = assertBase32 value
@@ -212,3 +248,4 @@ parseBase32Unpadded value = assertBase32 value
 -- $setup
 -- >>> import qualified Data.ByteString.Char8 as BS8
 -- >>> import qualified Data.ByteString.Short as SBS
+-- >>> import Data.Either (isLeft)

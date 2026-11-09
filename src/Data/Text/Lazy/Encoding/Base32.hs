@@ -94,10 +94,13 @@ decodeBase32Untyped value = BL32.decodeBase32Untyped (TL.encodeUtf8 value)
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32With' 'TL.decodeUtf8''
---   :: 'ByteString' -> 'Either' ('Base32Error' UnicodeException) 'TL.Text'
--- @
+-- >>> decodeBase32With UTF8.decodeUtf8' (BL8.pack "KN2W4===")
+-- Right "Sun"
+-- >>> decodeBase32With UTF8.decodeUtf8' (BL8.pack "!")
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> decodeBase32With (const (Left "unsupported encoding")) (BL8.pack "KN2W4===")
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32With
     :: (ByteString -> Either err TL.Text)
       -- ^ convert a bytestring to text (e.g. 'TL.decodeUtf8'')
@@ -152,10 +155,13 @@ decodeBase32UnpaddedUntyped value = BL32.decodeBase32UnpaddedUntyped (TL.encodeU
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32UnpaddedWith' 'TL.decodeUtf8''
---   :: 'ByteString' -> 'Either' ('Base32Error' UnicodeException) 'TL.Text'
--- @
+-- >>> decodeBase32UnpaddedWith UTF8.decodeUtf8' (BL8.pack "KN2W4")
+-- Right "Sun"
+-- >>> decodeBase32UnpaddedWith UTF8.decodeUtf8' (BL8.pack "!")
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> decodeBase32UnpaddedWith (const (Left "unsupported encoding")) (BL8.pack "KN2W4")
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32UnpaddedWith
     :: (ByteString -> Either err TL.Text)
       -- ^ convert a bytestring to text (e.g. 'TL.decodeUtf8'')
@@ -195,10 +201,13 @@ decodeBase32PaddedUntyped value = BL32.decodeBase32PaddedUntyped (TL.encodeUtf8 
 --
 -- === __Example__:
 --
--- @
--- 'decodeBase32PaddedWith' 'TL.decodeUtf8''
---   :: 'ByteString' -> 'Either' ('Base32Error' UnicodeException) 'TL.Text'
--- @
+-- >>> decodeBase32PaddedWith UTF8.decodeUtf8' (BL8.pack "KN2W4===")
+-- Right "Sun"
+-- >>> decodeBase32PaddedWith UTF8.decodeUtf8' (BL8.pack "!")
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+-- >>> decodeBase32PaddedWith (const (Left "unsupported encoding")) (BL8.pack "KN2W4===")
+-- Left (ConversionError "unsupported encoding")
+--
 decodeBase32PaddedWith
     :: (ByteString -> Either err TL.Text)
       -- ^ convert a bytestring to text (e.g. 'TL.decodeUtf8'')
@@ -214,6 +223,12 @@ decodeBase32PaddedWith f t = case BL32.decodeBase32PaddedUntyped t of
 -- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32 (encodeBase32 (Text.pack "Sun"))
+-- "Sun"
+-- >>> decodeBase32 (encodeBase32Unpadded (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32 :: StdAlphabet k => Base32 k TL.Text -> TL.Text
 decodeBase32 = TL.decodeUtf8 . BL32.decodeBase32 . fmap TL.encodeUtf8
 {-# INLINE decodeBase32 #-}
@@ -223,6 +238,10 @@ decodeBase32 = TL.decodeUtf8 . BL32.decodeBase32 . fmap TL.encodeUtf8
 -- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32Padded (encodeBase32 (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32Padded :: Base32 'StdPadded TL.Text -> TL.Text
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
@@ -230,6 +249,16 @@ decodeBase32Padded = decodeBase32
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
+--
+-- >>> parseBase32Padded (Text.pack "kn2w4===")
+-- Right "kn2w4==="
+-- >>> fmap decodeBase32Padded (parseBase32Padded (Text.pack "KN2W4==="))
+-- Right "Sun"
+-- >>> parseBase32Padded (Text.pack "")
+-- Right ""
+-- >>> parseBase32Padded (Text.pack "KN2W4")
+-- Left "Base32-encoded bytestring requires padding"
+--
 parseBase32Padded :: TL.Text -> Either T.Text (Base32 'StdPadded TL.Text)
 parseBase32Padded value = assertBase32 value
   <$ (BL32.decodeBase32PaddedUntyped . TL.encodeUtf8) value
@@ -240,6 +269,10 @@ parseBase32Padded value = assertBase32 value
 -- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
+--
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded (Text.pack "Sun"))
+-- "Sun"
+--
 decodeBase32Unpadded :: Base32 'StdUnpadded TL.Text -> TL.Text
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
@@ -247,6 +280,18 @@ decodeBase32Unpadded = decodeBase32
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
+--
+-- >>> parseBase32Unpadded (Text.pack "kn2w4")
+-- Right "kn2w4"
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded (Text.pack "KN2W4"))
+-- Right "Sun"
+-- >>> parseBase32Unpadded (Text.pack "")
+-- Right ""
+-- >>> parseBase32Unpadded (Text.pack "KN2W4===")
+-- Left "Base32-encoded bytestring has invalid padding"
+-- >>> isLeft (parseBase32Unpadded (Text.pack "MZ"))
+-- True
+--
 parseBase32Unpadded :: TL.Text -> Either T.Text (Base32 'StdUnpadded TL.Text)
 parseBase32Unpadded value = assertBase32 value
   <$ (BL32.decodeBase32UnpaddedUntyped . TL.encodeUtf8) value
@@ -254,3 +299,6 @@ parseBase32Unpadded value = assertBase32 value
 
 -- $setup
 -- >>> import qualified Data.Text.Lazy as Text
+-- >>> import Data.Either (isLeft)
+-- >>> import qualified Data.ByteString.Lazy.Char8 as BL8
+-- >>> import qualified Data.Text.Lazy.Encoding as UTF8
