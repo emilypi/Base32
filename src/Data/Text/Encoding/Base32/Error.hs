@@ -29,7 +29,7 @@ import GHC.Generics
 -- Namely, to distinguish between decoding errors from opaque
 -- unicode exceptions caught in the unicode decoding process.
 --
--- >>> DecodeError (Text.pack "invalid padding") :: Base32Error String
+-- >>> DecodeError "invalid padding" :: Base32Error String
 -- DecodeError "invalid padding"
 -- >>> ConversionError "invalid UTF-8" :: Base32Error String
 -- ConversionError "invalid UTF-8"
@@ -61,4 +61,4 @@ instance Exception e => Exception (Base32Error e)
 instance NFData e => NFData (Base32Error e)
 
 -- $setup
--- >>> import qualified Data.Text as Text
+-- >>> :seti -XOverloadedStrings

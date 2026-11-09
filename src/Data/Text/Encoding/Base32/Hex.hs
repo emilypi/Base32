@@ -50,7 +50,7 @@ import Data.Text.Encoding.Base32.Error (Base32Error(..))
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 (Text.pack "Sun")
+-- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
 encodeBase32 :: Text -> Base32 'HexPadded Text
@@ -69,13 +69,13 @@ encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Untyped (Text.pack "ADQMS===")
+-- >>> decodeBase32Untyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped (Text.pack "ADQMS")
+-- >>> decodeBase32Untyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped (Text.pack "ADQM===")
+-- >>> decodeBase32Untyped "ADQM==="
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32Untyped :: Text -> Either Text Text
 decodeBase32Untyped value = B32H.decodeBase32Untyped (T.encodeUtf8 value)
@@ -90,11 +90,11 @@ decodeBase32Untyped value = B32H.decodeBase32Untyped (T.encodeUtf8 value)
 --
 -- === __Examples__:
 --
--- >>> decodeBase32With UTF8.decodeUtf8' (BS8.pack "ADQMS===")
+-- >>> decodeBase32With UTF8.decodeUtf8' "ADQMS==="
 -- Right "Sun"
--- >>> decodeBase32With UTF8.decodeUtf8' (BS8.pack "!")
+-- >>> decodeBase32With UTF8.decodeUtf8' "!"
 -- Left (DecodeError "Base32-encoded bytestring has invalid size")
--- >>> decodeBase32With (const (Left "unsupported encoding")) (BS8.pack "ADQMS===")
+-- >>> decodeBase32With (const (Left "unsupported encoding")) "ADQMS==="
 -- Left (ConversionError "unsupported encoding")
 --
 decodeBase32With
@@ -116,7 +116,7 @@ decodeBase32With f t = case B32H.decodeBase32Untyped t of
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded (Text.pack "Sun")
+-- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
 encodeBase32Unpadded :: Text -> Base32 'HexUnpadded Text
@@ -134,10 +134,10 @@ encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
 --
 -- === __Examples__:
 --
--- >>> decodeBase32UnpaddedUntyped (Text.pack "ADQMS")
+-- >>> decodeBase32UnpaddedUntyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32UnpaddedUntyped (Text.pack "ADQMS===")
+-- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32UnpaddedUntyped :: Text -> Either Text Text
 decodeBase32UnpaddedUntyped value = B32H.decodeBase32UnpaddedUntyped (T.encodeUtf8 value)
@@ -153,11 +153,11 @@ decodeBase32UnpaddedUntyped value = B32H.decodeBase32UnpaddedUntyped (T.encodeUt
 --
 -- === __Example__:
 --
--- >>> decodeBase32UnpaddedWith UTF8.decodeUtf8' (BS8.pack "ADQMS")
+-- >>> decodeBase32UnpaddedWith UTF8.decodeUtf8' "ADQMS"
 -- Right "Sun"
--- >>> decodeBase32UnpaddedWith UTF8.decodeUtf8' (BS8.pack "!")
+-- >>> decodeBase32UnpaddedWith UTF8.decodeUtf8' "!"
 -- Left (DecodeError "Base32-encoded bytestring has invalid size")
--- >>> decodeBase32UnpaddedWith (const (Left "unsupported encoding")) (BS8.pack "ADQMS")
+-- >>> decodeBase32UnpaddedWith (const (Left "unsupported encoding")) "ADQMS"
 -- Left (ConversionError "unsupported encoding")
 --
 decodeBase32UnpaddedWith
@@ -182,10 +182,10 @@ decodeBase32UnpaddedWith f t = case B32H.decodeBase32UnpaddedUntyped t of
 --
 -- === __Examples__:
 --
--- >>> decodeBase32PaddedUntyped (Text.pack "ADQMS===")
+-- >>> decodeBase32PaddedUntyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32PaddedUntyped (Text.pack "ADQMS")
+-- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 decodeBase32PaddedUntyped :: Text -> Either Text Text
 decodeBase32PaddedUntyped value = B32H.decodeBase32PaddedUntyped (T.encodeUtf8 value)
@@ -200,11 +200,11 @@ decodeBase32PaddedUntyped value = B32H.decodeBase32PaddedUntyped (T.encodeUtf8 v
 --
 -- === __Example__:
 --
--- >>> decodeBase32PaddedWith UTF8.decodeUtf8' (BS8.pack "ADQMS===")
+-- >>> decodeBase32PaddedWith UTF8.decodeUtf8' "ADQMS==="
 -- Right "Sun"
--- >>> decodeBase32PaddedWith UTF8.decodeUtf8' (BS8.pack "!")
+-- >>> decodeBase32PaddedWith UTF8.decodeUtf8' "!"
 -- Left (DecodeError "Base32-encoded bytestring has invalid size")
--- >>> decodeBase32PaddedWith (const (Left "unsupported encoding")) (BS8.pack "ADQMS===")
+-- >>> decodeBase32PaddedWith (const (Left "unsupported encoding")) "ADQMS==="
 -- Left (ConversionError "unsupported encoding")
 --
 decodeBase32PaddedWith
@@ -223,9 +223,9 @@ decodeBase32PaddedWith f t = case B32H.decodeBase32PaddedUntyped t of
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
 --
--- >>> decodeBase32 (encodeBase32 (Text.pack "Sun"))
+-- >>> decodeBase32 (encodeBase32 "Sun")
 -- "Sun"
--- >>> decodeBase32 (encodeBase32Unpadded (Text.pack "Sun"))
+-- >>> decodeBase32 (encodeBase32Unpadded "Sun")
 -- "Sun"
 --
 decodeBase32 :: HexAlphabet k => Base32 k Text -> Text
@@ -238,7 +238,7 @@ decodeBase32 = T.decodeUtf8 . B32H.decodeBase32 . fmap T.encodeUtf8
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
 --
--- >>> decodeBase32Padded (encodeBase32 (Text.pack "Sun"))
+-- >>> decodeBase32Padded (encodeBase32 "Sun")
 -- "Sun"
 --
 decodeBase32Padded :: Base32 'HexPadded Text -> Text
@@ -249,13 +249,13 @@ decodeBase32Padded = decodeBase32
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 --
--- >>> parseBase32Padded (Text.pack "adqms===")
+-- >>> parseBase32Padded "adqms==="
 -- Right "adqms==="
--- >>> fmap decodeBase32Padded (parseBase32Padded (Text.pack "ADQMS==="))
+-- >>> fmap decodeBase32Padded (parseBase32Padded "ADQMS===")
 -- Right "Sun"
--- >>> parseBase32Padded (Text.pack "")
+-- >>> parseBase32Padded ""
 -- Right ""
--- >>> parseBase32Padded (Text.pack "ADQMS")
+-- >>> parseBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
 parseBase32Padded :: Text -> Either Text (Base32 'HexPadded Text)
@@ -269,7 +269,7 @@ parseBase32Padded value = assertBase32 value
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
 --
--- >>> decodeBase32Unpadded (encodeBase32Unpadded (Text.pack "Sun"))
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded "Sun")
 -- "Sun"
 --
 decodeBase32Unpadded :: Base32 'HexUnpadded Text -> Text
@@ -280,15 +280,15 @@ decodeBase32Unpadded = decodeBase32
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 --
--- >>> parseBase32Unpadded (Text.pack "adqms")
+-- >>> parseBase32Unpadded "adqms"
 -- Right "adqms"
--- >>> fmap decodeBase32Unpadded (parseBase32Unpadded (Text.pack "ADQMS"))
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded "ADQMS")
 -- Right "Sun"
--- >>> parseBase32Unpadded (Text.pack "")
+-- >>> parseBase32Unpadded ""
 -- Right ""
--- >>> parseBase32Unpadded (Text.pack "ADQMS===")
+-- >>> parseBase32Unpadded "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
--- >>> isLeft (parseBase32Unpadded (Text.pack "CP"))
+-- >>> isLeft (parseBase32Unpadded "CP")
 -- True
 --
 parseBase32Unpadded :: Text -> Either Text (Base32 'HexUnpadded Text)
@@ -297,7 +297,6 @@ parseBase32Unpadded value = assertBase32 value
 {-# INLINE parseBase32Unpadded #-}
 
 -- $setup
--- >>> import qualified Data.Text as Text
+-- >>> :seti -XOverloadedStrings
 -- >>> import Data.Either (isLeft)
--- >>> import qualified Data.ByteString.Char8 as BS8
 -- >>> import qualified Data.Text.Encoding as UTF8

@@ -51,7 +51,7 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 (SBS.toShort (BS8.pack "Sun"))
+-- >>> encodeBase32 "Sun"
 -- "KN2W4==="
 --
 encodeBase32 :: ShortByteString -> Base32 'StdPadded ShortText
@@ -64,7 +64,7 @@ encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' (SBS.toShort (BS8.pack "Sun"))
+-- >>> encodeBase32' "Sun"
 -- "KN2W4==="
 --
 encodeBase32' :: ShortByteString -> Base32 'StdPadded ShortByteString
@@ -83,13 +83,13 @@ encodeBase32' =
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Untyped (SBS.toShort (BS8.pack "KN2W4==="))
+-- >>> decodeBase32Untyped "KN2W4==="
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped (SBS.toShort (BS8.pack "KN2W4"))
+-- >>> decodeBase32Untyped "KN2W4"
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped (SBS.toShort (BS8.pack "KN2W==="))
+-- >>> decodeBase32Untyped "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Untyped :: ShortByteString -> Either Text ShortByteString
@@ -105,7 +105,7 @@ decodeBase32Untyped = decodeShort stdDecodeTable OptionalPadding
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded (SBS.toShort (BS8.pack "Sun"))
+-- >>> encodeBase32Unpadded "Sun"
 -- "KN2W4"
 --
 encodeBase32Unpadded :: ShortByteString -> Base32 'StdUnpadded ShortText
@@ -120,7 +120,7 @@ encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' (SBS.toShort (BS8.pack "Sun"))
+-- >>> encodeBase32Unpadded' "Sun"
 -- "KN2W4"
 --
 encodeBase32Unpadded' :: ShortByteString -> Base32 'StdUnpadded ShortByteString
@@ -141,10 +141,10 @@ encodeBase32Unpadded' =
 --
 -- === __Examples__:
 --
--- >>> decodeBase32UnpaddedUntyped (SBS.toShort (BS8.pack "KN2W4"))
+-- >>> decodeBase32UnpaddedUntyped "KN2W4"
 -- Right "Sun"
 --
--- >>> decodeBase32UnpaddedUntyped (SBS.toShort (BS8.pack "KN2W4==="))
+-- >>> decodeBase32UnpaddedUntyped "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32UnpaddedUntyped :: ShortByteString -> Either Text ShortByteString
@@ -162,10 +162,10 @@ decodeBase32UnpaddedUntyped = decodeShort stdDecodeTable ForbidPadding
 --
 -- === __Examples__:
 --
--- >>> decodeBase32PaddedUntyped (SBS.toShort (BS8.pack "KN2W4==="))
+-- >>> decodeBase32PaddedUntyped "KN2W4==="
 -- Right "Sun"
 --
--- >>> decodeBase32PaddedUntyped (SBS.toShort (BS8.pack "KN2W4"))
+-- >>> decodeBase32PaddedUntyped "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32PaddedUntyped :: ShortByteString -> Either Text ShortByteString
@@ -175,9 +175,9 @@ decodeBase32PaddedUntyped = decodeShort stdDecodeTable RequirePadding
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
 --
--- >>> decodeBase32 (encodeBase32' (SBS.toShort (BS8.pack "Sun")))
+-- >>> decodeBase32 (encodeBase32' "Sun")
 -- "Sun"
--- >>> decodeBase32 (encodeBase32Unpadded' (SBS.toShort (BS8.pack "Sun")))
+-- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
 decodeBase32 :: StdAlphabet k => Base32 k ShortByteString -> ShortByteString
@@ -188,7 +188,7 @@ decodeBase32 = decodeShortTyped stdDecodeTable
 -- Use 'parseBase32Padded' to check the padding policy on external input.
 -- The type establishes the alphabet and padding policy.
 --
--- >>> decodeBase32Padded (encodeBase32' (SBS.toShort (BS8.pack "Sun")))
+-- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
 --
 decodeBase32Padded :: Base32 'StdPadded ShortByteString -> ShortByteString
@@ -199,13 +199,13 @@ decodeBase32Padded = decodeBase32
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 --
--- >>> parseBase32Padded (SBS.toShort (BS8.pack "kn2w4==="))
+-- >>> parseBase32Padded "kn2w4==="
 -- Right "kn2w4==="
--- >>> fmap decodeBase32Padded (parseBase32Padded (SBS.toShort (BS8.pack "KN2W4===")))
+-- >>> fmap decodeBase32Padded (parseBase32Padded "KN2W4===")
 -- Right "Sun"
--- >>> parseBase32Padded (SBS.toShort (BS8.pack ""))
+-- >>> parseBase32Padded ""
 -- Right ""
--- >>> parseBase32Padded (SBS.toShort (BS8.pack "KN2W4"))
+-- >>> parseBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
 parseBase32Padded :: ShortByteString -> Either Text (Base32 'StdPadded ShortByteString)
@@ -217,7 +217,7 @@ parseBase32Padded value = assertBase32 value
 -- Use 'parseBase32Unpadded' to check the padding policy on external input.
 -- The type establishes the alphabet and padding policy.
 --
--- >>> decodeBase32Unpadded (encodeBase32Unpadded' (SBS.toShort (BS8.pack "Sun")))
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
 decodeBase32Unpadded :: Base32 'StdUnpadded ShortByteString -> ShortByteString
@@ -228,15 +228,15 @@ decodeBase32Unpadded = decodeBase32
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 --
--- >>> parseBase32Unpadded (SBS.toShort (BS8.pack "kn2w4"))
+-- >>> parseBase32Unpadded "kn2w4"
 -- Right "kn2w4"
--- >>> fmap decodeBase32Unpadded (parseBase32Unpadded (SBS.toShort (BS8.pack "KN2W4")))
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded "KN2W4")
 -- Right "Sun"
--- >>> parseBase32Unpadded (SBS.toShort (BS8.pack ""))
+-- >>> parseBase32Unpadded ""
 -- Right ""
--- >>> parseBase32Unpadded (SBS.toShort (BS8.pack "KN2W4==="))
+-- >>> parseBase32Unpadded "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
--- >>> isLeft (parseBase32Unpadded (SBS.toShort (BS8.pack "MZ")))
+-- >>> isLeft (parseBase32Unpadded "MZ")
 -- True
 --
 parseBase32Unpadded
@@ -246,6 +246,5 @@ parseBase32Unpadded value = assertBase32 value
 {-# INLINE parseBase32Unpadded #-}
 
 -- $setup
--- >>> import qualified Data.ByteString.Char8 as BS8
--- >>> import qualified Data.ByteString.Short as SBS
+-- >>> :seti -XOverloadedStrings
 -- >>> import Data.Either (isLeft)

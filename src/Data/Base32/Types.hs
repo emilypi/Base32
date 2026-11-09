@@ -35,8 +35,6 @@ import GHC.TypeLits (ErrorMessage (..), TypeError)
 
 -- | The alphabets and padding forms from RFC 4648 sections 6 and 7.
 --
--- >>> [StdPadded, StdUnpadded, HexPadded, HexUnpadded]
--- [StdPadded,StdUnpadded,HexPadded,HexUnpadded]
 data Alphabet = StdPadded | StdUnpadded | HexPadded | HexUnpadded
   deriving (Eq, Ord, Show)
 
@@ -105,4 +103,5 @@ assertBase32 = Base32
 {-# INLINE assertBase32 #-}
 
 -- $setup
+-- >>> :seti -XOverloadedStrings
 -- >>> :seti -XDataKinds -XTypeApplications -XTypeFamilies -XFlexibleContexts

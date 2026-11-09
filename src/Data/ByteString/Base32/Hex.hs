@@ -56,7 +56,7 @@ import System.IO.Unsafe (unsafeDupablePerformIO)
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 (BS8.pack "Sun")
+-- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
 encodeBase32 :: ByteString -> Base32 'HexPadded Text
@@ -69,7 +69,7 @@ encodeBase32 = fmap T.decodeUtf8 . encodeBase32'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' (BS8.pack "Sun")
+-- >>> encodeBase32' "Sun"
 -- "ADQMS==="
 --
 encodeBase32' :: ByteString -> Base32 'HexPadded ByteString
@@ -85,13 +85,13 @@ encodeBase32' = assertBase32 . encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Untyped (BS8.pack "ADQMS===")
+-- >>> decodeBase32Untyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped (BS8.pack "ADQMS")
+-- >>> decodeBase32Untyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped (BS8.pack "ADQM===")
+-- >>> decodeBase32Untyped "ADQM==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Untyped :: ByteString -> Either Text ByteString
@@ -117,7 +117,7 @@ decodeBase32Untyped bs@(BS _ !l)
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded (BS8.pack "Sun")
+-- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
 encodeBase32Unpadded :: ByteString -> Base32 'HexUnpadded Text
@@ -130,7 +130,7 @@ encodeBase32Unpadded = fmap T.decodeUtf8 . encodeBase32Unpadded'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' (BS8.pack "Sun")
+-- >>> encodeBase32Unpadded' "Sun"
 -- "ADQMS"
 --
 encodeBase32Unpadded' :: ByteString -> Base32 'HexUnpadded ByteString
@@ -144,10 +144,10 @@ encodeBase32Unpadded' = assertBase32
 --
 -- === __Examples__:
 --
--- >>> decodeBase32UnpaddedUntyped (BS8.pack "ADQMS")
+-- >>> decodeBase32UnpaddedUntyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32UnpaddedUntyped (BS8.pack "ADQMS===")
+-- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32UnpaddedUntyped :: ByteString -> Either Text ByteString
@@ -173,10 +173,10 @@ decodeBase32UnpaddedUntyped bs@(BS _ !l)
 --
 -- === __Examples__:
 --
--- >>> decodeBase32PaddedUntyped (BS8.pack "ADQMS===")
+-- >>> decodeBase32PaddedUntyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32PaddedUntyped (BS8.pack "ADQMS")
+-- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32PaddedUntyped :: ByteString -> Either Text ByteString
@@ -194,9 +194,9 @@ decodeBase32PaddedUntyped bs@(BS _ !l)
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
 --
--- >>> decodeBase32 (encodeBase32' (BS8.pack "Sun"))
+-- >>> decodeBase32 (encodeBase32' "Sun")
 -- "Sun"
--- >>> decodeBase32 (encodeBase32Unpadded' (BS8.pack "Sun"))
+-- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
 decodeBase32 :: HexAlphabet k => Base32 k ByteString -> ByteString
@@ -207,7 +207,7 @@ decodeBase32 = decodeBase32Typed_ hexDecodeTable
 -- Use 'parseBase32Padded' to check the padding policy on external input.
 -- The type establishes the alphabet and padding policy.
 --
--- >>> decodeBase32Padded (encodeBase32' (BS8.pack "Sun"))
+-- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
 --
 decodeBase32Padded :: Base32 'HexPadded ByteString -> ByteString
@@ -218,13 +218,13 @@ decodeBase32Padded = decodeBase32
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 --
--- >>> parseBase32Padded (BS8.pack "adqms===")
+-- >>> parseBase32Padded "adqms==="
 -- Right "adqms==="
--- >>> fmap decodeBase32Padded (parseBase32Padded (BS8.pack "ADQMS==="))
+-- >>> fmap decodeBase32Padded (parseBase32Padded "ADQMS===")
 -- Right "Sun"
--- >>> parseBase32Padded (BS8.pack "")
+-- >>> parseBase32Padded ""
 -- Right ""
--- >>> parseBase32Padded (BS8.pack "ADQMS")
+-- >>> parseBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
 parseBase32Padded :: ByteString -> Either Text (Base32 'HexPadded ByteString)
@@ -236,7 +236,7 @@ parseBase32Padded value = assertBase32 value
 -- Use 'parseBase32Unpadded' to check the padding policy on external input.
 -- The type establishes the alphabet and padding policy.
 --
--- >>> decodeBase32Unpadded (encodeBase32Unpadded' (BS8.pack "Sun"))
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
 decodeBase32Unpadded :: Base32 'HexUnpadded ByteString -> ByteString
@@ -247,15 +247,15 @@ decodeBase32Unpadded = decodeBase32
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 --
--- >>> parseBase32Unpadded (BS8.pack "adqms")
+-- >>> parseBase32Unpadded "adqms"
 -- Right "adqms"
--- >>> fmap decodeBase32Unpadded (parseBase32Unpadded (BS8.pack "ADQMS"))
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded "ADQMS")
 -- Right "Sun"
--- >>> parseBase32Unpadded (BS8.pack "")
+-- >>> parseBase32Unpadded ""
 -- Right ""
--- >>> parseBase32Unpadded (BS8.pack "ADQMS===")
+-- >>> parseBase32Unpadded "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
--- >>> isLeft (parseBase32Unpadded (BS8.pack "CP"))
+-- >>> isLeft (parseBase32Unpadded "CP")
 -- True
 --
 parseBase32Unpadded :: ByteString -> Either Text (Base32 'HexUnpadded ByteString)
@@ -264,5 +264,5 @@ parseBase32Unpadded value = assertBase32 value
 {-# INLINE parseBase32Unpadded #-}
 
 -- $setup
--- >>> import qualified Data.ByteString.Char8 as BS8
+-- >>> :seti -XOverloadedStrings
 -- >>> import Data.Either (isLeft)
