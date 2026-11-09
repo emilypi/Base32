@@ -17,12 +17,10 @@ module Data.ByteString.Base32.Internal
 , encodeBase32NoPad_
 , decodeBase32_
 , decodeBase32Typed_
-, validateBase32
 , validateLastNPads
 ) where
 
 
-import qualified Data.ByteString as BS
 import Data.ByteString.Internal
 import Data.ByteString.Base32.Internal.Head
 import Data.Text (Text)
@@ -37,41 +35,6 @@ import System.IO.Unsafe
 
 -- -------------------------------------------------------------------------- --
 -- Validating Base32
-
--- | Validate a base32-encoded bytestring against some alphabet.
---
-validateBase32 :: ByteString -> ByteString -> Bool
-validateBase32 !alphabet bs@(BS _ l)
-    | l == 0 = True
-    | r == 0 = f bs
-    | r == 2 = f (BS.append bs "======")
-    | r == 4 = f (BS.append bs "====")
-    | r == 5 = f (BS.append bs "===")
-    | r == 7 = f (BS.append bs "=")
-    | otherwise = False
-  where
-    r = l `rem` 8
-
-    f (BS fp l') = accursedUnutterablePerformIO $ withForeignPtr fp $ \p ->
-      go p (plusPtr p l')
-
-    go !p !end
-      | p == end = return True
-      | otherwise = do
-        w <- peek p
-
-        let check a
-              | a == 0x3d, plusPtr p 1 == end = True
-              | a == 0x3d, plusPtr p 2 == end = True
-              | a == 0x3d, plusPtr p 3 == end = True
-              | a == 0x3d, plusPtr p 4 == end = True
-              | a == 0x3d, plusPtr p 5 == end = True
-              | a == 0x3d, plusPtr p 6 == end = True
-              | a == 0x3d = False
-              | otherwise = BS.elem a alphabet
-
-        if check w then go (plusPtr p 1) end else return False
-{-# INLINE validateBase32 #-}
 
 -- | This function checks that the last N-chars of a bytestring are '='
 -- and, if true, fails with a message or completes some io action.
