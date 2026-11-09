@@ -77,15 +77,25 @@ variants reach the same kernels through their strict chunks or checked input.
 cabal test -f-simd
 cabal test -fsimd --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts'
 cabal exec -- sh test/typecheck.sh
-cabal bench -fsimd
 cabal haddock -fsimd
 cabal check
 ```
 
 CI tests both flag configurations across GHC 9.6–9.14, builds from the source
 archive, and runs native sanitizer and guard-page tests on x86-64 and ARM64.
-The benchmarks cover strict/short codecs, both alphabets, parsing, and sizes
-around the dispatch thresholds.
+
+Compare optimized scalar and SIMD benchmark builds separately:
+
+```sh
+cabal bench -f-simd --builddir=dist-scalar -O2 --benchmark-options='--csv scalar.csv'
+cabal bench -fsimd --builddir=dist-simd -O2 --benchmark-options='--csv simd.csv'
+```
+
+Benchmark names identify the selected flag configuration. Both builds measure
+the same deterministic inputs, with setup excluded from timing. The suite covers
+strict and short codecs, both alphabets and padding forms, encoding, typed and
+untyped decoding, parsing, sizes around dispatch thresholds, large buffers, and
+sliced strict inputs.
 
 The companion [base32-lens](https://hackage.haskell.org/package/base32-lens)
 package needs an update for the 1.0 API before it can be used with this release.

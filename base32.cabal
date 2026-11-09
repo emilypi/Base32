@@ -113,6 +113,10 @@ benchmark bench
     , bytestring        >=0.11 && <0.13
     , criterion
     , deepseq
-    , memory
     , text              >=2.0
     , text-short
+
+  if flag(simd)
+    cpp-options:    -DBASE32_SIMD
+
+  ghc-options:      -Wall -rtsopts
