@@ -53,6 +53,8 @@ import Data.Text.Encoding.Base32.Error (Base32Error(..))
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
+-- @since 1.0
+--
 encodeBase32 :: Text -> Base32 'HexPadded Text
 encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
 {-# INLINE encodeBase32 #-}
@@ -77,6 +79,9 @@ encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
 --
 -- >>> decodeBase32Untyped "ADQM==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
+--
 decodeBase32Untyped :: Text -> Either Text Text
 decodeBase32Untyped value = B32H.decodeBase32Untyped (T.encodeUtf8 value)
   >>= first (ErrorText.pack . show) . T.decodeUtf8'
@@ -121,6 +126,8 @@ decodeBase32With f t = case B32H.decodeBase32Untyped t of
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
+-- @since 1.0
+--
 encodeBase32Unpadded :: Text -> Base32 'HexUnpadded Text
 encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
 {-# INLINE encodeBase32Unpadded #-}
@@ -141,6 +148,9 @@ encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
 --
 -- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
+--
 decodeBase32UnpaddedUntyped :: Text -> Either Text Text
 decodeBase32UnpaddedUntyped value = B32H.decodeBase32UnpaddedUntyped (T.encodeUtf8 value)
   >>= first (ErrorText.pack . show) . T.decodeUtf8'
@@ -191,6 +201,9 @@ decodeBase32UnpaddedWith f t = case B32H.decodeBase32UnpaddedUntyped t of
 --
 -- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
+--
+-- @since 1.0
+--
 decodeBase32PaddedUntyped :: Text -> Either Text Text
 decodeBase32PaddedUntyped value = B32H.decodeBase32PaddedUntyped (T.encodeUtf8 value)
   >>= first (ErrorText.pack . show) . T.decodeUtf8'
@@ -235,6 +248,8 @@ decodeBase32PaddedWith f t = case B32H.decodeBase32PaddedUntyped t of
 -- >>> decodeBase32 (encodeBase32Unpadded "Sun")
 -- "Sun"
 --
+-- @since 1.0
+--
 decodeBase32 :: HexAlphabet k => Base32 k Text -> Text
 decodeBase32 = T.decodeUtf8 . B32H.decodeBase32 . fmap T.encodeUtf8
 {-# INLINE decodeBase32 #-}
@@ -245,6 +260,8 @@ decodeBase32 = T.decodeUtf8 . B32H.decodeBase32 . fmap T.encodeUtf8
 --
 -- >>> decodeBase32Padded (encodeBase32 "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Padded :: Base32 'HexPadded Text -> Text
 decodeBase32Padded = decodeBase32
@@ -264,6 +281,8 @@ decodeBase32Padded = decodeBase32
 -- >>> parseBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 parseBase32Padded :: Text -> Either Text (Base32 'HexPadded Text)
 parseBase32Padded value = assertBase32 value
   <$ (B32H.decodeBase32PaddedUntyped . T.encodeUtf8) value
@@ -275,6 +294,8 @@ parseBase32Padded value = assertBase32 value
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Unpadded :: Base32 'HexUnpadded Text -> Text
 decodeBase32Unpadded = decodeBase32
@@ -296,6 +317,8 @@ decodeBase32Unpadded = decodeBase32
 --
 -- >>> isLeft (parseBase32Unpadded "CP")
 -- True
+--
+-- @since 1.0
 --
 parseBase32Unpadded :: Text -> Either Text (Base32 'HexUnpadded Text)
 parseBase32Unpadded value = assertBase32 value

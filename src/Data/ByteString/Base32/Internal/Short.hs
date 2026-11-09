@@ -12,6 +12,8 @@
 --
 -- Direct byte-array codecs; no conversion through strict ByteString.
 --
+-- @since 1.0
+--
 module Data.ByteString.Base32.Internal.Short
   ( encodeShort
   , decodeShort
@@ -37,6 +39,9 @@ import qualified Data.ByteString.Base32.Internal.SIMD as SIMD
 #endif
 
 -- | Encode with the supplied 32-character ASCII alphabet.
+--
+-- @since 1.0
+--
 encodeShort :: Addr# -> Bool -> ShortByteString -> ShortByteString
 encodeShort alphabet padded input@(SBS source) = runST $ do
     dst <- newByteArray capacity
@@ -95,6 +100,9 @@ encodeShort alphabet padded input@(SBS source) = runST $ do
 
 -- | Decode with an ASCII lookup table. The caller checks the input length
 -- and final padding before entering the loop.
+--
+-- @since 1.0
+--
 decodeShort
   :: Ptr Word8 -> ShortByteString -> Either Text ShortByteString
 decodeShort (Ptr table) input@(SBS source) = runST $ do
@@ -175,6 +183,9 @@ decodeShort (Ptr table) input@(SBS source) = runST $ do
 
 -- | Decode established provenance directly from a byte array, without
 -- alphabet, size, padding-policy or canonical-bit validation.
+--
+-- @since 1.0
+--
 decodeShortTyped
   :: Ptr Word8 -> Base32 alphabet ShortByteString -> ShortByteString
 decodeShortTyped (Ptr table) encoded = runST $ do

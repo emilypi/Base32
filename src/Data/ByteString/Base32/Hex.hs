@@ -59,6 +59,8 @@ import System.IO.Unsafe (unsafeDupablePerformIO)
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
+-- @since 1.0
+--
 encodeBase32 :: ByteString -> Base32 'HexPadded Text
 encodeBase32 = fmap T.decodeUtf8 . encodeBase32'
 {-# INLINE encodeBase32 #-}
@@ -71,6 +73,8 @@ encodeBase32 = fmap T.decodeUtf8 . encodeBase32'
 --
 -- >>> encodeBase32' "Sun"
 -- "ADQMS==="
+--
+-- @since 1.0
 --
 encodeBase32' :: ByteString -> Base32 'HexPadded ByteString
 encodeBase32' = assertBase32 . encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
@@ -93,6 +97,8 @@ encodeBase32' = assertBase32 . encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 --
 -- >>> decodeBase32Untyped "ADQM==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
 --
 decodeBase32Untyped :: ByteString -> Either Text ByteString
 decodeBase32Untyped bs@(BS _ !l)
@@ -120,6 +126,8 @@ decodeBase32Untyped bs@(BS _ !l)
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
+-- @since 1.0
+--
 encodeBase32Unpadded :: ByteString -> Base32 'HexUnpadded Text
 encodeBase32Unpadded = fmap T.decodeUtf8 . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
@@ -132,6 +140,8 @@ encodeBase32Unpadded = fmap T.decodeUtf8 . encodeBase32Unpadded'
 --
 -- >>> encodeBase32Unpadded' "Sun"
 -- "ADQMS"
+--
+-- @since 1.0
 --
 encodeBase32Unpadded' :: ByteString -> Base32 'HexUnpadded ByteString
 encodeBase32Unpadded' = assertBase32
@@ -149,6 +159,8 @@ encodeBase32Unpadded' = assertBase32
 --
 -- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
 --
 decodeBase32UnpaddedUntyped :: ByteString -> Either Text ByteString
 decodeBase32UnpaddedUntyped bs@(BS _ !l)
@@ -179,6 +191,8 @@ decodeBase32UnpaddedUntyped bs@(BS _ !l)
 -- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 decodeBase32PaddedUntyped :: ByteString -> Either Text ByteString
 decodeBase32PaddedUntyped bs@(BS _ !l)
     | l == 0 = Right bs
@@ -200,6 +214,8 @@ decodeBase32PaddedUntyped bs@(BS _ !l)
 -- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
+-- @since 1.0
+--
 decodeBase32 :: HexAlphabet k => Base32 k ByteString -> ByteString
 decodeBase32 = decodeBase32Typed_ hexDecodeTable
 {-# INLINE decodeBase32 #-}
@@ -208,6 +224,8 @@ decodeBase32 = decodeBase32Typed_ hexDecodeTable
 --
 -- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Padded :: Base32 'HexPadded ByteString -> ByteString
 decodeBase32Padded = decodeBase32
@@ -227,6 +245,8 @@ decodeBase32Padded = decodeBase32
 -- >>> parseBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 parseBase32Padded :: ByteString -> Either Text (Base32 'HexPadded ByteString)
 parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
@@ -236,6 +256,8 @@ parseBase32Padded value = assertBase32 value
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Unpadded :: Base32 'HexUnpadded ByteString -> ByteString
 decodeBase32Unpadded = decodeBase32
@@ -253,6 +275,8 @@ decodeBase32Unpadded = decodeBase32
 -- Left "Base32-encoded bytestring has invalid padding"
 -- >>> isLeft (parseBase32Unpadded "CP")
 -- True
+--
+-- @since 1.0
 --
 parseBase32Unpadded :: ByteString -> Either Text (Base32 'HexUnpadded ByteString)
 parseBase32Unpadded value = assertBase32 value

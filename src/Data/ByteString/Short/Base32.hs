@@ -56,6 +56,8 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 -- >>> encodeBase32 "Sun"
 -- "KN2W4==="
 --
+-- @since 1.0
+--
 encodeBase32 :: ShortByteString -> Base32 'StdPadded ShortText
 encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 {-# INLINE encodeBase32 #-}
@@ -68,6 +70,8 @@ encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 --
 -- >>> encodeBase32' "Sun"
 -- "KN2W4==="
+--
+-- @since 1.0
 --
 encodeBase32' :: ShortByteString -> Base32 'StdPadded ShortByteString
 encodeBase32' =
@@ -93,6 +97,8 @@ encodeBase32' =
 --
 -- >>> decodeBase32Untyped "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
 --
 decodeBase32Untyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32Untyped bs
@@ -122,6 +128,8 @@ decodeBase32Untyped bs
 -- >>> encodeBase32Unpadded "Sun"
 -- "KN2W4"
 --
+-- @since 1.0
+--
 encodeBase32Unpadded :: ShortByteString -> Base32 'StdUnpadded ShortText
 encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
@@ -136,6 +144,8 @@ encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 --
 -- >>> encodeBase32Unpadded' "Sun"
 -- "KN2W4"
+--
+-- @since 1.0
 --
 encodeBase32Unpadded' :: ShortByteString -> Base32 'StdUnpadded ShortByteString
 encodeBase32Unpadded' =
@@ -160,6 +170,8 @@ encodeBase32Unpadded' =
 --
 -- >>> decodeBase32UnpaddedUntyped "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
 --
 decodeBase32UnpaddedUntyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32UnpaddedUntyped bs
@@ -191,6 +203,8 @@ decodeBase32UnpaddedUntyped bs
 -- >>> decodeBase32PaddedUntyped "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 decodeBase32PaddedUntyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32PaddedUntyped bs
     | l == 0 = Right bs
@@ -213,6 +227,8 @@ decodeBase32PaddedUntyped bs
 -- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
+-- @since 1.0
+--
 decodeBase32 :: StdAlphabet k => Base32 k ShortByteString -> ShortByteString
 decodeBase32 = decodeShortTyped stdDecodeTable
 {-# INLINE decodeBase32 #-}
@@ -221,6 +237,8 @@ decodeBase32 = decodeShortTyped stdDecodeTable
 --
 -- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Padded :: Base32 'StdPadded ShortByteString -> ShortByteString
 decodeBase32Padded = decodeBase32
@@ -240,6 +258,8 @@ decodeBase32Padded = decodeBase32
 -- >>> parseBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 parseBase32Padded :: ShortByteString -> Either Text (Base32 'StdPadded ShortByteString)
 parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
@@ -249,6 +269,8 @@ parseBase32Padded value = assertBase32 value
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Unpadded :: Base32 'StdUnpadded ShortByteString -> ShortByteString
 decodeBase32Unpadded = decodeBase32
@@ -270,6 +292,8 @@ decodeBase32Unpadded = decodeBase32
 --
 -- >>> isLeft (parseBase32Unpadded "MZ")
 -- True
+--
+-- @since 1.0
 --
 parseBase32Unpadded
   :: ShortByteString -> Either Text (Base32 'StdUnpadded ShortByteString)

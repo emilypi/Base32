@@ -58,6 +58,8 @@ import Data.Text.Short
 -- >>> encodeBase32 "Sun"
 -- "KN2W4==="
 --
+-- @since 1.0
+--
 encodeBase32 :: ShortText -> Base32 'StdPadded ShortText
 encodeBase32 =
   BS32.encodeBase32
@@ -85,6 +87,9 @@ encodeBase32 =
 --
 -- >>> decodeBase32Untyped "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
+--
 decodeBase32Untyped :: ShortText -> Either Text ShortText
 decodeBase32Untyped value =
   BS32.decodeBase32Untyped (toShortByteString value)
@@ -132,6 +137,8 @@ decodeBase32With f t = case BS32.decodeBase32Untyped t of
 -- >>> encodeBase32Unpadded "Sun"
 -- "KN2W4"
 --
+-- @since 1.0
+--
 encodeBase32Unpadded :: ShortText -> Base32 'StdUnpadded ShortText
 encodeBase32Unpadded =
   BS32.encodeBase32Unpadded
@@ -153,6 +160,9 @@ encodeBase32Unpadded =
 --
 -- >>> decodeBase32UnpaddedUntyped "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
+--
 decodeBase32UnpaddedUntyped :: ShortText -> Either Text ShortText
 decodeBase32UnpaddedUntyped value =
   BS32.decodeBase32UnpaddedUntyped (toShortByteString value)
@@ -204,6 +214,9 @@ decodeBase32UnpaddedWith f t = case BS32.decodeBase32UnpaddedUntyped t of
 --
 -- >>> decodeBase32PaddedUntyped "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
+--
+-- @since 1.0
+--
 decodeBase32PaddedUntyped :: ShortText -> Either Text ShortText
 decodeBase32PaddedUntyped value =
   BS32.decodeBase32PaddedUntyped (toShortByteString value)
@@ -251,6 +264,8 @@ decodeBase32PaddedWith f t = case BS32.decodeBase32PaddedUntyped t of
 -- >>> decodeBase32 (encodeBase32Unpadded "Sun")
 -- "Sun"
 --
+-- @since 1.0
+--
 decodeBase32 :: StdAlphabet k => Base32 k ShortText -> ShortText
 decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
   . BS32.decodeBase32 . fmap toShortByteString
@@ -262,6 +277,8 @@ decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
 --
 -- >>> decodeBase32Padded (encodeBase32 "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Padded :: Base32 'StdPadded ShortText -> ShortText
 decodeBase32Padded = decodeBase32
@@ -281,6 +298,8 @@ decodeBase32Padded = decodeBase32
 -- >>> parseBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 parseBase32Padded :: ShortText -> Either Text (Base32 'StdPadded ShortText)
 parseBase32Padded value = assertBase32 value
   <$ (BS32.decodeBase32PaddedUntyped . toShortByteString) value
@@ -292,6 +311,8 @@ parseBase32Padded value = assertBase32 value
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Unpadded :: Base32 'StdUnpadded ShortText -> ShortText
 decodeBase32Unpadded = decodeBase32
@@ -313,6 +334,8 @@ decodeBase32Unpadded = decodeBase32
 --
 -- >>> isLeft (parseBase32Unpadded "MZ")
 -- True
+--
+-- @since 1.0
 --
 parseBase32Unpadded :: ShortText -> Either Text (Base32 'StdUnpadded ShortText)
 parseBase32Unpadded value = assertBase32 value

@@ -14,6 +14,8 @@
 -- Byte arrays are passed directly to unsafe FFI: GHC cannot collect during
 -- the call, and the kernels retain no pointers and make no callbacks.
 --
+-- @since 1.0
+--
 module Data.ByteString.Base32.Internal.SIMD
   ( encodePrefix
   , decodePrefix
@@ -48,6 +50,9 @@ foreign import ccall unsafe "hs_base32_simd_decode_typed"
   c_decodeArrayTyped :: ByteArray# -> CSize -> MutableByteArray# s -> CInt -> IO CSize
 
 -- | Encode complete quanta. Destination capacity must be at least len/5*8.
+--
+-- @since 1.0
+--
 encodePrefix :: Addr# -> Ptr Word8 -> Int -> Ptr Word8 -> IO Int
 encodePrefix alphabet src len dst
   | len < 80 = pure 0
@@ -58,6 +63,9 @@ encodePrefix alphabet src len dst
 
 -- | Decode valid complete quanta; leave padding/invalid blocks for scalar code.
 -- Destination capacity must be at least len/8*5.
+--
+-- @since 1.0
+--
 decodePrefix :: Addr# -> Ptr Word8 -> Int -> Ptr Word8 -> IO Int
 decodePrefix table src len dst
   | len < 64 = pure 0
@@ -68,6 +76,9 @@ decodePrefix table src len dst
 
 -- | Decode known-valid symbols without validation; excludes trailing padding.
 -- Destination capacity must be at least len/8*5.
+--
+-- @since 1.0
+--
 decodeTypedPrefix :: Addr# -> Ptr Word8 -> Int -> Ptr Word8 -> IO Int
 decodeTypedPrefix table src len dst
   | len < 64 = pure 0
@@ -77,6 +88,9 @@ decodeTypedPrefix table src len dst
 {-# INLINE decodeTypedPrefix #-}
 
 -- | Direct unpinned-array encoding into a distinct mutable output buffer.
+--
+-- @since 1.0
+--
 encodeByteArrayPrefix ::
   Addr# -> ByteArray -> Int -> MutableByteArray s -> ST s Int
 encodeByteArrayPrefix alphabet (ByteArray src) len (MutableByteArray dst)
@@ -88,6 +102,9 @@ encodeByteArrayPrefix alphabet (ByteArray src) len (MutableByteArray dst)
 {-# INLINE encodeByteArrayPrefix #-}
 
 -- | Direct unpinned-array decoding into a distinct mutable output buffer.
+--
+-- @since 1.0
+--
 decodeByteArrayPrefix ::
   Addr# -> ByteArray -> Int -> MutableByteArray s -> ST s Int
 decodeByteArrayPrefix table (ByteArray src) len (MutableByteArray dst)
@@ -99,6 +116,9 @@ decodeByteArrayPrefix table (ByteArray src) len (MutableByteArray dst)
 {-# INLINE decodeByteArrayPrefix #-}
 
 -- | Unchecked array decoding of known-valid symbols, excluding padding.
+--
+-- @since 1.0
+--
 decodeByteArrayTypedPrefix ::
   Addr# -> ByteArray -> Int -> MutableByteArray s -> ST s Int
 decodeByteArrayTypedPrefix table (ByteArray src) len (MutableByteArray dst)

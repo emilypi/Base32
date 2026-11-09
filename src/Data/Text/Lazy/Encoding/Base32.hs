@@ -56,6 +56,8 @@ import qualified Data.Text.Lazy.Encoding as TL
 -- >>> encodeBase32 "Sun"
 -- "KN2W4==="
 --
+-- @since 1.0
+--
 encodeBase32 :: TL.Text -> Base32 'StdPadded TL.Text
 encodeBase32 = BL32.encodeBase32 . TL.encodeUtf8
 {-# INLINE encodeBase32 #-}
@@ -81,6 +83,9 @@ encodeBase32 = BL32.encodeBase32 . TL.encodeUtf8
 --
 -- >>> decodeBase32Untyped "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
+--
 decodeBase32Untyped :: TL.Text -> Either T.Text TL.Text
 decodeBase32Untyped value = BL32.decodeBase32Untyped (TL.encodeUtf8 value)
   >>= first (ErrorText.pack . show) . TL.decodeUtf8'
@@ -125,6 +130,8 @@ decodeBase32With f t = case BL32.decodeBase32Untyped t of
 -- >>> encodeBase32Unpadded "Sun"
 -- "KN2W4"
 --
+-- @since 1.0
+--
 encodeBase32Unpadded :: TL.Text -> Base32 'StdUnpadded TL.Text
 encodeBase32Unpadded = BL32.encodeBase32Unpadded . TL.encodeUtf8
 {-# INLINE encodeBase32Unpadded #-}
@@ -144,6 +151,9 @@ encodeBase32Unpadded = BL32.encodeBase32Unpadded . TL.encodeUtf8
 --
 -- >>> decodeBase32UnpaddedUntyped "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
+--
 decodeBase32UnpaddedUntyped :: TL.Text -> Either T.Text TL.Text
 decodeBase32UnpaddedUntyped value = BL32.decodeBase32UnpaddedUntyped (TL.encodeUtf8 value)
   >>= first (ErrorText.pack . show) . TL.decodeUtf8'
@@ -192,6 +202,9 @@ decodeBase32UnpaddedWith f t = case BL32.decodeBase32UnpaddedUntyped t of
 --
 -- >>> decodeBase32PaddedUntyped "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
+--
+-- @since 1.0
+--
 decodeBase32PaddedUntyped :: TL.Text -> Either T.Text TL.Text
 decodeBase32PaddedUntyped value = BL32.decodeBase32PaddedUntyped (TL.encodeUtf8 value)
   >>= first (ErrorText.pack . show) . TL.decodeUtf8'
@@ -236,6 +249,8 @@ decodeBase32PaddedWith f t = case BL32.decodeBase32PaddedUntyped t of
 -- >>> decodeBase32 (encodeBase32Unpadded "Sun")
 -- "Sun"
 --
+-- @since 1.0
+--
 decodeBase32 :: StdAlphabet k => Base32 k TL.Text -> TL.Text
 decodeBase32 = TL.decodeUtf8 . BL32.decodeBase32 . fmap TL.encodeUtf8
 {-# INLINE decodeBase32 #-}
@@ -246,6 +261,8 @@ decodeBase32 = TL.decodeUtf8 . BL32.decodeBase32 . fmap TL.encodeUtf8
 --
 -- >>> decodeBase32Padded (encodeBase32 "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Padded :: Base32 'StdPadded TL.Text -> TL.Text
 decodeBase32Padded = decodeBase32
@@ -265,6 +282,8 @@ decodeBase32Padded = decodeBase32
 -- >>> parseBase32Padded "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 parseBase32Padded :: TL.Text -> Either T.Text (Base32 'StdPadded TL.Text)
 parseBase32Padded value = assertBase32 value
   <$ (BL32.decodeBase32PaddedUntyped . TL.encodeUtf8) value
@@ -276,6 +295,8 @@ parseBase32Padded value = assertBase32 value
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded "Sun")
 -- "Sun"
+--
+-- @since 1.0
 --
 decodeBase32Unpadded :: Base32 'StdUnpadded TL.Text -> TL.Text
 decodeBase32Unpadded = decodeBase32
@@ -297,6 +318,8 @@ decodeBase32Unpadded = decodeBase32
 --
 -- >>> isLeft (parseBase32Unpadded "MZ")
 -- True
+--
+-- @since 1.0
 --
 parseBase32Unpadded :: TL.Text -> Either T.Text (Base32 'StdUnpadded TL.Text)
 parseBase32Unpadded value = assertBase32 value
