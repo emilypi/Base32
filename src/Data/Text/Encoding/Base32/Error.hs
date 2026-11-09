@@ -60,5 +60,3 @@ instance Exception e => Exception (Base32Error e)
 --
 instance NFData e => NFData (Base32Error e)
 
--- $setup
--- >>> :seti -XOverloadedStrings
