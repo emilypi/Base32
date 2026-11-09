@@ -7,23 +7,20 @@ See [MIGRATION-1.0.md](MIGRATION-1.0.md) for the changes from 0.4.
 
 * Introduce alphabet- and padding-tagged `Base32` values in `Data.Base32.Types`.
   Encoders return wrapped values; typed decoders consume them. Checked decoders
-  now use the `Untyped` suffix; custom text conversion functions retain their names.
+  now use the `Untyped` suffix for consuming raw Base32 encoded bytes.
+
   Typed decoding uses unchecked scalar and SIMD loops, with streaming lazy decoding.
   `StdAlphabet` and `HexAlphabet` admit both padding forms in general typed decoders;
   padding-specific typed decoders require exact tags.
+
 * Replace `isBase32`, `isValidBase32`, `isBase32Hex`, and `isValidBase32Hex` with
   `parseBase32Padded` and `parseBase32Unpadded` in all twelve APIs.
   Parsers preserve input, accept the decoder's existing case-insensitive alphabets,
-  and check unused pad bits. Noncanonical pad bits are now rejected by decoders too.
-* Add an optional, default-off `simd` flag with NEON, SSSE3, and AVX2 prefixes
+  and check unused pad bits. Noncanonical pad bits are now rejected by decoders too. These were removed because they had no measurable downstream usage, and were of questionable utility.  
+* Added an optional, default-off `simd` flag with NEON, SSSE3, and AVX2 prefixes
   and a portable scalar fallback, for both standard and extended-hex alphabets.
-* Encode and decode short values directly through byte arrays, including SIMD.
-* Report invalid UTF-8 through checked Text decoding, instead of throwing or
-  constructing invalid ShortText. Base32 parsing itself accepts binary payloads.
-* Use checked integer output capacities, write only the actual decoded tail,
-  and correct scalar byte order on big-endian targets.
 * Remove `Data.ByteString.Base32.Internal`; use `Internal.Head` for codec entry
-  points and `Internal.Utils` for `validateLastNPads`.
+  points and `Internal.Utils` for `validateLastNPads`. They were relics of older development. 
 * Support GHC 9.6–9.14; update copyright through 2026, CI, bounds, and benchmarks.
 
 ## 0.4
