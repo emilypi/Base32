@@ -49,8 +49,7 @@ import System.IO.Unsafe
 -- allocates the correct number of bytes that will be written, and
 -- executes the inner encoding loop against that data.
 --
--- Since 1.0, exported from this module instead of
--- @Data.ByteString.Base32.Internal@.
+-- @since 1.0
 --
 encodeBase32_ :: Addr# -> ByteString -> ByteString
 encodeBase32_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
@@ -70,8 +69,7 @@ encodeBase32_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
 -- allocates the correct number of bytes that will be written, and
 -- executes the inner encoding loop against that data.
 --
--- Since 1.0, exported from this module instead of
--- @Data.ByteString.Base32.Internal@.
+-- @since 1.0
 --
 encodeBase32NoPad_ :: Addr# -> ByteString -> ByteString
 encodeBase32NoPad_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
@@ -91,8 +89,7 @@ encodeBase32NoPad_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
 -- bytestring, allocates the correct number of bytes that will be written,
 -- and executes the inner decoding loop against that data.
 --
--- Since 1.0, exported from this module instead of
--- @Data.ByteString.Base32.Internal@.
+-- @since 1.0
 --
 decodeBase32_ :: Ptr Word8 -> ByteString -> IO (Either Text ByteString)
 decodeBase32_ table bs

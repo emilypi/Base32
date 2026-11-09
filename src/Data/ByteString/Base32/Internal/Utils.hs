@@ -156,8 +156,7 @@ encodedLength n
 -- The caller selects @n@ from the input length and padding policy, preventing
 -- existing padding from being accepted when missing padding is added.
 --
--- Since 1.0, exported from this module instead of
--- @Data.ByteString.Base32.Internal@.
+-- @since 1.0
 --
 validateLastNPads
     :: Int

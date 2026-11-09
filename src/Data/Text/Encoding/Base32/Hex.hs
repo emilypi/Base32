@@ -53,7 +53,7 @@ import Data.Text.Encoding.Base32.Error (Base32Error(..))
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32 :: Text -> Base32 'HexPadded Text
 encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
@@ -126,7 +126,7 @@ decodeBase32With f t = case B32H.decodeBase32Untyped t of
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32Unpadded :: Text -> Base32 'HexUnpadded Text
 encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
@@ -248,7 +248,7 @@ decodeBase32PaddedWith f t = case B32H.decodeBase32PaddedUntyped t of
 -- >>> decodeBase32 (encodeBase32Unpadded "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32 :: HexAlphabet k => Base32 k Text -> Text
 decodeBase32 = T.decodeUtf8 . B32H.decodeBase32 . fmap T.encodeUtf8
@@ -261,7 +261,7 @@ decodeBase32 = T.decodeUtf8 . B32H.decodeBase32 . fmap T.encodeUtf8
 -- >>> decodeBase32Padded (encodeBase32 "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32Padded :: Base32 'HexPadded Text -> Text
 decodeBase32Padded = decodeBase32
@@ -295,7 +295,7 @@ parseBase32Padded value = assertBase32 value
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32Unpadded :: Base32 'HexUnpadded Text -> Text
 decodeBase32Unpadded = decodeBase32

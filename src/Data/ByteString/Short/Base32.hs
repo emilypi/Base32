@@ -56,7 +56,7 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 -- >>> encodeBase32 "Sun"
 -- "KN2W4==="
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32 :: ShortByteString -> Base32 'StdPadded ShortText
 encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
@@ -71,7 +71,7 @@ encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 -- >>> encodeBase32' "Sun"
 -- "KN2W4==="
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32' :: ShortByteString -> Base32 'StdPadded ShortByteString
 encodeBase32' =
@@ -128,7 +128,7 @@ decodeBase32Untyped bs
 -- >>> encodeBase32Unpadded "Sun"
 -- "KN2W4"
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32Unpadded :: ShortByteString -> Base32 'StdUnpadded ShortText
 encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
@@ -145,7 +145,7 @@ encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 -- >>> encodeBase32Unpadded' "Sun"
 -- "KN2W4"
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32Unpadded' :: ShortByteString -> Base32 'StdUnpadded ShortByteString
 encodeBase32Unpadded' =
@@ -227,7 +227,7 @@ decodeBase32PaddedUntyped bs
 -- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32 :: StdAlphabet k => Base32 k ShortByteString -> ShortByteString
 decodeBase32 = decodeShortTyped stdDecodeTable
@@ -238,7 +238,7 @@ decodeBase32 = decodeShortTyped stdDecodeTable
 -- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32Padded :: Base32 'StdPadded ShortByteString -> ShortByteString
 decodeBase32Padded = decodeBase32
@@ -270,7 +270,7 @@ parseBase32Padded value = assertBase32 value
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32Unpadded :: Base32 'StdUnpadded ShortByteString -> ShortByteString
 decodeBase32Unpadded = decodeBase32

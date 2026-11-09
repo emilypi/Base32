@@ -57,7 +57,7 @@ import qualified Data.Text.Lazy.Encoding as TL
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32 :: ByteString -> Base32 'HexPadded TL.Text
 encodeBase32 = fmap TL.decodeUtf8 . encodeBase32'
@@ -72,7 +72,7 @@ encodeBase32 = fmap TL.decodeUtf8 . encodeBase32'
 -- >>> encodeBase32' "Sun"
 -- "ADQMS==="
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32' :: ByteString -> Base32 'HexPadded ByteString
 encodeBase32' = assertBase32 . fromChunks
@@ -119,7 +119,7 @@ decodeBase32Untyped = fmap (fromChunks . (:[]))
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32Unpadded :: ByteString -> Base32 'HexUnpadded TL.Text
 encodeBase32Unpadded = fmap TL.decodeUtf8 . encodeBase32Unpadded'
@@ -136,7 +136,7 @@ encodeBase32Unpadded = fmap TL.decodeUtf8 . encodeBase32Unpadded'
 -- >>> encodeBase32Unpadded' "Sun"
 -- "ADQMS"
 --
--- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+-- @since 1.0
 --
 encodeBase32Unpadded' :: ByteString -> Base32 'HexUnpadded ByteString
 encodeBase32Unpadded' = assertBase32 . fromChunks
@@ -206,7 +206,7 @@ decodeBase32PaddedUntyped = fmap (fromChunks . (:[]))
 -- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32 :: forall k. HexAlphabet k => Base32 k ByteString -> ByteString
 decodeBase32 = fromChunks
@@ -220,7 +220,7 @@ decodeBase32 = fromChunks
 -- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32Padded :: Base32 'HexPadded ByteString -> ByteString
 decodeBase32Padded = decodeBase32
@@ -252,7 +252,7 @@ parseBase32Padded value = assertBase32 value
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
--- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+-- @since 1.0
 --
 decodeBase32Unpadded :: Base32 'HexUnpadded ByteString -> ByteString
 decodeBase32Unpadded = decodeBase32
