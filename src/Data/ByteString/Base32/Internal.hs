@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
-
 -- |
 -- Module       : Data.ByteString.Base32.Internal
 -- Copyright 	: (c) 2020-2026 Emily Pillmore
@@ -12,17 +11,19 @@
 --
 -- Internal module defining the encoding and decoding
 -- processes and tables.
+--
 module Data.ByteString.Base32.Internal
-  ( encodeBase32_
-  , encodeBase32NoPad_
-  , decodeBase32_
-  , validateBase32
-  , validateLastNPads
-  ) where
+( encodeBase32_
+, encodeBase32NoPad_
+, decodeBase32_
+, validateBase32
+, validateLastNPads
+) where
+
 
 import qualified Data.ByteString as BS
-import Data.ByteString.Base32.Internal.Head
 import Data.ByteString.Internal
+import Data.ByteString.Base32.Internal.Head
 import Data.Text (Text)
 
 import Foreign.ForeignPtr
@@ -37,24 +38,25 @@ import System.IO.Unsafe
 -- Validating Base32
 
 -- | Validate a base32-encoded bytestring against some alphabet.
+--
 validateBase32 :: ByteString -> ByteString -> Bool
 validateBase32 !alphabet bs@(BS _ l)
-  | l == 0 = True
-  | r == 0 = f bs
-  | r == 2 = f (BS.append bs "======")
-  | r == 4 = f (BS.append bs "====")
-  | r == 5 = f (BS.append bs "===")
-  | r == 7 = f (BS.append bs "=")
-  | otherwise = False
- where
-  r = l `rem` 8
+    | l == 0 = True
+    | r == 0 = f bs
+    | r == 2 = f (BS.append bs "======")
+    | r == 4 = f (BS.append bs "====")
+    | r == 5 = f (BS.append bs "===")
+    | r == 7 = f (BS.append bs "=")
+    | otherwise = False
+  where
+    r = l `rem` 8
 
-  f (BS fp l') = accursedUnutterablePerformIO $ withForeignPtr fp $ \p ->
-    go p (plusPtr p l')
+    f (BS fp l') = accursedUnutterablePerformIO $ withForeignPtr fp $ \p ->
+      go p (plusPtr p l')
 
-  go !p !end
-    | p == end = return True
-    | otherwise = do
+    go !p !end
+      | p == end = return True
+      | otherwise = do
         w <- peek p
 
         let check a
@@ -101,24 +103,25 @@ validateBase32 !alphabet bs@(BS _ l)
 -- @
 --   B32.decodeUnpadded <|> B32.decodePadded ~ B32.decode
 -- @
-validateLastNPads ::
-  Int ->
-  ByteString ->
-  IO (Either Text ByteString) ->
-  Either Text ByteString
+--
+validateLastNPads
+    :: Int
+    -> ByteString
+    -> IO (Either Text ByteString)
+    -> Either Text ByteString
 validateLastNPads !n (BS !fp !l) io
-  | not valid = Left "Base32-encoded bytestring has invalid padding"
-  | otherwise = unsafeDupablePerformIO io
- where
-  valid = accursedUnutterablePerformIO $ withForeignPtr fp $ \p -> do
-    let end = plusPtr p l
+    | not valid = Left "Base32-encoded bytestring has invalid padding"
+    | otherwise = unsafeDupablePerformIO io
+  where
+    valid = accursedUnutterablePerformIO $ withForeignPtr fp $ \p -> do
+      let end = plusPtr p l
 
-    let go :: Ptr Word8 -> IO Bool
-        go !q
-          | q == end = return True
-          | otherwise = do
+      let go :: Ptr Word8 -> IO Bool
+          go !q
+            | q == end = return True
+            | otherwise = do
               a <- peek q
               if a == 0x3d then return False else go (plusPtr q 1)
 
-    go (plusPtr p (l - n))
+      go (plusPtr p (l - n))
 {-# INLINE validateLastNPads #-}

@@ -1,7 +1,6 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE Trustworthy #-}
-
 -- |
 -- Module       : Data.ByteString.Short.Base32
 -- Copyright    : (c) 2019-2026 Emily Pillmore
@@ -15,36 +14,37 @@
 -- implementing the RFC 4648 specification of the Base32
 -- encoding format. This includes strictly padded/unpadded decoding
 -- variants, as well as internal and external validation for canonicity.
+--
 module Data.ByteString.Short.Base32
-  ( -- * Encoding
-    encodeBase32
-  , encodeBase32'
-  , encodeBase32Unpadded
-  , encodeBase32Unpadded'
+( -- * Encoding
+  encodeBase32
+, encodeBase32'
+, encodeBase32Unpadded
+, encodeBase32Unpadded'
+  -- * Decoding
+, decodeBase32Untyped
+, decodeBase32UnpaddedUntyped
+, decodeBase32PaddedUntyped
+  -- * Validation
+, decodeBase32
+, decodeBase32Padded
+, decodeBase32Unpadded
+, parseBase32
+, parseBase32Padded
+, parseBase32Unpadded
+) where
 
-    -- * Decoding
-  , decodeBase32Untyped
-  , decodeBase32UnpaddedUntyped
-  , decodeBase32PaddedUntyped
 
-    -- * Validation
-  , decodeBase32
-  , decodeBase32Padded
-  , decodeBase32Unpadded
-  , parseBase32
-  , parseBase32Padded
-  , parseBase32Unpadded
-  ) where
-
-import Data.Base32.Types
 import Data.ByteString.Base32.Internal.Short
 import Data.ByteString.Base32.Internal.Tables
+import Data.ByteString.Short (ShortByteString)
+import Data.Base32.Types
 import qualified Data.Text as ErrorText
 
-import Data.ByteString.Short (ShortByteString)
 import Data.Text (Text)
 import Data.Text.Short (ShortText)
 import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
+
 
 -- | Encode a 'ShortByteString' value as a Base32 'Text' value with padding.
 --
@@ -54,6 +54,7 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 --
 -- >>> encodeBase32 "Sun"
 -- "KN2W4==="
+--
 encodeBase32 :: ShortByteString -> Base32 'Std ShortText
 encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 {-# INLINE encodeBase32 #-}
@@ -66,6 +67,7 @@ encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 --
 -- >>> encodeBase32' "Sun"
 -- "KN2W4==="
+--
 encodeBase32' :: ShortByteString -> Base32 'Std ShortByteString
 encodeBase32' =
   assertBase32
@@ -90,6 +92,7 @@ encodeBase32' =
 --
 -- >>> decodeBase32Untyped "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
 decodeBase32Untyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32Untyped = decodeShort stdDecodeTable OptionalPadding
 {-# INLINE decodeBase32Untyped #-}
@@ -105,6 +108,7 @@ decodeBase32Untyped = decodeShort stdDecodeTable OptionalPadding
 --
 -- >>> encodeBase32Unpadded "Sun"
 -- "KN2W4"
+--
 encodeBase32Unpadded :: ShortByteString -> Base32 'Std ShortText
 encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
@@ -119,6 +123,7 @@ encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 --
 -- >>> encodeBase32Unpadded' "Sun"
 -- "KN2W4"
+--
 encodeBase32Unpadded' :: ShortByteString -> Base32 'Std ShortByteString
 encodeBase32Unpadded' =
   assertBase32
@@ -142,6 +147,7 @@ encodeBase32Unpadded' =
 --
 -- >>> decodeBase32UnpaddedUntyped "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
 decodeBase32UnpaddedUntyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32UnpaddedUntyped = decodeShort stdDecodeTable ForbidPadding
 {-# INLINE decodeBase32UnpaddedUntyped #-}
@@ -162,6 +168,7 @@ decodeBase32UnpaddedUntyped = decodeShort stdDecodeTable ForbidPadding
 --
 -- >>> decodeBase32PaddedUntyped "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
+--
 decodeBase32PaddedUntyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32PaddedUntyped = decodeShort stdDecodeTable RequirePadding
 {-# INLINE decodeBase32PaddedUntyped #-}
@@ -170,55 +177,46 @@ decodeBase32PaddedUntyped = decodeShort stdDecodeTable RequirePadding
 -- Use 'parseBase32' to validate external input first.
 -- A false assertion or incompatible padding policy causes an error.
 decodeBase32 :: Base32 'Std ShortByteString -> ShortByteString
-decodeBase32 =
-  either (error . ErrorText.unpack) id
-    . decodeBase32Untyped
-    . extractBase32
+decodeBase32 = either (error . ErrorText.unpack) id
+  . decodeBase32Untyped . extractBase32
 {-# INLINE decodeBase32 #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 parseBase32 :: ShortByteString -> Either Text (Base32 'Std ShortByteString)
-parseBase32 value =
-  assertBase32 value
-    <$ (decodeBase32Untyped) value
+parseBase32 value = assertBase32 value
+  <$ (decodeBase32Untyped) value
 {-# INLINE parseBase32 #-}
 
 -- | Decode a value with established alphabet provenance.
 -- Use 'parseBase32Padded' to validate external input first.
 -- A false assertion or incompatible padding policy causes an error.
 decodeBase32Padded :: Base32 'Std ShortByteString -> ShortByteString
-decodeBase32Padded =
-  either (error . ErrorText.unpack) id
-    . decodeBase32PaddedUntyped
-    . extractBase32
+decodeBase32Padded = either (error . ErrorText.unpack) id
+  . decodeBase32PaddedUntyped . extractBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 parseBase32Padded :: ShortByteString -> Either Text (Base32 'Std ShortByteString)
-parseBase32Padded value =
-  assertBase32 value
-    <$ (decodeBase32PaddedUntyped) value
+parseBase32Padded value = assertBase32 value
+  <$ (decodeBase32PaddedUntyped) value
 {-# INLINE parseBase32Padded #-}
 
 -- | Decode a value with established alphabet provenance.
 -- Use 'parseBase32Unpadded' to validate external input first.
 -- A false assertion or incompatible padding policy causes an error.
 decodeBase32Unpadded :: Base32 'Std ShortByteString -> ShortByteString
-decodeBase32Unpadded =
-  either (error . ErrorText.unpack) id
-    . decodeBase32UnpaddedUntyped
-    . extractBase32
+decodeBase32Unpadded = either (error . ErrorText.unpack) id
+  . decodeBase32UnpaddedUntyped . extractBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 parseBase32Unpadded :: ShortByteString -> Either Text (Base32 'Std ShortByteString)
-parseBase32Unpadded value =
-  assertBase32 value
-    <$ (decodeBase32UnpaddedUntyped) value
+parseBase32Unpadded value = assertBase32 value
+  <$ (decodeBase32UnpaddedUntyped) value
 {-# INLINE parseBase32Unpadded #-}

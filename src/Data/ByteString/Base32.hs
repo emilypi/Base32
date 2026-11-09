@@ -1,9 +1,8 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Trustworthy #-}
-
 -- |
 -- Module       : Data.ByteString.Base32
 -- Copyright    : (c) 2019-2026 Emily Pillmore
@@ -17,38 +16,39 @@
 -- implementing the RFC 4648 specification of the Base32
 -- encoding format. This includes padded and unpadded decoding variants, as well as
 -- internal and external validation for canonicity.
+--
 module Data.ByteString.Base32
-  ( -- * Encoding
-    encodeBase32
-  , encodeBase32'
-  , encodeBase32Unpadded
-  , encodeBase32Unpadded'
+( -- * Encoding
+  encodeBase32
+, encodeBase32'
+, encodeBase32Unpadded
+, encodeBase32Unpadded'
+  -- * Decoding
+, decodeBase32Untyped
+, decodeBase32UnpaddedUntyped
+, decodeBase32PaddedUntyped
+  -- * Validation
+, decodeBase32
+, decodeBase32Padded
+, decodeBase32Unpadded
+, parseBase32
+, parseBase32Padded
+, parseBase32Unpadded
+) where
 
-    -- * Decoding
-  , decodeBase32Untyped
-  , decodeBase32UnpaddedUntyped
-  , decodeBase32PaddedUntyped
-
-    -- * Validation
-  , decodeBase32
-  , decodeBase32Padded
-  , decodeBase32Unpadded
-  , parseBase32
-  , parseBase32Padded
-  , parseBase32Unpadded
-  ) where
 
 import Data.Base32.Types
 import qualified Data.Text as ErrorText
 
 import qualified Data.ByteString as BS
+import Data.ByteString.Internal (ByteString(..))
 import Data.ByteString.Base32.Internal
 import Data.ByteString.Base32.Internal.Tables
-import Data.ByteString.Internal (ByteString (..))
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
 
 import System.IO.Unsafe (unsafeDupablePerformIO)
+
 
 -- | Encode a 'ByteString' value as a Base32 'Text' value with padding.
 --
@@ -58,6 +58,7 @@ import System.IO.Unsafe (unsafeDupablePerformIO)
 --
 -- >>> encodeBase32 "Sun"
 -- "KN2W4==="
+--
 encodeBase32 :: ByteString -> Base32 'Std Text
 encodeBase32 = fmap T.decodeUtf8 . encodeBase32'
 {-# INLINE encodeBase32 #-}
@@ -70,6 +71,7 @@ encodeBase32 = fmap T.decodeUtf8 . encodeBase32'
 --
 -- >>> encodeBase32' "Sun"
 -- "KN2W4==="
+--
 encodeBase32' :: ByteString -> Base32 'Std ByteString
 encodeBase32' = assertBase32 . encodeBase32_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 {-# INLINE encodeBase32' #-}
@@ -91,17 +93,19 @@ encodeBase32' = assertBase32 . encodeBase32_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
 --
 -- >>> decodeBase32Untyped "KN2W==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
 decodeBase32Untyped :: ByteString -> Either Text ByteString
 decodeBase32Untyped bs@(BS _ !l)
-  | l == 0 = Right bs
-  | r == 0 = unsafeDupablePerformIO $ decodeBase32_ stdDecodeTable bs
-  | r == 2 = unsafeDupablePerformIO $ decodeBase32_ stdDecodeTable (BS.append bs "======")
-  | r == 4 = validateLastNPads 2 bs $ decodeBase32_ stdDecodeTable (BS.append bs "====")
-  | r == 5 = validateLastNPads 3 bs $ decodeBase32_ stdDecodeTable (BS.append bs "===")
-  | r == 7 = validateLastNPads 5 bs $ decodeBase32_ stdDecodeTable (BS.append bs "=")
-  | otherwise = Left "Base32-encoded bytestring has invalid size"
- where
-  !r = l `rem` 8
+    | l == 0 = Right bs
+    | r == 0 = unsafeDupablePerformIO $ decodeBase32_ stdDecodeTable bs
+    | r == 2 = unsafeDupablePerformIO $
+        decodeBase32_ stdDecodeTable (BS.append bs "======")
+    | r == 4 = validateLastNPads 2 bs $ decodeBase32_ stdDecodeTable (BS.append bs "====")
+    | r == 5 = validateLastNPads 3 bs $ decodeBase32_ stdDecodeTable (BS.append bs "===")
+    | r == 7 = validateLastNPads 5 bs $ decodeBase32_ stdDecodeTable (BS.append bs "=")
+    | otherwise = Left "Base32-encoded bytestring has invalid size"
+  where
+    !r = l `rem` 8
 {-# INLINE decodeBase32Untyped #-}
 
 -- | Encode a 'ByteString' value as a Base32 'Text' value without padding.
@@ -112,6 +116,7 @@ decodeBase32Untyped bs@(BS _ !l)
 --
 -- >>> encodeBase32Unpadded "Sun"
 -- "KN2W4"
+--
 encodeBase32Unpadded :: ByteString -> Base32 'Std Text
 encodeBase32Unpadded = fmap T.decodeUtf8 . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
@@ -124,6 +129,7 @@ encodeBase32Unpadded = fmap T.decodeUtf8 . encodeBase32Unpadded'
 --
 -- >>> encodeBase32Unpadded' "Sun"
 -- "KN2W4"
+--
 encodeBase32Unpadded' :: ByteString -> Base32 'Std ByteString
 encodeBase32Unpadded' = assertBase32
   . encodeBase32NoPad_ "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"#
@@ -140,17 +146,19 @@ encodeBase32Unpadded' = assertBase32
 --
 -- >>> decodeBase32UnpaddedUntyped "KN2W4==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
 decodeBase32UnpaddedUntyped :: ByteString -> Either Text ByteString
 decodeBase32UnpaddedUntyped bs@(BS _ !l)
-  | l == 0 = Right bs
-  | r == 0 = validateLastNPads 1 bs $ decodeBase32_ stdDecodeTable bs
-  | r == 2 = unsafeDupablePerformIO $ decodeBase32_ stdDecodeTable (BS.append bs "======")
-  | r == 4 = validateLastNPads 1 bs $ decodeBase32_ stdDecodeTable (BS.append bs "====")
-  | r == 5 = validateLastNPads 1 bs $ decodeBase32_ stdDecodeTable (BS.append bs "===")
-  | r == 7 = validateLastNPads 1 bs $ decodeBase32_ stdDecodeTable (BS.append bs "=")
-  | otherwise = Left "Base32-encoded bytestring has invalid size"
- where
-  !r = l `rem` 8
+    | l == 0 = Right bs
+    | r == 0 = validateLastNPads 1 bs $ decodeBase32_ stdDecodeTable bs
+    | r == 2 = unsafeDupablePerformIO $
+        decodeBase32_ stdDecodeTable (BS.append bs "======")
+    | r == 4 = validateLastNPads 1 bs $ decodeBase32_ stdDecodeTable (BS.append bs "====")
+    | r == 5 = validateLastNPads 1 bs $ decodeBase32_ stdDecodeTable (BS.append bs "===")
+    | r == 7 = validateLastNPads 1 bs $ decodeBase32_ stdDecodeTable (BS.append bs "=")
+    | otherwise = Left "Base32-encoded bytestring has invalid size"
+  where
+    !r = l `rem` 8
 {-# INLINE decodeBase32UnpaddedUntyped #-}
 
 -- | Decode a padded Base32-encoded 'ByteString' value.
@@ -164,71 +172,63 @@ decodeBase32UnpaddedUntyped bs@(BS _ !l)
 --
 -- >>> decodeBase32PaddedUntyped "KN2W4"
 -- Left "Base32-encoded bytestring requires padding"
+--
 decodeBase32PaddedUntyped :: ByteString -> Either Text ByteString
 decodeBase32PaddedUntyped bs@(BS _ !l)
-  | l == 0 = Right bs
-  | r == 1 = Left "Base32-encoded bytestring has invalid size"
-  | r == 3 = Left "Base32-encoded bytestring has invalid size"
-  | r == 6 = Left "Base32-encoded bytestring has invalid size"
-  | r /= 0 = Left "Base32-encoded bytestring requires padding"
-  | otherwise = unsafeDupablePerformIO $ decodeBase32_ stdDecodeTable bs
- where
-  !r = l `rem` 8
+    | l == 0 = Right bs
+    | r == 1 = Left "Base32-encoded bytestring has invalid size"
+    | r == 3 = Left "Base32-encoded bytestring has invalid size"
+    | r == 6 = Left "Base32-encoded bytestring has invalid size"
+    | r /= 0 = Left "Base32-encoded bytestring requires padding"
+    | otherwise = unsafeDupablePerformIO $ decodeBase32_ stdDecodeTable bs
+  where
+    !r = l `rem` 8
 {-# INLINE decodeBase32PaddedUntyped #-}
 
 -- | Decode a value with established alphabet provenance.
 -- Use 'parseBase32' to validate external input first.
 -- A false assertion or incompatible padding policy causes an error.
 decodeBase32 :: Base32 'Std ByteString -> ByteString
-decodeBase32 =
-  either (error . ErrorText.unpack) id
-    . decodeBase32Untyped
-    . extractBase32
+decodeBase32 = either (error . ErrorText.unpack) id
+  . decodeBase32Untyped . extractBase32
 {-# INLINE decodeBase32 #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 parseBase32 :: ByteString -> Either Text (Base32 'Std ByteString)
-parseBase32 value =
-  assertBase32 value
-    <$ (decodeBase32Untyped) value
+parseBase32 value = assertBase32 value
+  <$ (decodeBase32Untyped) value
 {-# INLINE parseBase32 #-}
 
 -- | Decode a value with established alphabet provenance.
 -- Use 'parseBase32Padded' to validate external input first.
 -- A false assertion or incompatible padding policy causes an error.
 decodeBase32Padded :: Base32 'Std ByteString -> ByteString
-decodeBase32Padded =
-  either (error . ErrorText.unpack) id
-    . decodeBase32PaddedUntyped
-    . extractBase32
+decodeBase32Padded = either (error . ErrorText.unpack) id
+  . decodeBase32PaddedUntyped . extractBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 parseBase32Padded :: ByteString -> Either Text (Base32 'Std ByteString)
-parseBase32Padded value =
-  assertBase32 value
-    <$ (decodeBase32PaddedUntyped) value
+parseBase32Padded value = assertBase32 value
+  <$ (decodeBase32PaddedUntyped) value
 {-# INLINE parseBase32Padded #-}
 
 -- | Decode a value with established alphabet provenance.
 -- Use 'parseBase32Unpadded' to validate external input first.
 -- A false assertion or incompatible padding policy causes an error.
 decodeBase32Unpadded :: Base32 'Std ByteString -> ByteString
-decodeBase32Unpadded =
-  either (error . ErrorText.unpack) id
-    . decodeBase32UnpaddedUntyped
-    . extractBase32
+decodeBase32Unpadded = either (error . ErrorText.unpack) id
+  . decodeBase32UnpaddedUntyped . extractBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
 parseBase32Unpadded :: ByteString -> Either Text (Base32 'Std ByteString)
-parseBase32Unpadded value =
-  assertBase32 value
-    <$ (decodeBase32UnpaddedUntyped) value
+parseBase32Unpadded value = assertBase32 value
+  <$ (decodeBase32UnpaddedUntyped) value
 {-# INLINE parseBase32Unpadded #-}

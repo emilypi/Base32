@@ -1,5 +1,0 @@
-indentation: 2
-column-limit: 90
-comma-style: leading
-import-export-style: leading
-haddock-style: single-line

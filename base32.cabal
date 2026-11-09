@@ -25,7 +25,6 @@ tested-with:
   GHC ==9.6.7 || ==9.8.4 || ==9.10.3 || ==9.12.4 || ==9.14.1
 
 extra-source-files:
-  fourmolu.yaml
   cbits/base32_simd.h
   test/simd-native.c
 
