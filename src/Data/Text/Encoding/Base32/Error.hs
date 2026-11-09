@@ -2,7 +2,7 @@
 {-# LANGUAGE Safe #-}
 -- |
 -- Module       : Data.Text.Encoding.Base32.Error
--- Copyright    : (c) 2019-2023 Emily Pillmore
+-- Copyright    : (c) 2019-2026 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -29,6 +29,11 @@ import GHC.Generics
 -- Namely, to distinguish between decoding errors from opaque
 -- unicode exceptions caught in the unicode decoding process.
 --
+-- >>> DecodeError "invalid padding" :: Base32Error String
+-- DecodeError "invalid padding"
+-- >>> ConversionError "invalid UTF-8" :: Base32Error String
+-- ConversionError "invalid UTF-8"
+--
 data Base32Error e
   = DecodeError Text
     -- ^ The error associated with decoding failure
@@ -54,3 +59,6 @@ instance Exception e => Exception (Base32Error e)
 -- @since 0.2.0.0
 --
 instance NFData e => NFData (Base32Error e)
+
+-- $setup
+-- >>> :seti -XOverloadedStrings

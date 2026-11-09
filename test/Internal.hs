@@ -2,6 +2,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE KindSignatures #-}
@@ -9,7 +10,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -- |
 -- Module       : Main
--- Copyright    : (c) 2019-2023 Emily Pillmore
+-- Copyright    : (c) 2019-2026 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -33,6 +34,8 @@ module Internal
 ) where
 
 
+import Data.Base32.Types (Alphabet(..), Base32, StdAlphabet, HexAlphabet, extractBase32)
+import Data.Either (isRight)
 import Test.QuickCheck hiding (label)
 import Data.Text
 import qualified Data.ByteString as BS
@@ -69,12 +72,24 @@ data Harness bs = Harness
   , encodeNopad :: bs -> bs
   , encodeHex :: bs -> bs
   , encodeHexNopad :: bs -> bs
+  , decodeTyped :: forall k. StdAlphabet k => Base32 k bs -> bs
+  , decodePaddedTyped :: Base32 'StdPadded bs -> bs
+  , decodeUnpaddedTyped :: Base32 'StdUnpadded bs -> bs
+  , decodeHexTyped :: forall k. HexAlphabet k => Base32 k bs -> bs
+  , decodeHexPaddedTyped :: Base32 'HexPadded bs -> bs
+  , decodeHexUnpaddedTyped :: Base32 'HexUnpadded bs -> bs
   , decode :: bs -> Either Text bs
   , decodeHex :: bs -> Either Text bs
   , decodePad :: bs -> Either Text bs
   , decodeHexPad :: bs -> Either Text bs
   , decodeNopad :: bs -> Either Text bs
   , decodeHexNopad :: bs -> Either Text bs
+  , parseValue :: bs -> Either Text bs
+  , parseHexValue :: bs -> Either Text bs
+  , parsePaddedValue :: bs -> Either Text bs
+  , parseUnpaddedValue :: bs -> Either Text bs
+  , parseHexPaddedValue :: bs -> Either Text bs
+  , parseHexUnpaddedValue :: bs -> Either Text bs
   , correct :: bs -> Bool
   , correctHex :: bs -> Bool
   , validate :: bs -> Bool
@@ -84,115 +99,187 @@ data Harness bs = Harness
 b32 :: Harness BS.ByteString
 b32 = Harness
   { label = "ByteString"
-  , encode = B32.encodeBase32'
-  , encodeNopad = B32.encodeBase32Unpadded'
-  , decode = B32.decodeBase32
-  , decodePad = B32.decodeBase32Padded
-  , decodeNopad = B32.decodeBase32Unpadded
-  , correct = B32.isBase32
-  , validate = B32.isValidBase32
-  , encodeHex = B32H.encodeBase32'
-  , encodeHexNopad = B32H.encodeBase32Unpadded'
-  , decodeHex = B32H.decodeBase32
-  , decodeHexPad = B32H.decodeBase32Padded
-  , decodeHexNopad = B32H.decodeBase32Unpadded
-  , correctHex = B32H.isBase32Hex
-  , validateHex = B32H.isValidBase32Hex
+  , encode = extractBase32 . B32.encodeBase32'
+  , encodeNopad = extractBase32 . B32.encodeBase32Unpadded'
+  , decodeTyped = B32.decodeBase32
+  , decodePaddedTyped = B32.decodeBase32Padded
+  , decodeUnpaddedTyped = B32.decodeBase32Unpadded
+  , decodeHexTyped = B32H.decodeBase32
+  , decodeHexPaddedTyped = B32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = B32H.decodeBase32Unpadded
+  , decode = B32.decodeBase32Untyped
+  , decodePad = B32.decodeBase32PaddedUntyped
+  , decodeNopad = B32.decodeBase32UnpaddedUntyped
+  , parseValue = fmap extractBase32 . B32.parseBase32Padded
+  , parseHexValue = fmap extractBase32 . B32H.parseBase32Padded
+  , parsePaddedValue = fmap extractBase32 . B32.parseBase32Padded
+  , parseUnpaddedValue = fmap extractBase32 . B32.parseBase32Unpadded
+  , parseHexPaddedValue = fmap extractBase32 . B32H.parseBase32Padded
+  , parseHexUnpaddedValue = fmap extractBase32 . B32H.parseBase32Unpadded
+  , correct = isRight . B32.decodeBase32Untyped
+  , validate = isRight . B32.decodeBase32Untyped
+  , encodeHex = extractBase32 . B32H.encodeBase32'
+  , encodeHexNopad = extractBase32 . B32H.encodeBase32Unpadded'
+  , decodeHex = B32H.decodeBase32Untyped
+  , decodeHexPad = B32H.decodeBase32PaddedUntyped
+  , decodeHexNopad = B32H.decodeBase32UnpaddedUntyped
+  , correctHex = isRight . B32H.decodeBase32Untyped
+  , validateHex = isRight . B32H.decodeBase32Untyped
   }
 
 lb32 :: Harness LBS.ByteString
 lb32 = Harness
   { label = "Lazy ByteString"
-  , encode = BL32.encodeBase32'
-  , encodeNopad = BL32.encodeBase32Unpadded'
-  , decode = BL32.decodeBase32
-  , decodePad = BL32.decodeBase32Padded
-  , decodeNopad = BL32.decodeBase32Unpadded
-  , correct = BL32.isBase32
-  , validate = BL32.isValidBase32
-  , encodeHex = BL32H.encodeBase32'
-  , encodeHexNopad = BL32H.encodeBase32Unpadded'
-  , decodeHex = BL32H.decodeBase32
-  , decodeHexPad = BL32H.decodeBase32Padded
-  , decodeHexNopad = BL32H.decodeBase32Unpadded
-  , correctHex = BL32H.isBase32Hex
-  , validateHex = BL32H.isValidBase32Hex
+  , encode = extractBase32 . BL32.encodeBase32'
+  , encodeNopad = extractBase32 . BL32.encodeBase32Unpadded'
+  , decodeTyped = BL32.decodeBase32
+  , decodePaddedTyped = BL32.decodeBase32Padded
+  , decodeUnpaddedTyped = BL32.decodeBase32Unpadded
+  , decodeHexTyped = BL32H.decodeBase32
+  , decodeHexPaddedTyped = BL32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = BL32H.decodeBase32Unpadded
+  , decode = BL32.decodeBase32Untyped
+  , decodePad = BL32.decodeBase32PaddedUntyped
+  , decodeNopad = BL32.decodeBase32UnpaddedUntyped
+  , parseValue = fmap extractBase32 . BL32.parseBase32Padded
+  , parseHexValue = fmap extractBase32 . BL32H.parseBase32Padded
+  , parsePaddedValue = fmap extractBase32 . BL32.parseBase32Padded
+  , parseUnpaddedValue = fmap extractBase32 . BL32.parseBase32Unpadded
+  , parseHexPaddedValue = fmap extractBase32 . BL32H.parseBase32Padded
+  , parseHexUnpaddedValue = fmap extractBase32 . BL32H.parseBase32Unpadded
+  , correct = isRight . BL32.decodeBase32Untyped
+  , validate = isRight . BL32.decodeBase32Untyped
+  , encodeHex = extractBase32 . BL32H.encodeBase32'
+  , encodeHexNopad = extractBase32 . BL32H.encodeBase32Unpadded'
+  , decodeHex = BL32H.decodeBase32Untyped
+  , decodeHexPad = BL32H.decodeBase32PaddedUntyped
+  , decodeHexNopad = BL32H.decodeBase32UnpaddedUntyped
+  , correctHex = isRight . BL32H.decodeBase32Untyped
+  , validateHex = isRight . BL32H.decodeBase32Untyped
   }
 
 sb32 :: Harness SBS.ShortByteString
 sb32 = Harness
   { label = "Short ByteString"
-  , encode = BS32.encodeBase32'
-  , encodeNopad = BS32.encodeBase32Unpadded'
-  , decode = BS32.decodeBase32
-  , decodePad = BS32.decodeBase32Padded
-  , decodeNopad = BS32.decodeBase32Unpadded
-  , correct = BS32.isBase32
-  , validate = BS32.isValidBase32
-  , encodeHex = BS32H.encodeBase32'
-  , encodeHexNopad = BS32H.encodeBase32Unpadded'
-  , decodeHex = BS32H.decodeBase32
-  , decodeHexPad = BS32H.decodeBase32Padded
-  , decodeHexNopad = BS32H.decodeBase32Unpadded
-  , correctHex = BS32H.isBase32Hex
-  , validateHex = BS32H.isValidBase32Hex
+  , encode = extractBase32 . BS32.encodeBase32'
+  , encodeNopad = extractBase32 . BS32.encodeBase32Unpadded'
+  , decodeTyped = BS32.decodeBase32
+  , decodePaddedTyped = BS32.decodeBase32Padded
+  , decodeUnpaddedTyped = BS32.decodeBase32Unpadded
+  , decodeHexTyped = BS32H.decodeBase32
+  , decodeHexPaddedTyped = BS32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = BS32H.decodeBase32Unpadded
+  , decode = BS32.decodeBase32Untyped
+  , decodePad = BS32.decodeBase32PaddedUntyped
+  , decodeNopad = BS32.decodeBase32UnpaddedUntyped
+  , parseValue = fmap extractBase32 . BS32.parseBase32Padded
+  , parseHexValue = fmap extractBase32 . BS32H.parseBase32Padded
+  , parsePaddedValue = fmap extractBase32 . BS32.parseBase32Padded
+  , parseUnpaddedValue = fmap extractBase32 . BS32.parseBase32Unpadded
+  , parseHexPaddedValue = fmap extractBase32 . BS32H.parseBase32Padded
+  , parseHexUnpaddedValue = fmap extractBase32 . BS32H.parseBase32Unpadded
+  , correct = isRight . BS32.decodeBase32Untyped
+  , validate = isRight . BS32.decodeBase32Untyped
+  , encodeHex = extractBase32 . BS32H.encodeBase32'
+  , encodeHexNopad = extractBase32 . BS32H.encodeBase32Unpadded'
+  , decodeHex = BS32H.decodeBase32Untyped
+  , decodeHexPad = BS32H.decodeBase32PaddedUntyped
+  , decodeHexNopad = BS32H.decodeBase32UnpaddedUntyped
+  , correctHex = isRight . BS32H.decodeBase32Untyped
+  , validateHex = isRight . BS32H.decodeBase32Untyped
   }
 
 t32 :: Harness T.Text
 t32 = Harness
   { label = "Text"
-  , encode = T32.encodeBase32
-  , encodeNopad = T32.encodeBase32Unpadded
-  , decode = T32.decodeBase32
-  , decodePad = T32.decodeBase32Padded
-  , decodeNopad = T32.decodeBase32Unpadded
-  , correct = T32.isBase32
-  , validate = T32.isValidBase32
-  , encodeHex = T32H.encodeBase32
-  , encodeHexNopad = T32H.encodeBase32Unpadded
-  , decodeHex = T32H.decodeBase32
-  , decodeHexPad = T32H.decodeBase32Padded
-  , decodeHexNopad = T32H.decodeBase32Unpadded
-  , correctHex = T32H.isBase32Hex
-  , validateHex = T32H.isValidBase32Hex
+  , encode = extractBase32 . T32.encodeBase32
+  , encodeNopad = extractBase32 . T32.encodeBase32Unpadded
+  , decodeTyped = T32.decodeBase32
+  , decodePaddedTyped = T32.decodeBase32Padded
+  , decodeUnpaddedTyped = T32.decodeBase32Unpadded
+  , decodeHexTyped = T32H.decodeBase32
+  , decodeHexPaddedTyped = T32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = T32H.decodeBase32Unpadded
+  , decode = T32.decodeBase32Untyped
+  , decodePad = T32.decodeBase32PaddedUntyped
+  , decodeNopad = T32.decodeBase32UnpaddedUntyped
+  , parseValue = fmap extractBase32 . T32.parseBase32Padded
+  , parseHexValue = fmap extractBase32 . T32H.parseBase32Padded
+  , parsePaddedValue = fmap extractBase32 . T32.parseBase32Padded
+  , parseUnpaddedValue = fmap extractBase32 . T32.parseBase32Unpadded
+  , parseHexPaddedValue = fmap extractBase32 . T32H.parseBase32Padded
+  , parseHexUnpaddedValue = fmap extractBase32 . T32H.parseBase32Unpadded
+  , correct = isRight . T32.decodeBase32Untyped
+  , validate = isRight . T32.decodeBase32Untyped
+  , encodeHex = extractBase32 . T32H.encodeBase32
+  , encodeHexNopad = extractBase32 . T32H.encodeBase32Unpadded
+  , decodeHex = T32H.decodeBase32Untyped
+  , decodeHexPad = T32H.decodeBase32PaddedUntyped
+  , decodeHexNopad = T32H.decodeBase32UnpaddedUntyped
+  , correctHex = isRight . T32H.decodeBase32Untyped
+  , validateHex = isRight . T32H.decodeBase32Untyped
   }
 
 tl32 :: Harness TL.Text
 tl32 = Harness
   { label = "Lazy Text"
-  , encode = TL32.encodeBase32
-  , encodeNopad = TL32.encodeBase32Unpadded
-  , decode = TL32.decodeBase32
-  , decodePad = TL32.decodeBase32Padded
-  , decodeNopad = TL32.decodeBase32Unpadded
-  , correct = TL32.isBase32
-  , validate = TL32.isValidBase32
-  , encodeHex = TL32H.encodeBase32
-  , encodeHexNopad = TL32H.encodeBase32Unpadded
-  , decodeHex = TL32H.decodeBase32
-  , decodeHexPad = TL32H.decodeBase32Padded
-  , decodeHexNopad = TL32H.decodeBase32Unpadded
-  , correctHex = TL32H.isBase32Hex
-  , validateHex = TL32H.isValidBase32Hex
+  , encode = extractBase32 . TL32.encodeBase32
+  , encodeNopad = extractBase32 . TL32.encodeBase32Unpadded
+  , decodeTyped = TL32.decodeBase32
+  , decodePaddedTyped = TL32.decodeBase32Padded
+  , decodeUnpaddedTyped = TL32.decodeBase32Unpadded
+  , decodeHexTyped = TL32H.decodeBase32
+  , decodeHexPaddedTyped = TL32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = TL32H.decodeBase32Unpadded
+  , decode = TL32.decodeBase32Untyped
+  , decodePad = TL32.decodeBase32PaddedUntyped
+  , decodeNopad = TL32.decodeBase32UnpaddedUntyped
+  , parseValue = fmap extractBase32 . TL32.parseBase32Padded
+  , parseHexValue = fmap extractBase32 . TL32H.parseBase32Padded
+  , parsePaddedValue = fmap extractBase32 . TL32.parseBase32Padded
+  , parseUnpaddedValue = fmap extractBase32 . TL32.parseBase32Unpadded
+  , parseHexPaddedValue = fmap extractBase32 . TL32H.parseBase32Padded
+  , parseHexUnpaddedValue = fmap extractBase32 . TL32H.parseBase32Unpadded
+  , correct = isRight . TL32.decodeBase32Untyped
+  , validate = isRight . TL32.decodeBase32Untyped
+  , encodeHex = extractBase32 . TL32H.encodeBase32
+  , encodeHexNopad = extractBase32 . TL32H.encodeBase32Unpadded
+  , decodeHex = TL32H.decodeBase32Untyped
+  , decodeHexPad = TL32H.decodeBase32PaddedUntyped
+  , decodeHexNopad = TL32H.decodeBase32UnpaddedUntyped
+  , correctHex = isRight . TL32H.decodeBase32Untyped
+  , validateHex = isRight . TL32H.decodeBase32Untyped
   }
 
 ts32 :: Harness TS.ShortText
 ts32 = Harness
   { label = "Short Lazy Text"
-  , encode = TS32.encodeBase32
-  , encodeNopad = TS32.encodeBase32Unpadded
-  , decode = TS32.decodeBase32
-  , decodePad = TS32.decodeBase32Padded
-  , decodeNopad = TS32.decodeBase32Unpadded
-  , correct = TS32.isBase32
-  , validate = TS32.isValidBase32
-  , encodeHex = TS32H.encodeBase32
-  , encodeHexNopad = TS32H.encodeBase32Unpadded
-  , decodeHex = TS32H.decodeBase32
-  , decodeHexPad = TS32H.decodeBase32Padded
-  , decodeHexNopad = TS32H.decodeBase32Unpadded
-  , correctHex = TS32H.isBase32Hex
-  , validateHex = TS32H.isValidBase32Hex
+  , encode = extractBase32 . TS32.encodeBase32
+  , encodeNopad = extractBase32 . TS32.encodeBase32Unpadded
+  , decodeTyped = TS32.decodeBase32
+  , decodePaddedTyped = TS32.decodeBase32Padded
+  , decodeUnpaddedTyped = TS32.decodeBase32Unpadded
+  , decodeHexTyped = TS32H.decodeBase32
+  , decodeHexPaddedTyped = TS32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = TS32H.decodeBase32Unpadded
+  , decode = TS32.decodeBase32Untyped
+  , decodePad = TS32.decodeBase32PaddedUntyped
+  , decodeNopad = TS32.decodeBase32UnpaddedUntyped
+  , parseValue = fmap extractBase32 . TS32.parseBase32Padded
+  , parseHexValue = fmap extractBase32 . TS32H.parseBase32Padded
+  , parsePaddedValue = fmap extractBase32 . TS32.parseBase32Padded
+  , parseUnpaddedValue = fmap extractBase32 . TS32.parseBase32Unpadded
+  , parseHexPaddedValue = fmap extractBase32 . TS32H.parseBase32Padded
+  , parseHexUnpaddedValue = fmap extractBase32 . TS32H.parseBase32Unpadded
+  , correct = isRight . TS32.decodeBase32Untyped
+  , validate = isRight . TS32.decodeBase32Untyped
+  , encodeHex = extractBase32 . TS32H.encodeBase32
+  , encodeHexNopad = extractBase32 . TS32H.encodeBase32Unpadded
+  , decodeHex = TS32H.decodeBase32Untyped
+  , decodeHexPad = TS32H.decodeBase32PaddedUntyped
+  , decodeHexNopad = TS32H.decodeBase32UnpaddedUntyped
+  , correctHex = isRight . TS32H.decodeBase32Untyped
+  , validateHex = isRight . TS32H.decodeBase32Untyped
   }
 
 -- -------------------------------------------------------------------- --
@@ -200,11 +287,16 @@ ts32 = Harness
 
 data TextHarness bs cs = TextHarness
   { decodeWith_ :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
-  , decodePaddedWith_ :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
-  , decodeUnpaddedWith_ :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
-  , decodeHexWith_ :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
-  , decodeHexPaddedWith_ :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
-  , decodeHexUnpaddedWith_ :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  , decodePaddedWith_
+      :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  , decodeUnpaddedWith_
+      :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  , decodeHexWith_
+      :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  , decodeHexPaddedWith_
+      :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
+  , decodeHexUnpaddedWith_
+      :: forall err. (bs -> Either err cs) -> bs -> Either (Base32Error err) cs
   }
 
 tt32 :: TextHarness BS.ByteString Text

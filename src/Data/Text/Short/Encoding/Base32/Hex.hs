@@ -1,7 +1,10 @@
-{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE Safe #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+
 -- |
 -- Module       : Data.Text.Short.Encoding.Base32.Hex
--- Copyright    : (c) 2019-2023 Emily Pillmore
+-- Copyright    : (c) 2019-2026 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -18,28 +21,33 @@ module Data.Text.Short.Encoding.Base32.Hex
   encodeBase32
 , encodeBase32Unpadded
   -- * Decoding
-, decodeBase32
+, decodeBase32Untyped
 , decodeBase32With
-, decodeBase32Unpadded
+, decodeBase32UnpaddedUntyped
 , decodeBase32UnpaddedWith
-, decodeBase32Padded
+, decodeBase32PaddedUntyped
 , decodeBase32PaddedWith
---, decodeBase32Lenient
   -- * Validation
-, isBase32Hex
-, isValidBase32Hex
+, decodeBase32
+, decodeBase32Padded
+, decodeBase32Unpadded
+, parseBase32Padded
+, parseBase32Unpadded
 ) where
 
 
+import Data.Base32.Types
+import qualified Data.Text as ErrorText
+
 import Data.Bifunctor (first)
-import qualified Data.ByteString.Base32.Hex as B32H
 import Data.ByteString.Short (ShortByteString)
+import qualified Data.ByteString.Short as SBS
 import qualified Data.ByteString.Short.Base32.Hex as BS32H
 import Data.Text (Text)
-import qualified Data.Text.Encoding.Base32.Hex as B32TH
+import qualified Data.Text.Encoding as TE
 import Data.Text.Encoding.Base32.Error
 import Data.Text.Short
-import Data.Text.Short.Unsafe
+
 
 -- | Encode a 'ShortText' value in Base32hex with padding.
 --
@@ -50,59 +58,66 @@ import Data.Text.Short.Unsafe
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
-encodeBase32 :: ShortText -> ShortText
-encodeBase32 = fromByteStringUnsafe
-  . B32H.encodeBase32'
-  . toByteString
+encodeBase32 :: ShortText -> Base32 'HexPadded ShortText
+encodeBase32 =
+  BS32H.encodeBase32
+    . toShortByteString
 {-# INLINE encodeBase32 #-}
 
--- | Decode an arbitrarily padded Base32hex-encoded 'ShortText' value. If its length is not a multiple
--- of 4, then padding chars will be added to fill out the input to a multiple of
--- 4 for safe decoding as base32hex encodings are optionally padded.
+-- | Decode an arbitrarily padded Base32hex-encoded 'ShortText' value. If its length is
+-- not a multiple
+-- of 8, then padding chars will be added to fill out the input to a multiple of
+-- 8 for safe decoding as base32hex encodings are optionally padded.
 --
--- /Note:/ This function makes sure that decoding is total by deferring to
--- 'Data.Text.Encoding.decodeUtf8'. This will always round trip for any valid Base32-encoded
--- text value, but it may not round trip for bad inputs. The onus is on the
--- caller to make sure inputs are valid. If unsure, defer to `decodeBase32With`
--- and pass in a custom decode function.
+-- Decoded bytes are interpreted as UTF-8. Invalid Base32 or UTF-8
+-- returns 'Left'. Use the corresponding @decode*With@ function
+-- to choose a different character encoding.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "ADQMS==="
+-- >>> decodeBase32Untyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32 "ADQMS"
+-- >>> decodeBase32Untyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32 "ADQMS==="
+-- >>> decodeBase32Untyped "ADQM==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
-decodeBase32 :: ShortText -> Either Text ShortText
-decodeBase32 = fmap fromText . B32TH.decodeBase32 . toText
-{-# INLINE decodeBase32 #-}
+decodeBase32Untyped :: ShortText -> Either Text ShortText
+decodeBase32Untyped value =
+  BS32H.decodeBase32Untyped (toShortByteString value)
+    >>= maybe (Left (ErrorText.pack "invalid UTF-8 payload")) Right
+      . fromShortByteString
+{-# INLINE decodeBase32Untyped #-}
 
 -- | Attempt to decode a 'ShortByteString' value as Base32hex, converting from
--- 'ByteString' to 'ShortText' according to some encoding function. In practice,
--- This is something like 'decodeUtf8'', which may produce an error.
+-- 'ShortByteString' to 'ShortText' according to some encoding function. In practice,
+-- The conversion can report a character-encoding error.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32With' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32With utf8 "ADQMS==="
+-- Right "Sun"
+--
+-- >>> decodeBase32With utf8 "!"
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+--
+-- >>> decodeBase32With (const (Left "unsupported encoding")) "ADQMS==="
+-- Left (ConversionError "unsupported encoding")
 --
 decodeBase32With
     :: (ShortByteString -> Either err ShortText)
-      -- ^ convert a bytestring to text (e.g. '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)')
+      -- ^ convert a bytestring to text (e.g. '(fmap fromText .
+      -- Data.Text.Encoding.decodeUtf8' . toText)')
     -> ShortByteString
       -- ^ Input text to decode
     -> Either (Base32Error err) ShortText
-decodeBase32With f t = case BS32H.decodeBase32 t of
+decodeBase32With f t = case BS32H.decodeBase32Untyped t of
   Left de -> Left $ DecodeError de
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32With #-}
@@ -118,92 +133,103 @@ decodeBase32With f t = case BS32H.decodeBase32 t of
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
-encodeBase32Unpadded :: ShortText -> ShortText
-encodeBase32Unpadded = fromByteStringUnsafe
-  . B32H.encodeBase32Unpadded'
-  . toByteString
+encodeBase32Unpadded :: ShortText -> Base32 'HexUnpadded ShortText
+encodeBase32Unpadded =
+  BS32H.encodeBase32Unpadded
+    . toShortByteString
 {-# INLINE encodeBase32Unpadded #-}
 
 -- | Decode an unpadded Base32hex encoded 'ShortText' value.
 --
--- /Note:/ This function makes sure that decoding is total by deferring to
--- 'Data.Text.Encoding.decodeUtf8'. This will always round trip for any valid Base32-encoded
--- text value, but it may not round trip for bad inputs. The onus is on the
--- caller to make sure inputs are valid. If unsure, defer to `decodeBase32UnpaddedWith`
--- and pass in a custom decode function.
+-- Decoded bytes are interpreted as UTF-8. Invalid Base32 or UTF-8
+-- returns 'Left'. Use the corresponding @decode*With@ function
+-- to choose a different character encoding.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "ADQMS"
+-- >>> decodeBase32UnpaddedUntyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32Unpadded "ADQMS==="
+-- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
-decodeBase32Unpadded :: ShortText -> Either Text ShortText
-decodeBase32Unpadded = fmap fromText . B32TH.decodeBase32Unpadded . toText
-{-# INLINE decodeBase32Unpadded #-}
+decodeBase32UnpaddedUntyped :: ShortText -> Either Text ShortText
+decodeBase32UnpaddedUntyped value =
+  BS32H.decodeBase32UnpaddedUntyped (toShortByteString value)
+    >>= maybe (Left (ErrorText.pack "invalid UTF-8 payload")) Right
+      . fromShortByteString
+{-# INLINE decodeBase32UnpaddedUntyped #-}
 
 -- | Attempt to decode an unpadded 'ShortByteString' value as Base32hex, converting from
 -- 'ShortByteString' to 'ShortText' according to some encoding function. In practice,
--- This is something like 'decodeUtf8'', which may produce an error.
+-- The conversion can report a character-encoding error.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32UnpaddedWith' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32UnpaddedWith utf8 "ADQMS"
+-- Right "Sun"
+--
+-- >>> decodeBase32UnpaddedWith utf8 "!"
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+--
+-- >>> decodeBase32UnpaddedWith (const (Left "unsupported encoding")) "ADQMS"
+-- Left (ConversionError "unsupported encoding")
 --
 decodeBase32UnpaddedWith
     :: (ShortByteString -> Either err ShortText)
-      -- ^ convert a bytestring to text (e.g. '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)')
+      -- ^ convert a bytestring to text (e.g. '(fmap fromText .
+      -- Data.Text.Encoding.decodeUtf8' . toText)')
     -> ShortByteString
       -- ^ Input text to decode
     -> Either (Base32Error err) ShortText
-decodeBase32UnpaddedWith f t = case BS32H.decodeBase32Unpadded t of
+decodeBase32UnpaddedWith f t = case BS32H.decodeBase32UnpaddedUntyped t of
   Left de -> Left $ DecodeError de
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32UnpaddedWith #-}
 
 -- | Decode an padded Base32hex encoded 'ShortText' value
 --
--- /Note:/ This function makes sure that decoding is total by deferring to
--- 'Data.Text.Encoding.decodeUtf8'. This will always round trip for any valid Base32-encoded
--- text value, but it may not round trip for bad inputs. The onus is on the
--- caller to make sure inputs are valid. If unsure, defer to `decodeBase32PaddedWith`
--- and pass in a custom decode function.
+-- Decoded bytes are interpreted as UTF-8. Invalid Base32 or UTF-8
+-- returns 'Left'. Use the corresponding @decode*With@ function
+-- to choose a different character encoding.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "ADQMS==="
+-- >>> decodeBase32PaddedUntyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32Padded "ADQMS"
+-- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
---
-decodeBase32Padded :: ShortText -> Either Text ShortText
-decodeBase32Padded = fmap fromText . B32TH.decodeBase32Padded . toText
-{-# INLINE decodeBase32Padded #-}
+decodeBase32PaddedUntyped :: ShortText -> Either Text ShortText
+decodeBase32PaddedUntyped value =
+  BS32H.decodeBase32PaddedUntyped (toShortByteString value)
+    >>= maybe (Left (ErrorText.pack "invalid UTF-8 payload")) Right
+      . fromShortByteString
+{-# INLINE decodeBase32PaddedUntyped #-}
 
 -- | Attempt to decode a padded 'ShortByteString' value as Base32hex, converting from
--- 'ByteString' to 'ShortText' according to some encoding function. In practice,
--- This is something like 'decodeUtf8'', which may produce an error.
+-- 'ShortByteString' to 'ShortText' according to some encoding function. In practice,
+-- The conversion can report a character-encoding error.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- @
--- 'decodeBase32With' '(fmap fromText . Data.Text.Encoding.decodeUtf8' . toText)'
---   :: 'ShortByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'ShortText'
--- @
+-- >>> let utf8 = maybe (Left "invalid UTF-8") Right . Text.fromShortByteString
+-- >>> decodeBase32PaddedWith utf8 "ADQMS==="
+-- Right "Sun"
+--
+-- >>> decodeBase32PaddedWith utf8 "!"
+-- Left (DecodeError "Base32-encoded bytestring has invalid size")
+--
+-- >>> decodeBase32PaddedWith (const (Left "unsupported encoding")) "ADQMS==="
+-- Left (ConversionError "unsupported encoding")
 --
 decodeBase32PaddedWith
     :: (ShortByteString -> Either err ShortText)
@@ -211,63 +237,91 @@ decodeBase32PaddedWith
     -> ShortByteString
       -- ^ Input text to decode
     -> Either (Base32Error err) ShortText
-decodeBase32PaddedWith f t = case BS32H.decodeBase32Padded t of
+decodeBase32PaddedWith f t = case BS32H.decodeBase32PaddedUntyped t of
   Left de -> Left $ DecodeError de
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32PaddedWith #-}
 
--- -- | Leniently decode an unpadded Base32hex-encoded 'ShortText'. This function
--- -- will not generate parse errors. If input data contains padding chars,
--- -- then the input will be parsed up until the first pad character.
--- --
--- -- __Note:__ This is not RFC 4648-compliant.
--- --
--- -- === __Examples__:
--- --
--- -- >>> decodeBase32Lenient "PDw_Pj4="
--- -- "<<?>>"
--- --
--- -- >>> decodeBase32Lenient "PDw_%%%$}Pj4"
--- -- "<<?>>"
--- --
--- decodeBase32Lenient :: ShortText -> ShortText
--- decodeBase32Lenient = fromText . B32TH.decodeBase32Lenient . toText
--- {-# INLINE decodeBase32Lenient #-}
+-- | Decode a typed Base32hex-encoded 'ShortText' value.
+--
+-- This function is padding-agnostic.
+-- The decoded payload must be valid UTF-8.
+--
+-- >>> decodeBase32 (encodeBase32 "Sun")
+-- "Sun"
+--
+-- >>> decodeBase32 (encodeBase32Unpadded "Sun")
+-- "Sun"
+--
+decodeBase32 :: HexAlphabet k => Base32 k ShortText -> ShortText
+decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
+  . BS32H.decodeBase32 . fmap toShortByteString
+{-# INLINE decodeBase32 #-}
 
--- | Tell whether a 'ShortText' value is Base32hex-encoded.
+-- | Decode a typed, padded Base32hex-encoded 'ShortText' value.
 --
--- === __Examples__:
+-- The decoded payload must be valid UTF-8.
 --
--- >>> isBase32Hex "ADQMS"
--- True
+-- >>> decodeBase32Padded (encodeBase32 "Sun")
+-- "Sun"
 --
--- >>> isBase32Hex "ADQMS==="
--- True
---
--- >>> isBase32Hex "ADQMS=="
--- False
---
-isBase32Hex :: ShortText -> Bool
-isBase32Hex = B32H.isBase32Hex . toByteString
-{-# INLINE isBase32Hex #-}
+decodeBase32Padded :: Base32 'HexPadded ShortText -> ShortText
+decodeBase32Padded = decodeBase32
+{-# INLINE decodeBase32Padded #-}
 
--- | Tell whether a 'ShortText' value is a valid Base32hex format.
+-- | Parse and validate a base32hex-encoded value, assuming that it has padding.
 --
--- This will not tell you whether or not this is a correct Base32hex representation,
--- only that it conforms to the correct shape. To check whether it is a true
--- Base32 encoded 'ShortText' value, use 'isBase32Hex'.
+-- >>> parseBase32Padded "adqms==="
+-- Right "adqms==="
 --
--- === __Examples__:
+-- >>> fmap decodeBase32Padded (parseBase32Padded "ADQMS===")
+-- Right "Sun"
 --
--- >>> isValidBase32Hex "ADQMS"
+-- >>> parseBase32Padded ""
+-- Right ""
+--
+-- >>> parseBase32Padded "ADQMS"
+-- Left "Base32-encoded bytestring requires padding"
+--
+parseBase32Padded :: ShortText -> Either Text (Base32 'HexPadded ShortText)
+parseBase32Padded value = assertBase32 value
+  <$ (BS32H.decodeBase32PaddedUntyped . toShortByteString) value
+{-# INLINE parseBase32Padded #-}
+
+-- | Decode a typed, unpadded Base32hex-encoded value.
+--
+-- The decoded payload must be valid UTF-8.
+--
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded "Sun")
+-- "Sun"
+--
+decodeBase32Unpadded :: Base32 'HexUnpadded ShortText -> ShortText
+decodeBase32Unpadded = decodeBase32
+{-# INLINE decodeBase32Unpadded #-}
+
+-- | Parse and validate a base32hex-encoded value, assuming that it is unpadded.
+--
+-- >>> parseBase32Unpadded "adqms"
+-- Right "adqms"
+--
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded "ADQMS")
+-- Right "Sun"
+--
+-- >>> parseBase32Unpadded ""
+-- Right ""
+--
+-- >>> parseBase32Unpadded "ADQMS==="
+-- Left "Base32-encoded bytestring has invalid padding"
+--
+-- >>> isLeft (parseBase32Unpadded "CP")
 -- True
 --
--- >>> isValidBase32Hex "ADQMS="
--- False
---
--- >>> isValidBase32Hex "ADQMS%"
--- False
---
-isValidBase32Hex :: ShortText -> Bool
-isValidBase32Hex = B32H.isValidBase32Hex . toByteString
-{-# INLINE isValidBase32Hex #-}
+parseBase32Unpadded :: ShortText -> Either Text (Base32 'HexUnpadded ShortText)
+parseBase32Unpadded value = assertBase32 value
+  <$ (BS32H.decodeBase32UnpaddedUntyped . toShortByteString) value
+{-# INLINE parseBase32Unpadded #-}
+
+-- $setup
+-- >>> :seti -XOverloadedStrings
+-- >>> import qualified Data.Text.Short as Text
+-- >>> import Data.Either (isLeft)

@@ -1,5 +1,30 @@
 # Revision history for base32
 
+## 1.0
+
+* Introduce alphabet- and padding-tagged `Base32` values in `Data.Base32.Types`.
+  Encoders return wrapped values; typed decoders consume them. Checked decoders
+  now use the `Untyped` suffix; custom text conversion functions retain their names.
+  Typed decoding uses unchecked scalar and SIMD loops, with streaming lazy decoding.
+  `StdAlphabet` and `HexAlphabet` admit both padding forms in general typed decoders;
+  padding-specific typed decoders require exact tags.
+* Replace `isBase32`, `isValidBase32`, `isBase32Hex`, and `isValidBase32Hex` with
+  `parseBase32Padded` and `parseBase32Unpadded` in all twelve APIs.
+  Parsers preserve input, accept the decoder's existing case-insensitive alphabets,
+  and check unused pad bits. Noncanonical pad bits are now rejected by decoders too.
+* Add an optional, default-off `simd` flag with NEON, SSSE3, and AVX2 prefixes
+  and a portable scalar fallback, for both standard and extended-hex alphabets.
+* Encode and decode short values directly through byte arrays, including SIMD.
+* Report invalid UTF-8 through checked Text decoding, instead of throwing or
+  constructing invalid ShortText. Base32 parsing itself accepts binary payloads.
+* Use checked integer output capacities, write only the actual decoded tail,
+  and correct scalar byte order on big-endian targets.
+* Remove `Data.ByteString.Base32.Internal`; use `Internal.Head` for codec entry
+  points and `Internal.Utils` for `validateLastNPads`.
+* Support GHC 9.6–9.14; update copyright through 2026, CI, bounds, and benchmarks.
+
+See [MIGRATION-1.0.md](MIGRATION-1.0.md) for source compatibility changes.
+
 ## 0.4
 
 * Support for GHC 9.8

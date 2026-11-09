@@ -1,5 +1,4 @@
 {-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -8,7 +7,7 @@
 {-# LANGUAGE RecordWildCards #-}
 -- |
 -- Module       : Main
--- Copyright    : (c) 2019-2023 Emily Pillmore
+-- Copyright    : (c) 2019-2026 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -22,24 +21,21 @@ module Main
 ) where
 
 
+import Data.Base32.Types (extractBase32)
 import Data.Bifunctor (second)
 import qualified "memory" Data.ByteArray.Encoding as Mem
 import qualified Data.ByteString as BS
-import Data.ByteString.Internal (c2w)
 import "base32" Data.ByteString.Base32 as B32
-import "base32" Data.ByteString.Base32.Hex as B32H
-import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Short as SBS
-import Data.String (IsString)
-import qualified Data.Text as T
+import Data.String (IsString, fromString)
+import qualified Data.Text as Text
 import qualified Data.Text.Encoding as T
 import Data.Text.Encoding.Base32.Error (Base32Error(..))
-import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.Text.Short as TS
-import Data.Word
 
 import Internal
+import Regression (regressions)
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -54,7 +50,8 @@ main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "Base32 Tests"
-  [ mkTree b32
+  [ regressions
+  , mkTree b32
     [ mkPropTree
     , mkUnitTree
     ]
@@ -206,8 +203,9 @@ prop_padding_invariants Harness{..} = testGroup "prop_padding_invariants"
 prop_mem_coherence :: TestTree
 prop_mem_coherence = testGroup "prop_mem_coherence"
   [ testProperty "prop_std_mem_coherence" $ \bs ->
-      Right bs == B32.decodeBase32 (B32.encodeBase32' bs)
-      && Right bs == Mem.convertFromBase Mem.Base32 (Mem.convertToBase @BS.ByteString @BS.ByteString Mem.Base32 bs)
+      Right bs == B32.decodeBase32Untyped (extractBase32 (B32.encodeBase32' bs))
+      && Right bs == Mem.convertFromBase Mem.Base32
+        (Mem.convertToBase @BS.ByteString @BS.ByteString Mem.Base32 bs)
   ]
 
 -- ---------------------------------------------------------------- --
@@ -240,18 +238,18 @@ rfcVectors Harness{..} = testGroup "RFC 4648 Test Vectors"
     testCaseStd s t =
       testCaseSteps (show $ if s == "" then "empty" else s) $ \step -> do
         step "encode is sound"
-        t @=? encode s
+        fromString t @=? encode (fromString s)
 
         step "decode is sound"
-        Right s @=? decode (encode s)
+        Right (fromString s) @=? decode (encode (fromString s))
 
     testCaseHex s t =
       testCaseSteps (show $ if s == "" then "empty" else s) $ \step -> do
         step "encode is sound"
-        t @=? encodeHex s
+        fromString t @=? encodeHex (fromString s)
 
         step "decode is sound"
-        Right s @=? decodeHexPad t
+        Right (fromString s) @=? decodeHexPad (fromString t)
 
 -- | Unit test trees for the `decode*With` family of text-valued functions
 --
@@ -268,78 +266,87 @@ decodeWithVectors
 decodeWithVectors utf8 TextHarness{..} s t = testGroup "DecodeWith* unit tests"
   [ testGroup "decodeWith negative tests"
     [ testCase "decodeWith non-utf8 inputs on decodeUtf8" $ do
-      case decodeWith_  utf8 "\1079743" of
+      case decodeWith_  utf8 (fromString "\1079743") of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
     , testCase "decodeWith valid utf8 inputs on decodeUtf8" $ do
-      case decodeWith_  utf8 (encode s "\1079743") of
+      case decodeWith_  utf8 (encode s (fromString "\1079743")) of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
     , testCase "decodeHexWith non-utf8 inputs on decodeUtf8" $ do
-      case decodeHexWith_  utf8 "\1079743" of
+      case decodeHexWith_  utf8 (fromString "\1079743") of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
     , testCase "decodePaddedWith non-utf8 inputs on decodeUtf8" $ do
-      case decodePaddedWith_ utf8 "\1079743" of
+      case decodePaddedWith_ utf8 (fromString "\1079743") of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
     , testCase "decodePaddedWith valid utf8 inputs on decodeUtf8" $ do
-      case decodePaddedWith_ utf8 (encode s "\1079743") of
+      case decodePaddedWith_ utf8 (encode s (fromString "\1079743")) of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
     , testCase "decodeUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
-      case decodeUnpaddedWith_ utf8 "\1079743" of
+      case decodeUnpaddedWith_ utf8 (fromString "\1079743") of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
     , testCase "decodeUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
-      case decodeUnpaddedWith_ utf8 (encodeNopad s "\1079743") of
+      case decodeUnpaddedWith_ utf8 (encodeNopad s (fromString "\1079743")) of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
     , testCase "decodeHexWith valid utf8 inputs on decodeUtf8" $ do
-      case decodeHexWith_ utf8 (encodeHex s "\1079743") of
+      case decodeHexWith_ utf8 (encodeHex s (fromString "\1079743")) of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
     , testCase "decodeHexPaddedWith non-utf8 inputs on decodeUtf8" $ do
-      case decodeHexPaddedWith_  utf8 "\1079743" of
+      case decodeHexPaddedWith_  utf8 (fromString "\1079743") of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
     , testCase "decodeHexPaddedWith valid utf8 inputs on decodeUtf8" $ do
-      case decodeHexPaddedWith_  utf8 (encodeHex s "\1079743") of
+      case decodeHexPaddedWith_  utf8 (encodeHex s (fromString "\1079743")) of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
     , testCase "decodeHexUnpaddedWith non-utf8 inputs on decodeUtf8" $ do
-      case decodeHexUnpaddedWith_  utf8 "\1079743" of
+      case decodeHexUnpaddedWith_  utf8 (fromString "\1079743") of
         Left (DecodeError _) -> return ()
         _ -> assertFailure "decoding phase"
     , testCase "decodeHexUnpaddedWith valid utf8 inputs on decodeUtf8" $ do
-      case decodeHexUnpaddedWith_ utf8 (encodeHexNopad s "\1079743") of
+      case decodeHexUnpaddedWith_ utf8 (encodeHexNopad s (fromString "\1079743")) of
         Left (ConversionError _) -> return ()
         _ -> assertFailure "conversion phase"
     ]
   , testGroup "decodeWith positive tests"
     [ testCase "decodeWith utf8 inputs on decodeUtf8" $ do
-      a <- either (assertFailure . show) pure $ decode t "MZXW6YTBOI======"
-      b <- either (assertFailure . show) pure $ decodeWith_ utf8 "MZXW6YTBOI======"
+      a <- either (assertFailure . show) pure $ decode t (fromString "MZXW6YTBOI======")
+      b <- either (assertFailure . show) pure $
+        decodeWith_ utf8 (fromString "MZXW6YTBOI======")
       a @=? b
     , testCase "decodePaddedWith utf8 inputs on decodeUtf8" $ do
-      a <- either (assertFailure . show) pure $ decodePad t "MZXW6YTBOI======"
-      b <- either (assertFailure . show) pure $ decodePaddedWith_ utf8 "MZXW6YTBOI======"
+      a <- either (assertFailure . show) pure $
+        decodePad t (fromString "MZXW6YTBOI======")
+      b <- either (assertFailure . show) pure $
+        decodePaddedWith_ utf8 (fromString "MZXW6YTBOI======")
       a @=? b
     , testCase "decodeUnpaddedWith utf8 inputs on decodeUtf8" $ do
-      a <- either (assertFailure . show) pure $ decodeNopad t "MZXW6YTBOI"
-      b <- either (assertFailure . show) pure $ decodeUnpaddedWith_ utf8 "MZXW6YTBOI"
+      a <- either (assertFailure . show) pure $ decodeNopad t (fromString "MZXW6YTBOI")
+      b <- either (assertFailure . show) pure $
+        decodeUnpaddedWith_ utf8 (fromString "MZXW6YTBOI")
       a @=? b
     , testCase "decodeHexWith utf8 inputs on decodeUtf8" $ do
-      a <- either (assertFailure . show) pure $ decodeHex t "CPNMUOJ1E8======"
-      b <- either (assertFailure . show) pure $ decodeHexWith_ utf8 "CPNMUOJ1E8======"
+      a <- either (assertFailure . show) pure $
+        decodeHex t (fromString "CPNMUOJ1E8======")
+      b <- either (assertFailure . show) pure $
+        decodeHexWith_ utf8 (fromString "CPNMUOJ1E8======")
       a @=? b
     , testCase "decodeHexPaddedWith utf8 inputs on decodeUtf8" $ do
-      a <- either (assertFailure . show) pure $ decodeHexPad t "CPNMUOJ1E8======"
-      b <- either (assertFailure . show) pure $ decodeHexPaddedWith_ utf8 "CPNMUOJ1E8======"
+      a <- either (assertFailure . show) pure $
+        decodeHexPad t (fromString "CPNMUOJ1E8======")
+      b <- either (assertFailure . show) pure $
+        decodeHexPaddedWith_ utf8 (fromString "CPNMUOJ1E8======")
       a @=? b
     , testCase "decodeHexUnpaddedWith utf8 inputs on decodeUtf8" $ do
-      a <- either (assertFailure . show) pure $ decodeHexNopad t "CPNMUOJ1"
-      b <- either (assertFailure . show) pure $ decodeHexUnpaddedWith_ utf8 "CPNMUOJ1"
+      a <- either (assertFailure . show) pure $ decodeHexNopad t (fromString "CPNMUOJ1")
+      b <- either (assertFailure . show) pure $
+        decodeHexUnpaddedWith_ utf8 (fromString "CPNMUOJ1")
       a @=? b
     ]
   ]
@@ -350,63 +357,63 @@ validityTests :: C a => Harness a -> TestTree
 validityTests Harness{..} = testGroup "Validity and correctness unit tests"
   [ testGroup "Validity unit tests"
     [ testCase "Hex padding tests" $ do
-      not (validateHex "C") @? "C"
-      validateHex "CO" @? "CO"
-      validateHex "CPNG" @? "CPNG"
-      validateHex "CPNMU" @? "CPNMU"
-      validateHex "CPNMUOG" @? "CPNMUOG"
-      validateHex "CPNMUOJ1" @? "CPNMUOJ1"
-      validateHex "CPNMUOJ1E8" @? "CPNMUOJ1E8"
-      validateHex "CO======" @? "CO======"
-      validateHex "CPNG====" @? "CPNG===="
-      validateHex "CPNMU===" @? "CPNMU==="
-      validateHex "CPNMUOG=" @? "CPNMUOG="
-      validateHex "CPNMUOJ1" @? "CPNMUOJ1"
-      validateHex "CPNMUOJ1E8======" @? "CPNMUOJ1E8======"
+      not (validateHex (fromString "C")) @? "C"
+      validateHex (fromString "CO") @? "CO"
+      validateHex (fromString "CPNG") @? "CPNG"
+      validateHex (fromString "CPNMU") @? "CPNMU"
+      validateHex (fromString "CPNMUOG") @? "CPNMUOG"
+      validateHex (fromString "CPNMUOJ1") @? "CPNMUOJ1"
+      validateHex (fromString "CPNMUOJ1E8") @? "CPNMUOJ1E8"
+      validateHex (fromString "CO======") @? "CO======"
+      validateHex (fromString "CPNG====") @? "CPNG===="
+      validateHex (fromString "CPNMU===") @? "CPNMU==="
+      validateHex (fromString "CPNMUOG=") @? "CPNMUOG="
+      validateHex (fromString "CPNMUOJ1") @? "CPNMUOJ1"
+      validateHex (fromString "CPNMUOJ1E8======") @? "CPNMUOJ1E8======"
     , testCase "Std padding tests" $ do
-      not (validate "M") @? "M"
-      validate "MY" @? "MY"
-      validate "MZXQ" @? "MZXQ"
-      validate "MZXW6" @? "MZXW6"
-      validate "MZXW6YQ" @? "MZXW6YQ"
-      validate "MZXW6YTB" @? "MZXW6YTB"
-      validate "MZXW6YTBOI" @? "MZXW6YTBOI"
-      validate "MY======" @? "MY======"
-      validate "MZXQ====" @? "MZXQ===="
-      validate "MZXW6===" @? "MZXW6==="
-      validate "MZXW6YQ=" @? "MZXW6YQ="
-      validate "MZXW6YTB" @? "MZXW6YTB"
-      validate "MZXW6YTBOI======" @? "MZXW6YTBOI======"
+      not (validate (fromString "M")) @? "M"
+      validate (fromString "MY") @? "MY"
+      validate (fromString "MZXQ") @? "MZXQ"
+      validate (fromString "MZXW6") @? "MZXW6"
+      validate (fromString "MZXW6YQ") @? "MZXW6YQ"
+      validate (fromString "MZXW6YTB") @? "MZXW6YTB"
+      validate (fromString "MZXW6YTBOI") @? "MZXW6YTBOI"
+      validate (fromString "MY======") @? "MY======"
+      validate (fromString "MZXQ====") @? "MZXQ===="
+      validate (fromString "MZXW6===") @? "MZXW6==="
+      validate (fromString "MZXW6YQ=") @? "MZXW6YQ="
+      validate (fromString "MZXW6YTB") @? "MZXW6YTB"
+      validate (fromString "MZXW6YTBOI======") @? "MZXW6YTBOI======"
     ]
   , testGroup "Correctness unit tests"
     [ testCase "Hex tests" $ do
-      not (correctHex "C") @? "C"
-      correctHex "CO" @? "CO"
-      correctHex "CPNG" @? "CPNG"
-      correctHex "CPNMU" @? "CPNMU"
-      correctHex "CPNMUOG" @? "CPNMUOG"
-      correctHex "CPNMUOJ1" @? "CPNMUOJ1"
-      correctHex "CPNMUOJ1E8" @? "CPNMUOJ1E8"
-      correctHex "CO======" @? "CO======"
-      correctHex "CPNG====" @? "CPNG===="
-      correctHex "CPNMU===" @? "CPNMU==="
-      correctHex "CPNMUOG=" @? "CPNMUOG="
-      correctHex "CPNMUOJ1" @? "CPNMUOJ1"
-      correctHex "CPNMUOJ1E8======" @? "CPNMUOJ1E8======"
+      not (correctHex (fromString "C")) @? "C"
+      correctHex (fromString "CO") @? "CO"
+      correctHex (fromString "CPNG") @? "CPNG"
+      correctHex (fromString "CPNMU") @? "CPNMU"
+      correctHex (fromString "CPNMUOG") @? "CPNMUOG"
+      correctHex (fromString "CPNMUOJ1") @? "CPNMUOJ1"
+      correctHex (fromString "CPNMUOJ1E8") @? "CPNMUOJ1E8"
+      correctHex (fromString "CO======") @? "CO======"
+      correctHex (fromString "CPNG====") @? "CPNG===="
+      correctHex (fromString "CPNMU===") @? "CPNMU==="
+      correctHex (fromString "CPNMUOG=") @? "CPNMUOG="
+      correctHex (fromString "CPNMUOJ1") @? "CPNMUOJ1"
+      correctHex (fromString "CPNMUOJ1E8======") @? "CPNMUOJ1E8======"
     , testCase "Std tests" $ do
-      not (correct "M") @? "M"
-      correct "MY" @? "MY"
-      correct "MZXQ" @? "MZXQ"
-      correct "MZXW6" @? "MZXW6"
-      correct "MZXW6YQ" @? "MZXW6YQ"
-      correct "MZXW6YTB" @? "MZXW6YTB"
-      correct "MZXW6YTBOI" @? "MZXW6YTBOI"
-      correct "MY======" @? "MY======"
-      correct "MZXQ====" @? "MZXQ===="
-      correct "MZXW6===" @? "MZXW6==="
-      correct "MZXW6YQ=" @? "MZXW6YQ="
-      correct "MZXW6YTB" @? "MZXW6YTB"
-      correct "MZXW6YTBOI======" @? "MZXW6YTBOI======"
+      not (correct (fromString "M")) @? "M"
+      correct (fromString "MY") @? "MY"
+      correct (fromString "MZXQ") @? "MZXQ"
+      correct (fromString "MZXW6") @? "MZXW6"
+      correct (fromString "MZXW6YQ") @? "MZXW6YQ"
+      correct (fromString "MZXW6YTB") @? "MZXW6YTB"
+      correct (fromString "MZXW6YTBOI") @? "MZXW6YTBOI"
+      correct (fromString "MY======") @? "MY======"
+      correct (fromString "MZXQ====") @? "MZXQ===="
+      correct (fromString "MZXW6===") @? "MZXW6==="
+      correct (fromString "MZXW6YQ=") @? "MZXW6YQ="
+      correct (fromString "MZXW6YTB") @? "MZXW6YTB"
+      correct (fromString "MZXW6YTBOI======") @? "MZXW6YTBOI======"
     ]
   ]
 
@@ -417,42 +424,74 @@ offsetVectors :: C a => Harness a -> TestTree
 offsetVectors Harness{..} = testGroup "Offset tests"
   [ testGroup "Hex - Invalid padding"
     [ testCase "Invalid staggered padding" $ do
-      decodeHex "=PNMUOJ1E8======" @?= Left "invalid padding at offset: 0"
-      decodeHex "C=NMUOJ1E8======" @?= Left "invalid padding at offset: 1"
-      decodeHex "CP=MUOJ1E8======" @?= Left "invalid padding at offset: 2"
-      decodeHex "CPN=UOJ1E8======" @?= Left "invalid padding at offset: 3"
-      decodeHex "CPNM=OJ1E8======" @?= Left "invalid padding at offset: 4"
-      decodeHex "CPNMU=J1E8======" @?= Left "invalid padding at offset: 5"
-      decodeHex "CPNMUO=1E8======" @?= Left "invalid padding at offset: 6"
-      decodeHex "CPNMUOJ=E8======" @?= Left "invalid padding at offset: 7"
+      decodeHex (fromString "=PNMUOJ1E8======")
+        @?= Left (Text.pack "invalid padding at offset: 0")
+      decodeHex (fromString "C=NMUOJ1E8======")
+        @?= Left (Text.pack "invalid padding at offset: 1")
+      decodeHex (fromString "CP=MUOJ1E8======")
+        @?= Left (Text.pack "invalid padding at offset: 2")
+      decodeHex (fromString "CPN=UOJ1E8======")
+        @?= Left (Text.pack "invalid padding at offset: 3")
+      decodeHex (fromString "CPNM=OJ1E8======")
+        @?= Left (Text.pack "invalid padding at offset: 4")
+      decodeHex (fromString "CPNMU=J1E8======")
+        @?= Left (Text.pack "invalid padding at offset: 5")
+      decodeHex (fromString "CPNMUO=1E8======")
+        @?= Left (Text.pack "invalid padding at offset: 6")
+      decodeHex (fromString "CPNMUOJ=E8======")
+        @?= Left (Text.pack "invalid padding at offset: 7")
     , testCase "Invalid character coverage" $ do
-      decodeHex "%PNMUOJ1E8======" @?= Left "invalid character at offset: 0"
-      decodeHex "C%NMUOJ1E8======" @?= Left "invalid character at offset: 1"
-      decodeHex "CP%MUOJ1E8======" @?= Left "invalid character at offset: 2"
-      decodeHex "CPN%UOJ1E8======" @?= Left "invalid character at offset: 3"
-      decodeHex "CPNM%OJ1E8======" @?= Left "invalid character at offset: 4"
-      decodeHex "CPNMU%J1E8======" @?= Left "invalid character at offset: 5"
-      decodeHex "CPNMUO%1E8======" @?= Left "invalid character at offset: 6"
-      decodeHex "CPNMUOJ%E8======" @?= Left "invalid character at offset: 7"
+      decodeHex (fromString "%PNMUOJ1E8======")
+        @?= Left (Text.pack "invalid character at offset: 0")
+      decodeHex (fromString "C%NMUOJ1E8======")
+        @?= Left (Text.pack "invalid character at offset: 1")
+      decodeHex (fromString "CP%MUOJ1E8======")
+        @?= Left (Text.pack "invalid character at offset: 2")
+      decodeHex (fromString "CPN%UOJ1E8======")
+        @?= Left (Text.pack "invalid character at offset: 3")
+      decodeHex (fromString "CPNM%OJ1E8======")
+        @?= Left (Text.pack "invalid character at offset: 4")
+      decodeHex (fromString "CPNMU%J1E8======")
+        @?= Left (Text.pack "invalid character at offset: 5")
+      decodeHex (fromString "CPNMUO%1E8======")
+        @?= Left (Text.pack "invalid character at offset: 6")
+      decodeHex (fromString "CPNMUOJ%E8======")
+        @?= Left (Text.pack "invalid character at offset: 7")
     ]
   , testGroup "Std - Invalid padding"
     [ testCase "Invalid staggered padding" $ do
-      decode "=ZXW6YTBOI======" @?= Left "invalid padding at offset: 0"
-      decode "M=XW6YTBOI======" @?= Left "invalid padding at offset: 1"
-      decode "MZ=W6YTBOI======" @?= Left "invalid padding at offset: 2"
-      decode "MZX=6YTBOI======" @?= Left "invalid padding at offset: 3"
-      decode "MZXW=YTBOI======" @?= Left "invalid padding at offset: 4"
-      decode "MZXW6=TBOI======" @?= Left "invalid padding at offset: 5"
-      decode "MZXW6Y=BOI======" @?= Left "invalid padding at offset: 6"
-      decode "MZXW6YT=OI======" @?= Left "invalid padding at offset: 7"
+      decode (fromString "=ZXW6YTBOI======")
+        @?= Left (Text.pack "invalid padding at offset: 0")
+      decode (fromString "M=XW6YTBOI======")
+        @?= Left (Text.pack "invalid padding at offset: 1")
+      decode (fromString "MZ=W6YTBOI======")
+        @?= Left (Text.pack "invalid padding at offset: 2")
+      decode (fromString "MZX=6YTBOI======")
+        @?= Left (Text.pack "invalid padding at offset: 3")
+      decode (fromString "MZXW=YTBOI======")
+        @?= Left (Text.pack "invalid padding at offset: 4")
+      decode (fromString "MZXW6=TBOI======")
+        @?= Left (Text.pack "invalid padding at offset: 5")
+      decode (fromString "MZXW6Y=BOI======")
+        @?= Left (Text.pack "invalid padding at offset: 6")
+      decode (fromString "MZXW6YT=OI======")
+        @?= Left (Text.pack "invalid padding at offset: 7")
     , testCase "Invalid character coverage" $ do
-      decode "%ZXW6YTBOI======" @?= Left "invalid character at offset: 0"
-      decode "M%XW6YTBOI======" @?= Left "invalid character at offset: 1"
-      decode "MZ%W6YTBOI======" @?= Left "invalid character at offset: 2"
-      decode "MZX%6YTBOI======" @?= Left "invalid character at offset: 3"
-      decode "MZXW%YTBOI======" @?= Left "invalid character at offset: 4"
-      decode "MZXW6%TBOI======" @?= Left "invalid character at offset: 5"
-      decode "MZXW6Y%BOI======" @?= Left "invalid character at offset: 6"
-      decode "MZXW6YT%OI======" @?= Left "invalid character at offset: 7"
+      decode (fromString "%ZXW6YTBOI======")
+        @?= Left (Text.pack "invalid character at offset: 0")
+      decode (fromString "M%XW6YTBOI======")
+        @?= Left (Text.pack "invalid character at offset: 1")
+      decode (fromString "MZ%W6YTBOI======")
+        @?= Left (Text.pack "invalid character at offset: 2")
+      decode (fromString "MZX%6YTBOI======")
+        @?= Left (Text.pack "invalid character at offset: 3")
+      decode (fromString "MZXW%YTBOI======")
+        @?= Left (Text.pack "invalid character at offset: 4")
+      decode (fromString "MZXW6%TBOI======")
+        @?= Left (Text.pack "invalid character at offset: 5")
+      decode (fromString "MZXW6Y%BOI======")
+        @?= Left (Text.pack "invalid character at offset: 6")
+      decode (fromString "MZXW6YT%OI======")
+        @?= Left (Text.pack "invalid character at offset: 7")
     ]
   ]

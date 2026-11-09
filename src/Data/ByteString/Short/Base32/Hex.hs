@@ -1,7 +1,10 @@
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE Trustworthy #-}
 -- |
 -- Module       : Data.ByteString.Short.Base32.Hex
--- Copyright    : (c) 2019-2023 Emily Pillmore
+-- Copyright    : (c) 2019-2026 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -20,19 +23,26 @@ module Data.ByteString.Short.Base32.Hex
 , encodeBase32Unpadded
 , encodeBase32Unpadded'
   -- * Decoding
-, decodeBase32
-, decodeBase32Unpadded
-, decodeBase32Padded
---, decodeBase32Lenient
+, decodeBase32Untyped
+, decodeBase32UnpaddedUntyped
+, decodeBase32PaddedUntyped
   -- * Validation
-, isBase32Hex
-, isValidBase32Hex
+, decodeBase32
+, decodeBase32Padded
+, decodeBase32Unpadded
+, parseBase32Padded
+, parseBase32Unpadded
 ) where
 
 
-import qualified Data.ByteString.Base32.Hex as B32H
-import Data.ByteString.Short (ShortByteString, fromShort, toShort)
+import Data.ByteString.Base32.Internal.Short
+import Data.ByteString.Base32.Internal.Tables
+import Data.ByteString.Short (ShortByteString)
+import qualified Data.ByteString.Short as SBS
+import Data.Base32.Types
+
 import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Text.Short (ShortText)
 import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 
@@ -45,8 +55,8 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
-encodeBase32 :: ShortByteString -> ShortText
-encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
+encodeBase32 :: ShortByteString -> Base32 'HexPadded ShortText
+encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 {-# INLINE encodeBase32 #-}
 
 -- | Encode a 'ShortByteString' as a Base32hex 'ShortByteString' value with padding.
@@ -58,31 +68,49 @@ encodeBase32 = fromShortByteStringUnsafe . encodeBase32'
 -- >>> encodeBase32' "Sun"
 -- "ADQMS==="
 --
-encodeBase32' :: ShortByteString -> ShortByteString
-encodeBase32' = toShort . B32H.encodeBase32' . fromShort
+encodeBase32' :: ShortByteString -> Base32 'HexPadded ShortByteString
+encodeBase32' =
+  assertBase32
+    . encodeShort
+      "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
+      True
 
--- | Decode an arbitrarily padded Base32hex encoded 'ShortByteString' value. If its length is not a multiple
--- of 4, then padding chars will be added to fill out the input to a multiple of
--- 4 for safe decoding as Base32hex-encoded values are optionally padded.
+-- | Decode an arbitrarily padded Base32hex encoded 'ShortByteString' value. If its length
+-- is not a multiple
+-- of 8, then padding chars will be added to fill out the input to a multiple of
+-- 8 for safe decoding as Base32hex-encoded values are optionally padded.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "ADQMS==="
+-- >>> decodeBase32Untyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32 "ADQMS"
+-- >>> decodeBase32Untyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32 "ADQM==="
+-- >>> decodeBase32Untyped "ADQM==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
-decodeBase32 :: ShortByteString -> Either Text ShortByteString
-decodeBase32 = fmap toShort . B32H.decodeBase32 . fromShort
-{-# INLINE decodeBase32 #-}
+decodeBase32Untyped :: ShortByteString -> Either Text ShortByteString
+decodeBase32Untyped bs
+    | l == 0 = Right bs
+    | r == 1 || r == 3 || r == 6 =
+        Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r == 4 && any isPad [1 .. 2]
+      || r == 5 && any isPad [1 .. 3]
+      || r == 7 && any isPad [1 .. 5] =
+        Left (Text.pack "Base32-encoded bytestring has invalid padding")
+    | otherwise = decodeShort hexDecodeTable bs
+  where
+    l = SBS.length bs
+    r = l `rem` 8
+    isPad i = SBS.index bs (l - i) == 0x3d
+{-# INLINE decodeBase32Untyped #-}
 
--- | Encode a 'ShortByteString' value as Base32hex 'Text' without padding. Note that for Base32hex,
+-- | Encode a 'ShortByteString' value as Base32hex 'Text' without padding. Note that for
+-- Base32hex,
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32hex and stripping padding chars from the output.
 --
@@ -90,14 +118,15 @@ decodeBase32 = fmap toShort . B32H.decodeBase32 . fromShort
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "Sun"
+-- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
-encodeBase32Unpadded :: ShortByteString -> ShortText
-encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
+encodeBase32Unpadded :: ShortByteString -> Base32 'HexUnpadded ShortText
+encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
 
--- | Encode a 'ShortByteString' value as Base32hex without padding. Note that for Base32hex,
+-- | Encode a 'ShortByteString' value as Base32hex without padding. Note that for
+-- Base32hex,
 -- padding is optional. If you call this function, you will simply be encoding
 -- as Base32hex and stripping padding chars from the output.
 --
@@ -108,103 +137,146 @@ encodeBase32Unpadded = fromShortByteStringUnsafe . encodeBase32Unpadded'
 -- >>> encodeBase32Unpadded' "Sun"
 -- "ADQMS"
 --
-encodeBase32Unpadded' :: ShortByteString -> ShortByteString
-encodeBase32Unpadded' = toShort . B32H.encodeBase32Unpadded' . fromShort
+encodeBase32Unpadded' :: ShortByteString -> Base32 'HexUnpadded ShortByteString
+encodeBase32Unpadded' =
+  assertBase32
+    . encodeShort
+      "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
+      False
 
 -- | Decode an unpadded Base32hex-encoded 'ShortByteString' value. Input strings are
 -- required to be unpadded, and will undergo validation prior to decoding to
 -- confirm.
 --
 -- In general, unless unpadded Base32hex is explicitly required, it is
--- safer to call 'decodeBase32'.
+-- safer to call 'decodeBase32Untyped'.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "ADQMS"
+-- >>> decodeBase32UnpaddedUntyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32Unpadded "ADQMS==="
+-- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
-decodeBase32Unpadded :: ShortByteString -> Either Text ShortByteString
-decodeBase32Unpadded = fmap toShort . B32H.decodeBase32Unpadded . fromShort
-{-# INLINE decodeBase32Unpadded #-}
+decodeBase32UnpaddedUntyped :: ShortByteString -> Either Text ShortByteString
+decodeBase32UnpaddedUntyped bs
+    | l == 0 = Right bs
+    | r == 1 || r == 3 || r == 6 =
+        Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r /= 2 && SBS.index bs (l - 1) == 0x3d =
+        Left (Text.pack "Base32-encoded bytestring has invalid padding")
+    | otherwise = decodeShort hexDecodeTable bs
+  where
+    l = SBS.length bs
+    r = l `rem` 8
+{-# INLINE decodeBase32UnpaddedUntyped #-}
 
 -- | Decode a padded Base32hex-encoded 'ShortByteString' value. Input strings are
 -- required to be correctly padded, and will be validated prior to decoding
 -- to confirm.
 --
 -- In general, unless padded Base32hex is explicitly required, it is
--- safer to call 'decodeBase32'.
+-- safer to call 'decodeBase32Untyped'.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-7 RFC-4648 section 7>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "ADQMS==="
+-- >>> decodeBase32PaddedUntyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32Padded "ADQMS"
+-- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
-decodeBase32Padded :: ShortByteString -> Either Text ShortByteString
-decodeBase32Padded = fmap toShort . B32H.decodeBase32Padded . fromShort
+decodeBase32PaddedUntyped :: ShortByteString -> Either Text ShortByteString
+decodeBase32PaddedUntyped bs
+    | l == 0 = Right bs
+    | r == 1 || r == 3 || r == 6 =
+        Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r /= 0 = Left (Text.pack "Base32-encoded bytestring requires padding")
+    | otherwise = decodeShort hexDecodeTable bs
+  where
+    l = SBS.length bs
+    r = l `rem` 8
+{-# INLINE decodeBase32PaddedUntyped #-}
+
+-- | Decode a typed Base32hex-encoded 'ShortByteString' value.
+--
+-- This function is padding-agnostic.
+--
+-- >>> decodeBase32 (encodeBase32' "Sun")
+-- "Sun"
+--
+-- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
+-- "Sun"
+--
+decodeBase32 :: HexAlphabet k => Base32 k ShortByteString -> ShortByteString
+decodeBase32 = decodeShortTyped hexDecodeTable
+{-# INLINE decodeBase32 #-}
+
+-- | Decode a typed, padded Base32hex-encoded 'ShortByteString' value.
+--
+-- >>> decodeBase32Padded (encodeBase32' "Sun")
+-- "Sun"
+--
+decodeBase32Padded :: Base32 'HexPadded ShortByteString -> ShortByteString
+decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
--- -- | Leniently decode an unpadded Base32hex-encoded 'ShortByteString'. This function
--- -- will not generate parse errors. If input data contains padding chars,
--- -- then the input will be parsed up until the first pad character.
--- --
--- -- __Note:__ This is not RFC 4648-compliant.
--- --
--- -- === __Examples__:
--- --
--- -- >>> decodeBase32Lenient "PDw_Pj4="
--- -- "<<?>>"
--- --
--- -- >>> decodeBase32Lenient "PDw_%%%$}Pj4"
--- -- "<<?>>"
--- --
--- decodeBase32Lenient :: ShortByteString -> ShortByteString
--- decodeBase32Lenient = toShort . B32H.decodeBase32Lenient . fromShort
--- {-# INLINE decodeBase32Lenient #-}
+-- | Parse and validate a base32hex-encoded value, assuming that it has padding.
+--
+-- >>> parseBase32Padded "adqms==="
+-- Right "adqms==="
+--
+-- >>> fmap decodeBase32Padded (parseBase32Padded "ADQMS===")
+-- Right "Sun"
+--
+-- >>> parseBase32Padded ""
+-- Right ""
+--
+-- >>> parseBase32Padded "ADQMS"
+-- Left "Base32-encoded bytestring requires padding"
+--
+parseBase32Padded :: ShortByteString -> Either Text (Base32 'HexPadded ShortByteString)
+parseBase32Padded value = assertBase32 value
+  <$ (decodeBase32PaddedUntyped) value
+{-# INLINE parseBase32Padded #-}
 
--- | Tell whether a 'ShortByteString' is Base32hex-encoded.
+-- | Decode a typed, unpadded Base32hex-encoded value.
 --
--- === __Examples__:
+-- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
+-- "Sun"
 --
--- >>> isBase32Hex "ADQMS"
--- True
---
--- >>> isBase32Hex "ADQMS==="
--- True
---
--- >>> isBase32Hex "ADQMS=="
--- False
---
-isBase32Hex :: ShortByteString -> Bool
-isBase32Hex = B32H.isBase32Hex . fromShort
-{-# INLINE isBase32Hex #-}
+decodeBase32Unpadded :: Base32 'HexUnpadded ShortByteString -> ShortByteString
+decodeBase32Unpadded = decodeBase32
+{-# INLINE decodeBase32Unpadded #-}
 
--- | Tell whether a 'ShortByteString' is a valid Base32hex format.
+-- | Parse and validate a base32hex-encoded value, assuming that it is unpadded.
 --
--- This will not tell you whether or not this is a correct Base32hex representation,
--- only that it conforms to the correct shape. To check whether it is a true
--- Base32 encoded 'ShortByteString' value, use 'isBase32Hex'.
+-- >>> parseBase32Unpadded "adqms"
+-- Right "adqms"
 --
--- === __Examples__:
+-- >>> fmap decodeBase32Unpadded (parseBase32Unpadded "ADQMS")
+-- Right "Sun"
 --
--- >>> isValidBase32Hex "ADQMS"
+-- >>> parseBase32Unpadded ""
+-- Right ""
+--
+-- >>> parseBase32Unpadded "ADQMS==="
+-- Left "Base32-encoded bytestring has invalid padding"
+--
+-- >>> isLeft (parseBase32Unpadded "CP")
 -- True
 --
--- >>> isValidBase32Hex "ADQMS="
--- False
---
--- >>> isValidBase32Hex "ADQMS%"
--- False
---
-isValidBase32Hex :: ShortByteString -> Bool
-isValidBase32Hex = B32H.isValidBase32Hex . fromShort
-{-# INLINE isValidBase32Hex #-}
+parseBase32Unpadded
+  :: ShortByteString -> Either Text (Base32 'HexUnpadded ShortByteString)
+parseBase32Unpadded value = assertBase32 value
+  <$ (decodeBase32UnpaddedUntyped) value
+{-# INLINE parseBase32Unpadded #-}
+
+-- $setup
+-- >>> :seti -XOverloadedStrings
+-- >>> import Data.Either (isLeft)

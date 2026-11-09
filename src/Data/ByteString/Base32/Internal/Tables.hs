@@ -1,4 +1,15 @@
 {-# LANGUAGE TypeApplications #-}
+-- |
+-- Module       : Data.ByteString.Base32.Internal.Tables
+-- Copyright    : (c) 2020-2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Decoding tables for the standard and extended-hex alphabets.
+--
 module Data.ByteString.Base32.Internal.Tables
 ( stdDecodeTable
 , hexDecodeTable

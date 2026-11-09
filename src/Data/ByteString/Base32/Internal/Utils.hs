@@ -1,5 +1,16 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
+-- |
+-- Module       : Data.ByteString.Base32.Internal.Utils
+-- Copyright    : (c) 2020-2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Shared allocation, byte-order, table lookup, rechunking, and padding utilities.
+--
 module Data.ByteString.Base32.Internal.Utils
 ( aix
 , peekWord32BE
@@ -8,12 +19,16 @@ module Data.ByteString.Base32.Internal.Utils
 , w32
 , w64
 , w64_32
+, encodedLength
 , writeNPlainPtrBytes
+, validateLastNPads
 ) where
 
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
+import Data.Text (Text)
+import qualified Data.Text as Text
 
 import Foreign.Ptr
 import Foreign.Storable
@@ -96,3 +111,26 @@ reChunkN n = go
                in acc' : go cs'
              else accum acc' cs
 {-# INLINE reChunkN #-}
+
+-- | Padded output capacity, using checked integer arithmetic.
+encodedLength :: Int -> Int
+encodedLength n
+  | n < 0 || blocks > maxBound `quot` 8 = error "Base32 output is too large"
+  | otherwise = blocks * 8
+  where
+    blocks = n `quot` 5 + if n `rem` 5 == 0 then 0 else 1
+{-# INLINE encodedLength #-}
+
+-- | Reject '=' in the final @n@ bytes before running the decoder.
+-- The caller selects @n@ from the input length and padding policy, preventing
+-- existing padding from being accepted when missing padding is added.
+validateLastNPads
+    :: Int
+    -> ByteString
+    -> IO (Either Text ByteString)
+    -> Either Text ByteString
+validateLastNPads n bs io
+    | BS.elem 0x3d (BS.drop (BS.length bs - n) bs) =
+        Left (Text.pack "Base32-encoded bytestring has invalid padding")
+    | otherwise = unsafeDupablePerformIO io
+{-# INLINE validateLastNPads #-}
