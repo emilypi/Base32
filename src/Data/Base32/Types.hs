@@ -7,14 +7,17 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE Trustworthy #-}
-
 -- |
 -- Module       : Data.Base32.Types
 -- Copyright    : (c) 2026 Emily Pillmore
 -- License      : BSD-style
+--
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : stable
+-- Portability  : non-portable
 --
 -- Encoded values tagged with their alphabet and padding policy.
+--
 module Data.Base32.Types
   ( Alphabet (..)
   , StdAlphabet

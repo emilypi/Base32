@@ -1,5 +1,16 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
+-- |
+-- Module       : Data.ByteString.Base32.Internal.Utils
+-- Copyright    : (c) 2020-2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Shared allocation, byte-order, table lookup, and rechunking utilities.
+--
 module Data.ByteString.Base32.Internal.Utils
 ( aix
 , peekWord32BE

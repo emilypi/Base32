@@ -2,6 +2,17 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeApplications #-}
+-- |
+-- Module       : Data.ByteString.Base32.Internal.Loop
+-- Copyright    : (c) 2020-2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Encoding loops, checked and typed decoding loops, and quantum validation.
+--
 module Data.ByteString.Base32.Internal.Loop
 ( innerLoop
 , decodeLoop

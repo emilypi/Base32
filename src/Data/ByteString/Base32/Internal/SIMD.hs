@@ -1,12 +1,19 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnliftedFFITypes #-}
-
 -- |
--- Copyright: (c) 2026 Emily Pillmore
+-- Module       : Data.ByteString.Base32.Internal.SIMD
+-- Copyright    : (c) 2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
 -- Bounded native prefixes. Callers retain pointer buffers with withForeignPtr.
 -- Byte arrays are passed directly to unsafe FFI: GHC cannot collect during
 -- the call, and the kernels retain no pointers and make no callbacks.
+--
 module Data.ByteString.Base32.Internal.SIMD
   ( encodePrefix
   , decodePrefix

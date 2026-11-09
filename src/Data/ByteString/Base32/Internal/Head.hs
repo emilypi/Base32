@@ -2,6 +2,17 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeApplications #-}
+-- |
+-- Module       : Data.ByteString.Base32.Internal.Head
+-- Copyright    : (c) 2020-2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Allocation and entry points for the strict encoding and decoding loops.
+--
 module Data.ByteString.Base32.Internal.Head
 ( encodeBase32_
 , encodeBase32NoPad_

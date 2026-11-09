@@ -2,7 +2,17 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
--- | Direct byte-array codecs; no conversion through strict ByteString.
+-- |
+-- Module       : Data.ByteString.Base32.Internal.Short
+-- Copyright    : (c) 2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Direct byte-array codecs; no conversion through strict ByteString.
+--
 module Data.ByteString.Base32.Internal.Short
   ( encodeShort
   , decodeShort

@@ -1,5 +1,16 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
+-- |
+-- Module       : Data.ByteString.Base32.Internal.Tail
+-- Copyright    : (c) 2020-2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Final quantum encoding for padded and unpadded output.
+--
 module Data.ByteString.Base32.Internal.Tail
 ( loopTail
 , loopTailNoPad
