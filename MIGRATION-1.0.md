@@ -34,7 +34,8 @@ faster and easier, resulting in a significant speedup. Go Haskell!
 These replacements apply to all twelve ByteString/Text modules. The old names
 now consume `Base32` values and return the decoded result directly. The
 `decodeBase32With`, `decodeBase32PaddedWith`, and `decodeBase32UnpaddedWith`
-functions keep their checked signatures and names, and are `Text` only.
+functions keep their checked signatures and names, and are `Text` only, because 
+decoding is separate from utf8 conversion and errors are surfaced accordingly for each step.  
 
 Typed decoders use dedicated unchecked loops. They trust the established
 provenance and do not check the alphabet, input length, padding, or unused bits.
