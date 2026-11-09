@@ -95,8 +95,10 @@ decodeBase32Untyped value = BL32H.decodeBase32Untyped (TL.encodeUtf8 value)
 --
 -- >>> decodeBase32With UTF8.decodeUtf8' "ADQMS==="
 -- Right "Sun"
+--
 -- >>> decodeBase32With UTF8.decodeUtf8' "!"
 -- Left (DecodeError "Base32-encoded bytestring has invalid size")
+--
 -- >>> decodeBase32With (const (Left "unsupported encoding")) "ADQMS==="
 -- Left (ConversionError "unsupported encoding")
 --
@@ -157,8 +159,10 @@ decodeBase32UnpaddedUntyped value =
 --
 -- >>> decodeBase32UnpaddedWith UTF8.decodeUtf8' "ADQMS"
 -- Right "Sun"
+--
 -- >>> decodeBase32UnpaddedWith UTF8.decodeUtf8' "!"
 -- Left (DecodeError "Base32-encoded bytestring has invalid size")
+--
 -- >>> decodeBase32UnpaddedWith (const (Left "unsupported encoding")) "ADQMS"
 -- Left (ConversionError "unsupported encoding")
 --
@@ -203,8 +207,10 @@ decodeBase32PaddedUntyped value = BL32H.decodeBase32PaddedUntyped (TL.encodeUtf8
 --
 -- >>> decodeBase32PaddedWith UTF8.decodeUtf8' "ADQMS==="
 -- Right "Sun"
+--
 -- >>> decodeBase32PaddedWith UTF8.decodeUtf8' "!"
 -- Left (DecodeError "Base32-encoded bytestring has invalid size")
+--
 -- >>> decodeBase32PaddedWith (const (Left "unsupported encoding")) "ADQMS==="
 -- Left (ConversionError "unsupported encoding")
 --
@@ -219,13 +225,14 @@ decodeBase32PaddedWith f t = case BL32H.decodeBase32PaddedUntyped t of
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32PaddedWith #-}
 
--- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
--- Decoded Text payloads must be valid UTF-8.
--- Character conversion is separate from the Base32 provenance.
+-- | Decode a typed Base32hex-encoded 'TL.Text' value.
+--
+-- This function is padding-agnostic.
+-- The decoded payload must be valid UTF-8.
 --
 -- >>> decodeBase32 (encodeBase32 "Sun")
 -- "Sun"
+--
 -- >>> decodeBase32 (encodeBase32Unpadded "Sun")
 -- "Sun"
 --
@@ -233,11 +240,9 @@ decodeBase32 :: HexAlphabet k => Base32 k TL.Text -> TL.Text
 decodeBase32 = TL.decodeUtf8 . BL32H.decodeBase32 . fmap TL.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
--- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32Padded' to check the padding policy on external input.
--- The type establishes the alphabet and padding policy.
--- Decoded Text payloads must be valid UTF-8.
--- Character conversion is separate from the Base32 provenance.
+-- | Decode a typed, padded Base32hex-encoded 'TL.Text' value.
+--
+-- The decoded payload must be valid UTF-8.
 --
 -- >>> decodeBase32Padded (encodeBase32 "Sun")
 -- "Sun"
@@ -246,16 +251,17 @@ decodeBase32Padded :: Base32 'HexPadded TL.Text -> TL.Text
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
+-- | Parse and validate a base32hex-encoded value, assuming that it has padding.
 --
 -- >>> parseBase32Padded "adqms==="
 -- Right "adqms==="
+--
 -- >>> fmap decodeBase32Padded (parseBase32Padded "ADQMS===")
 -- Right "Sun"
+--
 -- >>> parseBase32Padded ""
 -- Right ""
+--
 -- >>> parseBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
@@ -264,11 +270,9 @@ parseBase32Padded value = assertBase32 value
   <$ (BL32H.decodeBase32PaddedUntyped . TL.encodeUtf8) value
 {-# INLINE parseBase32Padded #-}
 
--- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32Unpadded' to check the padding policy on external input.
--- The type establishes the alphabet and padding policy.
--- Decoded Text payloads must be valid UTF-8.
--- Character conversion is separate from the Base32 provenance.
+-- | Decode a typed, unpadded Base32hex-encoded value.
+--
+-- The decoded payload must be valid UTF-8.
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded "Sun")
 -- "Sun"
@@ -277,18 +281,20 @@ decodeBase32Unpadded :: Base32 'HexUnpadded TL.Text -> TL.Text
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
+-- | Parse and validate a base32hex-encoded value, assuming that it is unpadded.
 --
 -- >>> parseBase32Unpadded "adqms"
 -- Right "adqms"
+--
 -- >>> fmap decodeBase32Unpadded (parseBase32Unpadded "ADQMS")
 -- Right "Sun"
+--
 -- >>> parseBase32Unpadded ""
 -- Right ""
+--
 -- >>> parseBase32Unpadded "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
 -- >>> isLeft (parseBase32Unpadded "CP")
 -- True
 --
