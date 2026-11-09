@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -75,7 +76,7 @@ regressions =
               encoded = extractBase32 (B.encodeBase32' input)
               sliced = BS.drop offset (BS.replicate offset 99 <> encoded)
           B.decodeBase32Untyped sliced @?= Right payload
-          B.decodeBase32 (assertBase32 sliced) @?= payload
+          B.decodeBase32 (assertBase32 @'StdPadded sliced) @?= payload
     , parserTests b32
     , parserTests lb32
     , parserTests sb32
@@ -101,18 +102,18 @@ regressions =
         output <- timeout 1000000 $ evaluate $ force $
           BL.take 16 (L.decodeBase32 (L.encodeBase32' (BL.repeat 255)))
         output @?= Just (BL.replicate 16 255)
-    , testCase "typed decoding accepts established provenance for either padding" $ do
-        B.decodeBase32Padded (B.encodeBase32Unpadded' "f") @?= "f"
-        H.decodeBase32Unpadded (H.encodeBase32' "f") @?= "f"
-        S.decodeBase32Padded (S.encodeBase32Unpadded' "f") @?= "f"
-        SH.decodeBase32Unpadded (SH.encodeBase32' "f") @?= "f"
+    , testCase "parsed padding provenance selects the matching typed decoder" $ do
+        fmap B.decodeBase32Padded (B.parseBase32Padded "MY======") @?= Right "f"
+        fmap H.decodeBase32Unpadded (H.parseBase32Unpadded "CO") @?= Right "f"
+        fmap S.decodeBase32Padded (S.parseBase32Padded "MY======") @?= Right "f"
+        fmap SH.decodeBase32Unpadded (SH.parseBase32Unpadded "CO") @?= Right "f"
     , testCase "lazy padding at every chunk boundary" $ do
         let encoded = extractBase32 (B.encodeBase32' (BS.replicate 81 102))
         forM_ [0 .. BS.length encoded] $ \i -> do
           let chunks = BL.fromChunks [BS.take i encoded, BS.drop i encoded]
-          fmap extractBase32 (L.parseBase32 chunks) @?= Right chunks
+          fmap extractBase32 (L.parseBase32Padded chunks) @?= Right chunks
           L.decodeBase32Untyped chunks @?= Right (BL.replicate 81 102)
-          L.decodeBase32 (assertBase32 chunks) @?= BL.replicate 81 102
+          L.decodeBase32 (assertBase32 @'StdPadded chunks) @?= BL.replicate 81 102
     , testCase "invalid bytes after SIMD prefixes keep global offsets" $
         forM_ [0 .. 159] $ \i -> do
           let input = BS.replicate i 65 <> "!" <> BS.replicate (159 - i) 65
@@ -133,7 +134,7 @@ regressions =
                   === S.decodeBase32UnpaddedUntyped short
               ]
     , testCase "text parsers accept binary; decoders check UTF-8" $ do
-        assertBool "binary parser" (isRight (T.parseBase32 "74======"))
+        assertBool "binary parser" (isRight (T.parseBase32Padded "74======"))
         assertBool "invalid UTF-8" (isLeft (T.decodeBase32Untyped "74======"))
         assertBool "lazy invalid UTF-8" (isLeft (TL.decodeBase32Untyped "74======"))
         assertBool "short invalid UTF-8" (isLeft (TS.decodeBase32Untyped "74======"))
@@ -159,18 +160,24 @@ parserTests ::
 parserTests Harness{..} =
   testGroup
     (label ++ " parsers")
-    [ testProperty "typed decoding trusts both padding forms" $ \input ->
-        conjoin
-          [ decoder (assertBase32 encoded) === input
-          | encoded <- [encode input, encodeNopad input]
-          , decoder <- [decodeTyped, decodePaddedTyped, decodeUnpaddedTyped]
-          ]
-    , testProperty "typed hex decoding trusts both padding forms" $ \input ->
-        conjoin
-          [ decoder (assertBase32 encoded) === input
-          | encoded <- [encodeHex input, encodeHexNopad input]
-          , decoder <- [decodeHexTyped, decodeHexPaddedTyped, decodeHexUnpaddedTyped]
-          ]
+    [ testProperty "typed standard decoding preserves padding provenance" $ \input ->
+        let padded = assertBase32 @'StdPadded (encode input)
+            unpadded = assertBase32 @'StdUnpadded (encodeNopad input)
+         in conjoin
+              [ decodeTyped padded === input
+              , decodeTyped unpadded === input
+              , decodePaddedTyped padded === input
+              , decodeUnpaddedTyped unpadded === input
+              ]
+    , testProperty "typed hex decoding preserves padding provenance" $ \input ->
+        let padded = assertBase32 @'HexPadded (encodeHex input)
+            unpadded = assertBase32 @'HexUnpadded (encodeHexNopad input)
+         in conjoin
+              [ decodeHexTyped padded === input
+              , decodeHexTyped unpadded === input
+              , decodeHexPaddedTyped padded === input
+              , decodeHexUnpaddedTyped unpadded === input
+              ]
     , testProperty "preserve padded standard input" $ \input ->
         parsePaddedValue (encode input) === Right (encode input)
     , testProperty "preserve unpadded hex input" $ \input ->
@@ -178,8 +185,8 @@ parserTests Harness{..} =
     , testCase "preserve original letter case" $ do
         parseValue "my======" @?= Right "my======"
         parseHexValue "co======" @?= Right "co======"
-        decodeTyped (assertBase32 "my======") @?= "f"
-        decodeHexTyped (assertBase32 "co======") @?= "f"
+        decodeTyped (assertBase32 @'StdPadded "my======") @?= "f"
+        decodeHexTyped (assertBase32 @'HexPadded "co======") @?= "f"
     , testCase "enforce padding policies" $ do
         assertBool "padded requires padding" (isLeft (parsePaddedValue "MY"))
         assertBool "unpadded rejects padding" (isLeft (parseUnpaddedValue "MY======"))
@@ -201,7 +208,8 @@ parserTests Harness{..} =
           , "MZXW6YR="
           ]
           $ \value ->
-            assertBool (show value) (isLeft (parseValue value))
+            assertBool (show value)
+              (isLeft (parsePaddedValue value) && isLeft (parseUnpaddedValue value))
         forM_
           [ "CP"
           , "CPNH"
@@ -213,10 +221,11 @@ parserTests Harness{..} =
           , "CPNMUOH="
           ]
           $ \value ->
-            assertBool (show value) (isLeft (parseHexValue value))
+            assertBool (show value)
+              (isLeft (parseHexPaddedValue value) && isLeft (parseHexUnpaddedValue value))
     , testCase "parser and checked decoder report the same errors" $
         forM_ ["M", "!Y======", "MZ======", "MY====", "MY======MY======"] $ \value ->
-          case decode value of
+          case decodePad value of
             Left err -> parseValue value @?= Left err
             Right _ -> assertFailure "expected malformed fixture"
     ]

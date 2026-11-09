@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Main (main) where
 
 import Criterion.Main
-import Data.Base32.Types (assertBase32, extractBase32)
+import Data.Base32.Types (Alphabet(..), assertBase32, extractBase32)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Base32 as B32
 import qualified Data.ByteString.Base32.Hex as H32
@@ -34,13 +36,13 @@ main =
             bgroup
               "decode"
               [ bench "strict" $ nf B32.decodeBase32Untyped encoded
-              , env (pure (assertBase32 encoded)) $ \typed ->
+              , env (pure (assertBase32 @'StdPadded encoded)) $ \typed ->
                   bench "strict-typed" $ nf B32.decodeBase32 typed
-              , bench "parse" $ nf B32.parseBase32 encoded
+              , bench "parse" $ nf B32.parseBase32Padded encoded
               , env (pure (S.toShort encoded)) $ \short ->
                   bgroup "short"
                     [ bench "checked" $ nf S32.decodeBase32Untyped short
-                    , env (pure (assertBase32 short)) $ \typed ->
+                    , env (pure (assertBase32 @'StdPadded short)) $ \typed ->
                         bench "typed" $ nf S32.decodeBase32 typed
                     ]
               ]

@@ -2,13 +2,14 @@
 
 ## 1.0
 
-* Introduce alphabet-tagged `Base32` values in `Data.Base32.Types`.
+* Introduce alphabet- and padding-tagged `Base32` values in `Data.Base32.Types`.
   Encoders return wrapped values; typed decoders consume them. Checked decoders
   now use the `Untyped` suffix; custom text conversion functions retain their names.
   Typed decoding uses unchecked scalar and SIMD loops, with streaming lazy decoding.
-  Typed padded/unpadded names accept either valid form; parsers enforce padding policies.
+  `StdAlphabet` and `HexAlphabet` admit both padding forms in general typed decoders;
+  padding-specific typed decoders require exact tags.
 * Replace `isBase32`, `isValidBase32`, `isBase32Hex`, and `isValidBase32Hex` with
-  `parseBase32`, `parseBase32Padded`, and `parseBase32Unpadded` in all twelve APIs.
+  `parseBase32Padded` and `parseBase32Unpadded` in all twelve APIs.
   Parsers preserve input, accept the decoder's existing case-insensitive alphabets,
   and check unused pad bits. Noncanonical pad bits are now rejected by decoders too.
 * Add an optional, default-off `simd` flag with NEON, SSSE3, and AVX2 prefixes

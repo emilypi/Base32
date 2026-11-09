@@ -1,5 +1,6 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE Trustworthy #-}
 -- |
 -- Module       : Data.ByteString.Short.Base32.Hex
@@ -29,7 +30,6 @@ module Data.ByteString.Short.Base32.Hex
 , decodeBase32
 , decodeBase32Padded
 , decodeBase32Unpadded
-, parseBase32
 , parseBase32Padded
 , parseBase32Unpadded
 ) where
@@ -53,7 +53,7 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
-encodeBase32 :: ShortByteString -> Base32 'Hex ShortText
+encodeBase32 :: ShortByteString -> Base32 'HexPadded ShortText
 encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 {-# INLINE encodeBase32 #-}
 
@@ -66,7 +66,7 @@ encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 -- >>> encodeBase32' "Sun"
 -- "ADQMS==="
 --
-encodeBase32' :: ShortByteString -> Base32 'Hex ShortByteString
+encodeBase32' :: ShortByteString -> Base32 'HexPadded ShortByteString
 encodeBase32' =
   assertBase32
     . encodeShort
@@ -107,7 +107,7 @@ decodeBase32Untyped = decodeShort hexDecodeTable OptionalPadding
 -- >>> encodeBase32Unpadded' "Sun"
 -- "ADQMS"
 --
-encodeBase32Unpadded :: ShortByteString -> Base32 'Hex ShortText
+encodeBase32Unpadded :: ShortByteString -> Base32 'HexUnpadded ShortText
 encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
 
@@ -123,7 +123,7 @@ encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 -- >>> encodeBase32Unpadded' "Sun"
 -- "ADQMS"
 --
-encodeBase32Unpadded' :: ShortByteString -> Base32 'Hex ShortByteString
+encodeBase32Unpadded' :: ShortByteString -> Base32 'HexUnpadded ShortByteString
 encodeBase32Unpadded' =
   assertBase32
     . encodeShort
@@ -173,45 +173,38 @@ decodeBase32PaddedUntyped = decodeShort hexDecodeTable RequirePadding
 {-# INLINE decodeBase32PaddedUntyped #-}
 
 -- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32' to validate external input first.
-decodeBase32 :: Base32 'Hex ShortByteString -> ShortByteString
+-- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
+decodeBase32 :: HexAlphabet k => Base32 k ShortByteString -> ShortByteString
 decodeBase32 = decodeShortTyped hexDecodeTable
 {-# INLINE decodeBase32 #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32 :: ShortByteString -> Either Text (Base32 'Hex ShortByteString)
-parseBase32 value = assertBase32 value
-  <$ (decodeBase32Untyped) value
-{-# INLINE parseBase32 #-}
-
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
-decodeBase32Padded :: Base32 'Hex ShortByteString -> ShortByteString
+-- The type establishes the alphabet and padding policy.
+decodeBase32Padded :: Base32 'HexPadded ShortByteString -> ShortByteString
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Padded :: ShortByteString -> Either Text (Base32 'Hex ShortByteString)
+parseBase32Padded :: ShortByteString -> Either Text (Base32 'HexPadded ShortByteString)
 parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
 {-# INLINE parseBase32Padded #-}
 
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Unpadded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
-decodeBase32Unpadded :: Base32 'Hex ShortByteString -> ShortByteString
+-- The type establishes the alphabet and padding policy.
+decodeBase32Unpadded :: Base32 'HexUnpadded ShortByteString -> ShortByteString
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Unpadded :: ShortByteString -> Either Text (Base32 'Hex ShortByteString)
+parseBase32Unpadded
+  :: ShortByteString -> Either Text (Base32 'HexUnpadded ShortByteString)
 parseBase32Unpadded value = assertBase32 value
   <$ (decodeBase32UnpaddedUntyped) value
 {-# INLINE parseBase32Unpadded #-}

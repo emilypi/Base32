@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE Safe #-}
 -- |
 -- Module       : Data.Text.Lazy.Encoding.Base32.Hex
@@ -29,7 +30,6 @@ module Data.Text.Lazy.Encoding.Base32.Hex
 , decodeBase32
 , decodeBase32Padded
 , decodeBase32Unpadded
-, parseBase32
 , parseBase32Padded
 , parseBase32Unpadded
 ) where
@@ -56,7 +56,7 @@ import qualified Data.Text.Lazy.Encoding as TL
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
-encodeBase32 :: TL.Text -> Base32 'Hex TL.Text
+encodeBase32 :: TL.Text -> Base32 'HexPadded TL.Text
 encodeBase32 = BL32H.encodeBase32 . TL.encodeUtf8
 {-# INLINE encodeBase32 #-}
 
@@ -119,7 +119,7 @@ decodeBase32With f t = case BL32H.decodeBase32Untyped t of
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
-encodeBase32Unpadded :: TL.Text -> Base32 'Hex TL.Text
+encodeBase32Unpadded :: TL.Text -> Base32 'HexUnpadded TL.Text
 encodeBase32Unpadded = BL32H.encodeBase32Unpadded . TL.encodeUtf8
 {-# INLINE encodeBase32Unpadded #-}
 
@@ -211,51 +211,43 @@ decodeBase32PaddedWith f t = case BL32H.decodeBase32PaddedUntyped t of
 {-# INLINE decodeBase32PaddedWith #-}
 
 -- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32' to validate external input first.
+-- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32 :: Base32 'Hex TL.Text -> TL.Text
+decodeBase32 :: HexAlphabet k => Base32 k TL.Text -> TL.Text
 decodeBase32 = TL.decodeUtf8 . BL32H.decodeBase32 . fmap TL.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32 :: TL.Text -> Either T.Text (Base32 'Hex TL.Text)
-parseBase32 value = assertBase32 value
-  <$ (BL32H.decodeBase32Untyped . TL.encodeUtf8) value
-{-# INLINE parseBase32 #-}
-
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
+-- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32Padded :: Base32 'Hex TL.Text -> TL.Text
+decodeBase32Padded :: Base32 'HexPadded TL.Text -> TL.Text
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Padded :: TL.Text -> Either T.Text (Base32 'Hex TL.Text)
+parseBase32Padded :: TL.Text -> Either T.Text (Base32 'HexPadded TL.Text)
 parseBase32Padded value = assertBase32 value
   <$ (BL32H.decodeBase32PaddedUntyped . TL.encodeUtf8) value
 {-# INLINE parseBase32Padded #-}
 
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Unpadded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
+-- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32Unpadded :: Base32 'Hex TL.Text -> TL.Text
+decodeBase32Unpadded :: Base32 'HexUnpadded TL.Text -> TL.Text
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Unpadded :: TL.Text -> Either T.Text (Base32 'Hex TL.Text)
+parseBase32Unpadded :: TL.Text -> Either T.Text (Base32 'HexUnpadded TL.Text)
 parseBase32Unpadded value = assertBase32 value
   <$ (BL32H.decodeBase32UnpaddedUntyped . TL.encodeUtf8) value
 {-# INLINE parseBase32Unpadded #-}

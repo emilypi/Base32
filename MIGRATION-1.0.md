@@ -1,11 +1,11 @@
 # Migrating from base32 0.4 to 1.0
 
-## Encoded values carry their alphabet
+## Encoded values carry their alphabet and padding
 
 Import `Data.Base32.Types` for the opaque `Base32` wrapper, `Alphabet(..)`,
-`extractBase32`, and `assertBase32`. Standard encoders return `Base32 'Std a`;
-extended-hex encoders return `Base32 'Hex a`. Add `DataKinds` when writing these
-signatures explicitly. Padding is selected by the function name, not the type.
+`extractBase32`, and `assertBase32`. Standard encoders return `Base32 'StdPadded a`
+or `Base32 'StdUnpadded a`; extended-hex encoders return `Base32 'HexPadded a` or
+`Base32 'HexUnpadded a`. Add `DataKinds` when writing these signatures explicitly.
 
 ```haskell
 -- Before
@@ -33,8 +33,11 @@ functions keep their checked signatures and names.
 
 Typed decoders use dedicated unchecked loops. They trust the established
 provenance and do not check the alphabet, input length, padding, or unused bits.
-The typed padded/unpadded names are aliases of `decodeBase32`, accepting either
-valid padding form. Select a padding-specific parser to enforce a wire policy.
+`decodeBase32` accepts both padding forms within its alphabet through the
+`StdAlphabet k` or `HexAlphabet k` constraint. The padding-specific decoders
+require the corresponding exact tag, so mixing their API paths is a type error.
+For example, `decodeBase32Padded (encodeBase32Unpadded' bytes)` cannot compile.
+Use `TypeFamilies` when writing signatures with these constraints.
 Callers using `assertBase32`, record updates, or mapping instances must preserve
 validity themselves.
 
@@ -44,12 +47,13 @@ parsing still validate a complete finite input.
 ## Replace predicates with parsers
 
 `isBase32`, `isValidBase32`, `isBase32Hex`, and `isValidBase32Hex` are removed.
-Use `parseBase32` from the corresponding standard or `.Hex` module, or a
-padding-specific parser. `Data.Either.isRight . parseBase32` provides a Boolean
-when needed. Prefer retaining the successful parsed value:
+Use `parseBase32Padded` or `parseBase32Unpadded` from the corresponding standard
+or `.Hex` module. Each returns the precise padding tag; there is no permissive
+`parseBase32`. `Data.Either.isRight . parseBase32Padded` provides a Boolean check
+for padded input when needed. Prefer retaining the successful parsed value:
 
 ```haskell
-case B32.parseBase32 wire of
+case B32.parseBase32Padded wire of
   Left err -> handleError err
   Right encoded -> consumeBytes (B32.decodeBase32 encoded)
 ```
@@ -63,7 +67,7 @@ rejected instead of silently decoding as `f`.
 ## Text decoding and binary payloads
 
 The wrapper establishes Base32 syntax, not the decoded payload's character
-encoding. `parseBase32 "74======"` succeeds, since it encodes byte `0xff`.
+encoding. `parseBase32Padded "74======"` succeeds, since it encodes byte `0xff`.
 Checked Text decoding now reports invalid UTF-8 as `Left`, including short and
 lazy Text. Typed Text decoding requires valid UTF-8 and fails otherwise. Use
 ByteString decoding for binary data, or a `decode*With` function for explicit

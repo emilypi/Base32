@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE Safe #-}
 -- |
 -- Module       : Data.Text.Encoding.Base32.Hex
@@ -27,7 +28,6 @@ module Data.Text.Encoding.Base32.Hex
 , decodeBase32
 , decodeBase32Padded
 , decodeBase32Unpadded
-, parseBase32
 , parseBase32Padded
 , parseBase32Unpadded
 ) where
@@ -53,7 +53,7 @@ import Data.Text.Encoding.Base32.Error (Base32Error(..))
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
-encodeBase32 :: Text -> Base32 'Hex Text
+encodeBase32 :: Text -> Base32 'HexPadded Text
 encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
 {-# INLINE encodeBase32 #-}
 
@@ -116,7 +116,7 @@ decodeBase32With f t = case B32H.decodeBase32Untyped t of
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
-encodeBase32Unpadded :: Text -> Base32 'Hex Text
+encodeBase32Unpadded :: Text -> Base32 'HexUnpadded Text
 encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
 {-# INLINE encodeBase32Unpadded #-}
 
@@ -210,51 +210,43 @@ decodeBase32PaddedWith f t = case B32H.decodeBase32PaddedUntyped t of
 {-# INLINE decodeBase32PaddedWith #-}
 
 -- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32' to validate external input first.
+-- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32 :: Base32 'Hex Text -> Text
+decodeBase32 :: HexAlphabet k => Base32 k Text -> Text
 decodeBase32 = T.decodeUtf8 . B32H.decodeBase32 . fmap T.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32 :: Text -> Either Text (Base32 'Hex Text)
-parseBase32 value = assertBase32 value
-  <$ (B32H.decodeBase32Untyped . T.encodeUtf8) value
-{-# INLINE parseBase32 #-}
-
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
+-- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32Padded :: Base32 'Hex Text -> Text
+decodeBase32Padded :: Base32 'HexPadded Text -> Text
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Padded :: Text -> Either Text (Base32 'Hex Text)
+parseBase32Padded :: Text -> Either Text (Base32 'HexPadded Text)
 parseBase32Padded value = assertBase32 value
   <$ (B32H.decodeBase32PaddedUntyped . T.encodeUtf8) value
 {-# INLINE parseBase32Padded #-}
 
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Unpadded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
+-- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32Unpadded :: Base32 'Hex Text -> Text
+decodeBase32Unpadded :: Base32 'HexUnpadded Text -> Text
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Unpadded :: Text -> Either Text (Base32 'Hex Text)
+parseBase32Unpadded :: Text -> Either Text (Base32 'HexUnpadded Text)
 parseBase32Unpadded value = assertBase32 value
   <$ (B32H.decodeBase32UnpaddedUntyped . T.encodeUtf8) value
 {-# INLINE parseBase32Unpadded #-}

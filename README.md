@@ -12,33 +12,35 @@ import Data.Base32.Types
 import qualified Data.ByteString.Base32 as B32
 
 encoded = B32.encodeBase32' "Sun"
--- encoded :: Base32 'Std ByteString
+-- encoded :: Base32 'StdPadded ByteString
 -- extractBase32 encoded == "KN2W4==="
 -- B32.decodeBase32 encoded == "Sun"
 
-parsed = B32.parseBase32 "KN2W4"
+parsed = B32.parseBase32Unpadded "KN2W4"
 -- Right "KN2W4"; the original encoded representation is retained
 
 raw = B32.decodeBase32Untyped "KN2W4"
 -- Right "Sun"
 ```
 
-Use `.Hex` modules for the extended-hex alphabet. Its values carry the `'Hex`
-marker, preventing accidental mixing with standard Base32. See
+Use `.Hex` modules for the extended-hex alphabet. Values carry `'StdPadded`,
+`'StdUnpadded`, `'HexPadded`, or `'HexUnpadded`, preventing accidental mixing of
+alphabets or padding-specific APIs. See
 [MIGRATION-1.0.md](MIGRATION-1.0.md) for the changes from 0.4.
 
 ## Validation
 
-`parseBase32` accepts padded or unpadded input. `parseBase32Padded` and
-`parseBase32Unpadded` enforce a specific padding policy. All three check the
-alphabet, input length, padding placement, and zero unused trailing bits.
+`parseBase32Padded` and `parseBase32Unpadded` establish the corresponding padding
+tag. Both check the alphabet, input length, padding placement, and zero unused
+trailing bits.
 They accept upper- and lowercase letters, preserve the original case and
 representation, and accept empty input. Whitespace is rejected.
 
 Typed decoders use dedicated unchecked loops: provenance establishes validity,
 so decoding does not repeat alphabet, length, padding, or canonical-bit checks.
-The typed padded/unpadded names are aliases of `decodeBase32`; enforce a padding
-policy at the parsing boundary.
+`decodeBase32` uses the `StdAlphabet` or `HexAlphabet` constraint to accept both
+padding forms of its alphabet. `decodeBase32Padded` and `decodeBase32Unpadded`
+require their exact tags; calling them with the wrong padding form is a type error.
 
 The wrapper identifies the alphabet; it does not prove that decoded bytes form UTF-8.
 Checked Text decoders return `Left` for invalid UTF-8; `decodeBase32With` and
@@ -74,6 +76,7 @@ variants reach the same kernels through their strict chunks or checked input.
 ```sh
 cabal test -f-simd
 cabal test -fsimd --ghc-options='-fcheck-prim-bounds -fno-ignore-asserts'
+cabal exec -- sh test/typecheck.sh
 cabal bench -fsimd
 cabal haddock -fsimd
 cabal check

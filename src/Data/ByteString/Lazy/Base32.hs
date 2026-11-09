@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Trustworthy #-}
 -- |
@@ -29,7 +31,6 @@ module Data.ByteString.Lazy.Base32
 , decodeBase32
 , decodeBase32Padded
 , decodeBase32Unpadded
-, parseBase32
 , parseBase32Padded
 , parseBase32Unpadded
 ) where
@@ -56,7 +57,7 @@ import qualified Data.Text.Lazy.Encoding as TL
 --
 -- >>> encodeBase32 "Sun"
 -- "KN2W4==="
-encodeBase32 :: ByteString -> Base32 'Std TL.Text
+encodeBase32 :: ByteString -> Base32 'StdPadded TL.Text
 encodeBase32 = fmap TL.decodeUtf8 . encodeBase32'
 {-# INLINE encodeBase32 #-}
 
@@ -69,7 +70,7 @@ encodeBase32 = fmap TL.decodeUtf8 . encodeBase32'
 -- >>> encodeBase32 "Sun"
 -- "KN2W4==="
 --
-encodeBase32' :: ByteString -> Base32 'Std ByteString
+encodeBase32' :: ByteString -> Base32 'StdPadded ByteString
 encodeBase32' = assertBase32 . fromChunks
   . fmap (extractBase32 . B32.encodeBase32')
   . reChunkN 5
@@ -111,7 +112,7 @@ decodeBase32Untyped = fmap (fromChunks . (:[]))
 --
 -- >>> encodeBase32Unpadded "Sun"
 -- "KN2W4"
-encodeBase32Unpadded :: ByteString -> Base32 'Std TL.Text
+encodeBase32Unpadded :: ByteString -> Base32 'StdUnpadded TL.Text
 encodeBase32Unpadded = fmap TL.decodeUtf8 . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
 
@@ -126,7 +127,7 @@ encodeBase32Unpadded = fmap TL.decodeUtf8 . encodeBase32Unpadded'
 -- >>> encodeBase32Unpadded' "Sun"
 -- "KN2W4"
 --
-encodeBase32Unpadded' :: ByteString -> Base32 'Std ByteString
+encodeBase32Unpadded' :: ByteString -> Base32 'StdUnpadded ByteString
 encodeBase32Unpadded' = assertBase32 . fromChunks
   . fmap (extractBase32 . B32.encodeBase32Unpadded')
   . reChunkN 5
@@ -181,47 +182,40 @@ decodeBase32PaddedUntyped = fmap (fromChunks . (:[]))
 {-# INLINE decodeBase32PaddedUntyped #-}
 
 -- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32' to validate external input first.
-decodeBase32 :: Base32 'Std ByteString -> ByteString
+-- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
+decodeBase32 :: forall k. StdAlphabet k => Base32 k ByteString -> ByteString
 decodeBase32 = fromChunks
-  . fmap (B32.decodeBase32 . assertBase32)
+  . fmap (B32.decodeBase32
+      . (assertBase32 :: BS.ByteString -> Base32 k BS.ByteString))
   . reChunkN 8 . toChunks . extractBase32
 {-# INLINE decodeBase32 #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32 :: ByteString -> Either T.Text (Base32 'Std ByteString)
-parseBase32 value = assertBase32 value
-  <$ (decodeBase32Untyped) value
-{-# INLINE parseBase32 #-}
-
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
-decodeBase32Padded :: Base32 'Std ByteString -> ByteString
+-- The type establishes the alphabet and padding policy.
+decodeBase32Padded :: Base32 'StdPadded ByteString -> ByteString
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Padded :: ByteString -> Either T.Text (Base32 'Std ByteString)
+parseBase32Padded :: ByteString -> Either T.Text (Base32 'StdPadded ByteString)
 parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
 {-# INLINE parseBase32Padded #-}
 
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Unpadded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
-decodeBase32Unpadded :: Base32 'Std ByteString -> ByteString
+-- The type establishes the alphabet and padding policy.
+decodeBase32Unpadded :: Base32 'StdUnpadded ByteString -> ByteString
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Unpadded :: ByteString -> Either T.Text (Base32 'Std ByteString)
+parseBase32Unpadded :: ByteString -> Either T.Text (Base32 'StdUnpadded ByteString)
 parseBase32Unpadded value = assertBase32 value
   <$ (decodeBase32UnpaddedUntyped) value
 {-# INLINE parseBase32Unpadded #-}

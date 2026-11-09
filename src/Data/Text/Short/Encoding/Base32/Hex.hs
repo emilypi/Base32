@@ -1,5 +1,6 @@
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- |
 -- Module       : Data.Text.Short.Encoding.Base32.Hex
@@ -30,7 +31,6 @@ module Data.Text.Short.Encoding.Base32.Hex
 , decodeBase32
 , decodeBase32Padded
 , decodeBase32Unpadded
-, parseBase32
 , parseBase32Padded
 , parseBase32Unpadded
 ) where
@@ -58,7 +58,7 @@ import Data.Text.Short
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
-encodeBase32 :: ShortText -> Base32 'Hex ShortText
+encodeBase32 :: ShortText -> Base32 'HexPadded ShortText
 encodeBase32 =
   BS32H.encodeBase32
     . toShortByteString
@@ -127,7 +127,7 @@ decodeBase32With f t = case BS32H.decodeBase32Untyped t of
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
-encodeBase32Unpadded :: ShortText -> Base32 'Hex ShortText
+encodeBase32Unpadded :: ShortText -> Base32 'HexUnpadded ShortText
 encodeBase32Unpadded =
   BS32H.encodeBase32Unpadded
     . toShortByteString
@@ -225,52 +225,44 @@ decodeBase32PaddedWith f t = case BS32H.decodeBase32PaddedUntyped t of
 {-# INLINE decodeBase32PaddedWith #-}
 
 -- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32' to validate external input first.
+-- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32 :: Base32 'Hex ShortText -> ShortText
+decodeBase32 :: HexAlphabet k => Base32 k ShortText -> ShortText
 decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
   . BS32H.decodeBase32 . fmap toShortByteString
 {-# INLINE decodeBase32 #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32 :: ShortText -> Either Text (Base32 'Hex ShortText)
-parseBase32 value = assertBase32 value
-  <$ (BS32H.decodeBase32Untyped . toShortByteString) value
-{-# INLINE parseBase32 #-}
-
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Padded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
+-- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32Padded :: Base32 'Hex ShortText -> ShortText
+decodeBase32Padded :: Base32 'HexPadded ShortText -> ShortText
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Padded :: ShortText -> Either Text (Base32 'Hex ShortText)
+parseBase32Padded :: ShortText -> Either Text (Base32 'HexPadded ShortText)
 parseBase32Padded value = assertBase32 value
   <$ (BS32H.decodeBase32PaddedUntyped . toShortByteString) value
 {-# INLINE parseBase32Padded #-}
 
 -- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32Unpadded' to check the padding policy on external input.
--- Typed decoding accepts either padding form; the alphabet is already known.
+-- The type establishes the alphabet and padding policy.
 -- Decoded Text payloads must be valid UTF-8.
 -- Character conversion is separate from the Base32 provenance.
-decodeBase32Unpadded :: Base32 'Hex ShortText -> ShortText
+decodeBase32Unpadded :: Base32 'HexUnpadded ShortText -> ShortText
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
 -- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
 -- This validates Base32 bytes, not the character encoding of the payload.
-parseBase32Unpadded :: ShortText -> Either Text (Base32 'Hex ShortText)
+parseBase32Unpadded :: ShortText -> Either Text (Base32 'HexUnpadded ShortText)
 parseBase32Unpadded value = assertBase32 value
   <$ (BS32H.decodeBase32UnpaddedUntyped . toShortByteString) value
 {-# INLINE parseBase32Unpadded #-}
