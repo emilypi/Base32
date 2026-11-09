@@ -75,6 +75,10 @@ character conversion.
 
 ## Build and compatibility
 
+`Data.ByteString.Base32.Internal` is removed. Import codec entry points from
+`Data.ByteString.Base32.Internal.Head` and `validateLastNPads` from
+`Data.ByteString.Base32.Internal.Utils`.
+
 The compiler range is GHC 9.6–9.14. Dependencies include `primitive` for direct
 short byte-array codecs. SIMD is optional and remains disabled unless selected
 with `-fsimd`; both modes use identical validation rules. The source archive

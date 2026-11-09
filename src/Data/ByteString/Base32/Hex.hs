@@ -41,8 +41,9 @@ import Data.Base32.Types
 
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (ByteString(..))
-import Data.ByteString.Base32.Internal
+import Data.ByteString.Base32.Internal.Head
 import Data.ByteString.Base32.Internal.Tables
+import Data.ByteString.Base32.Internal.Utils (validateLastNPads)
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
 

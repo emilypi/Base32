@@ -43,7 +43,6 @@ library
     Data.Base32.Types
     Data.ByteString.Base32
     Data.ByteString.Base32.Hex
-    Data.ByteString.Base32.Internal
     Data.ByteString.Lazy.Base32
     Data.ByteString.Lazy.Base32.Hex
     Data.ByteString.Short.Base32

@@ -4,7 +4,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
+-- |
+-- Module       : Regression
+-- Copyright    : (c) 2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Regression tests for typed codecs, parsing, and buffer boundaries.
+--
 module Regression (regressions) where
 
 import Control.Concurrent (forkIO, killThread, threadDelay)
@@ -16,7 +26,7 @@ import Data.Bits (xor)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base32 as B
 import qualified Data.ByteString.Base32.Hex as H
-import Data.ByteString.Base32.Internal (decodeBase32_, encodeBase32_)
+import Data.ByteString.Base32.Internal.Head (decodeBase32_, encodeBase32_)
 import Data.ByteString.Base32.Internal.Short (decodeShort, encodeShort)
 import Data.ByteString.Base32.Internal.Tables (stdDecodeTable)
 import Data.ByteString.Base32.Internal.Utils (encodedLength)

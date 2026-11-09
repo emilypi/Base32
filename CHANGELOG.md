@@ -19,6 +19,8 @@
   constructing invalid ShortText. Base32 parsing itself accepts binary payloads.
 * Use checked integer output capacities, write only the actual decoded tail,
   and correct scalar byte order on big-endian targets.
+* Remove `Data.ByteString.Base32.Internal`; use `Internal.Head` for codec entry
+  points and `Internal.Utils` for `validateLastNPads`.
 * Support GHC 9.6–9.14; update copyright through 2026, CI, bounds, and benchmarks.
 
 See [MIGRATION-1.0.md](MIGRATION-1.0.md) for source compatibility changes.

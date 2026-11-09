@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module       : Data.ByteString.Base32.Internal.Utils
 -- Copyright    : (c) 2020-2026 Emily Pillmore
@@ -9,7 +10,7 @@
 -- Stability    : Experimental
 -- Portability  : portable
 --
--- Shared allocation, byte-order, table lookup, and rechunking utilities.
+-- Shared allocation, byte-order, table lookup, rechunking, and padding utilities.
 --
 module Data.ByteString.Base32.Internal.Utils
 ( aix
@@ -21,11 +22,13 @@ module Data.ByteString.Base32.Internal.Utils
 , w64_32
 , encodedLength
 , writeNPlainPtrBytes
+, validateLastNPads
 ) where
 
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
+import Data.Text (Text)
 
 import Foreign.Ptr
 import Foreign.Storable
@@ -117,3 +120,17 @@ encodedLength n
   where
     blocks = n `quot` 5 + if n `rem` 5 == 0 then 0 else 1
 {-# INLINE encodedLength #-}
+
+-- | Reject '=' in the final @n@ bytes before running the decoder.
+-- The caller selects @n@ from the input length and padding policy, preventing
+-- existing padding from being accepted when missing padding is added.
+validateLastNPads
+    :: Int
+    -> ByteString
+    -> IO (Either Text ByteString)
+    -> Either Text ByteString
+validateLastNPads n bs io
+    | BS.elem 0x3d (BS.drop (BS.length bs - n) bs) =
+        Left "Base32-encoded bytestring has invalid padding"
+    | otherwise = unsafeDupablePerformIO io
+{-# INLINE validateLastNPads #-}
