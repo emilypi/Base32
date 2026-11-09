@@ -41,7 +41,7 @@ Checked Text decoders return `Left` for invalid UTF-8; `decodeBase32With` and
 its variants let you choose a character conversion. For arbitrary binary
 payloads, use ByteString decoders.
 
-`assertBase32`, record updates, the `base32` lens, and the mapping instances
+`assertBase32`, record updates, and the mapping instances
 can bypass validation. Typed decoding requires a truthful encoded value and,
 for Text, valid UTF-8 payload bytes. Use parsers and checked decoders for
 external input.

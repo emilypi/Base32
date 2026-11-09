@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RoleAnnotations #-}
 {-# LANGUAGE Trustworthy #-}
 
@@ -19,7 +18,6 @@ module Data.Base32.Types
   , Base32
   , extractBase32
   , assertBase32
-  , base32
   ) where
 
 import Control.DeepSeq (NFData)
@@ -50,13 +48,3 @@ newtype Base32 (alphabet :: Alphabet) a = Base32
 assertBase32 :: a -> Base32 alphabet a
 assertBase32 = Base32
 {-# INLINE assertBase32 #-}
-
--- | A representation-preserving lens. Updating through it does not validate
--- the replacement; callers must preserve the encoded-value invariant.
-base32 ::
-  (Functor f) =>
-  (a -> f b) ->
-  Base32 alphabet a ->
-  f (Base32 alphabet b)
-base32 f = fmap Base32 . f . extractBase32
-{-# INLINE base32 #-}
