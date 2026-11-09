@@ -25,6 +25,13 @@ tested-with:
 
 extra-source-files:
   fourmolu.yaml
+  cbits/base32_simd.h
+  test/simd-native.c
+
+flag simd
+  description:     Enable bundled SIMD kernels with portable scalar fallback
+  default:         False
+  manual:          True
 
 source-repository head
   type:     git
@@ -54,6 +61,13 @@ library
     Data.ByteString.Base32.Internal.Tables
     Data.ByteString.Base32.Internal.Tail
     Data.ByteString.Base32.Internal.Utils
+
+  if flag(simd)
+    exposed-modules: Data.ByteString.Base32.Internal.SIMD
+    cpp-options:    -DBASE32_SIMD
+    c-sources:      cbits/base32_simd.c
+    include-dirs:   cbits
+    cc-options:     -O2 -std=c99
 
   build-depends:
       base            >=4.18     && <4.23
