@@ -210,13 +210,12 @@ decodeBase32PaddedWith f t = case BL32H.decodeBase32PaddedUntyped t of
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32PaddedWith #-}
 
--- | Decode a value with established alphabet provenance.
+-- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
--- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+-- Decoded Text payloads must be valid UTF-8.
+-- Character conversion is separate from the Base32 provenance.
 decodeBase32 :: Base32 'Hex TL.Text -> TL.Text
-decodeBase32 = either (error . ErrorText.unpack) id
-  . decodeBase32Untyped . extractBase32
+decodeBase32 = TL.decodeUtf8 . BL32H.decodeBase32 . fmap TL.encodeUtf8
 {-# INLINE decodeBase32 #-}
 
 -- | Validate encoded input, retaining its original representation and case.
@@ -227,13 +226,13 @@ parseBase32 value = assertBase32 value
   <$ (BL32H.decodeBase32Untyped . TL.encodeUtf8) value
 {-# INLINE parseBase32 #-}
 
--- | Decode a value with established alphabet provenance.
--- Use 'parseBase32Padded' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
--- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+-- | Decode established Base32 provenance without repeating validation.
+-- Use 'parseBase32Padded' to check the padding policy on external input.
+-- Typed decoding accepts either padding form; the alphabet is already known.
+-- Decoded Text payloads must be valid UTF-8.
+-- Character conversion is separate from the Base32 provenance.
 decodeBase32Padded :: Base32 'Hex TL.Text -> TL.Text
-decodeBase32Padded = either (error . ErrorText.unpack) id
-  . decodeBase32PaddedUntyped . extractBase32
+decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
@@ -244,13 +243,13 @@ parseBase32Padded value = assertBase32 value
   <$ (BL32H.decodeBase32PaddedUntyped . TL.encodeUtf8) value
 {-# INLINE parseBase32Padded #-}
 
--- | Decode a value with established alphabet provenance.
--- Use 'parseBase32Unpadded' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
--- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+-- | Decode established Base32 provenance without repeating validation.
+-- Use 'parseBase32Unpadded' to check the padding policy on external input.
+-- Typed decoding accepts either padding form; the alphabet is already known.
+-- Decoded Text payloads must be valid UTF-8.
+-- Character conversion is separate from the Base32 provenance.
 decodeBase32Unpadded :: Base32 'Hex TL.Text -> TL.Text
-decodeBase32Unpadded = either (error . ErrorText.unpack) id
-  . decodeBase32UnpaddedUntyped . extractBase32
+decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.

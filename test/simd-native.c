@@ -76,6 +76,17 @@ static void boundaries(int hex)
             for (size_t i = 0; i < offset; ++i) {
                 assert(decoded[i] == 0xa5);
             }
+            memset(decoded, 0xa5, read + offset + 1);
+            used = hs_base32_simd_decode_typed(encoded + offset, written,
+                                               decoded + offset, hex);
+            assert(used == (hs_base32_simd_backend() ? written : 0));
+            assert(memcmp(decoded + offset, src, used / 8 * 5) == 0);
+            for (size_t i = used / 8 * 5; i <= read; ++i) {
+                assert(decoded[offset + i] == 0xa5);
+            }
+            for (size_t i = 0; i < offset; ++i) {
+                assert(decoded[i] == 0xa5);
+            }
             free(encoded);
             free(decoded);
             free(allocation);
@@ -119,6 +130,14 @@ static void malformed(int hex)
     size_t used = hs_base32_simd_decode(encoded, sizeof encoded, decoded, hex);
     assert(used == (hs_base32_simd_backend() ? sizeof encoded : 0));
     assert(memcmp(decoded, payload, used / 8 * 5) == 0);
+    used = hs_base32_simd_decode_typed(encoded, sizeof encoded, decoded, hex);
+    assert(used == (hs_base32_simd_backend() ? sizeof encoded : 0));
+    assert(memcmp(decoded, payload, used / 8 * 5) == 0);
+
+    /* White-box check: the typed entry point must bypass validation. */
+    memset(encoded, '!', sizeof encoded);
+    used = hs_base32_simd_decode_typed(encoded, sizeof encoded, decoded, hex);
+    assert(used == (hs_base32_simd_backend() ? sizeof encoded : 0));
 }
 
 static void guarded(int hex)
@@ -139,6 +158,7 @@ static void guarded(int hex)
         capacity = len / 8 * 5;
         memset(src + page - len, hex ? '0' : 'A', len);
         hs_base32_simd_decode(src + page - len, len, dst + page - capacity, hex);
+        hs_base32_simd_decode_typed(src + page - len, len, dst + page - capacity, hex);
     }
     assert(munmap(src, page * 2) == 0);
     assert(munmap(dst, page * 2) == 0);

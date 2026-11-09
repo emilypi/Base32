@@ -10,8 +10,10 @@
 module Data.ByteString.Base32.Internal.SIMD
   ( encodePrefix
   , decodePrefix
+  , decodeTypedPrefix
   , encodeByteArrayPrefix
   , decodeByteArrayPrefix
+  , decodeByteArrayTypedPrefix
   ) where
 
 import Control.Monad.ST (ST)
@@ -33,6 +35,11 @@ foreign import ccall unsafe "hs_base32_simd_encode"
 foreign import ccall unsafe "hs_base32_simd_decode"
   c_decodeArray :: ByteArray# -> CSize -> MutableByteArray# s -> CInt -> IO CSize
 
+foreign import ccall unsafe "hs_base32_simd_decode_typed"
+  c_decodeTyped :: Ptr Word8 -> CSize -> Ptr Word8 -> CInt -> IO CSize
+foreign import ccall unsafe "hs_base32_simd_decode_typed"
+  c_decodeArrayTyped :: ByteArray# -> CSize -> MutableByteArray# s -> CInt -> IO CSize
+
 -- | Encode complete quanta. Destination capacity must be at least len/5*8.
 encodePrefix :: Addr# -> Ptr Word8 -> Int -> Ptr Word8 -> IO Int
 encodePrefix alphabet src len dst
@@ -51,6 +58,16 @@ decodePrefix table src len dst
       fromIntegral <$> c_decode src (fromIntegral len) dst hex
   | otherwise = pure 0
 {-# INLINE decodePrefix #-}
+
+-- | Decode known-valid symbols without validation; excludes trailing padding.
+-- Destination capacity must be at least len/8*5.
+decodeTypedPrefix :: Addr# -> Ptr Word8 -> Int -> Ptr Word8 -> IO Int
+decodeTypedPrefix table src len dst
+  | len < 64 = pure 0
+  | Just hex <- decodingAlphabet table =
+      fromIntegral <$> c_decodeTyped src (fromIntegral len) dst hex
+  | otherwise = pure 0
+{-# INLINE decodeTypedPrefix #-}
 
 -- | Direct unpinned-array encoding into a distinct mutable output buffer.
 encodeByteArrayPrefix ::
@@ -73,6 +90,17 @@ decodeByteArrayPrefix table (ByteArray src) len (MutableByteArray dst)
         fromIntegral <$> c_decodeArray src (fromIntegral len) dst hex
   | otherwise = pure 0
 {-# INLINE decodeByteArrayPrefix #-}
+
+-- | Unchecked array decoding of known-valid symbols, excluding padding.
+decodeByteArrayTypedPrefix ::
+  Addr# -> ByteArray -> Int -> MutableByteArray s -> ST s Int
+decodeByteArrayTypedPrefix table (ByteArray src) len (MutableByteArray dst)
+  | len < 64 = pure 0
+  | Just hex <- decodingAlphabet table =
+      unsafeIOToST $
+        fromIntegral <$> c_decodeArrayTyped src (fromIntegral len) dst hex
+  | otherwise = pure 0
+{-# INLINE decodeByteArrayTypedPrefix #-}
 
 -- Arbitrary alphabets are part of the exposed low-level API. Only exact
 -- built-in alphabets can use these kernels; other alphabets stay scalar.

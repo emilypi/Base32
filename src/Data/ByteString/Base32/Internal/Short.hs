@@ -6,10 +6,11 @@
 module Data.ByteString.Base32.Internal.Short
   ( encodeShort
   , decodeShort
+  , decodeShortTyped
   ) where
 
 import Control.Monad.ST (runST)
-import Data.Base32.Types (Padding(..))
+import Data.Base32.Types (Base32, Padding(..), extractBase32)
 import Data.Bits
 import Data.ByteString.Base32.Internal.Loop (decodeQuantum)
 import Data.ByteString.Base32.Internal.Utils (aix, encodedLength)
@@ -177,3 +178,55 @@ decodeShort (Ptr table) policy input@(SBS source)
       | i >= len = 0x63
       | otherwise = fromIntegral (aix (indexByteArray src i) table) :: Word64
 {-# INLINE decodeShort #-}
+
+-- | Decode established provenance directly from a byte array, without
+-- alphabet, size, padding-policy or canonical-bit validation.
+decodeShortTyped
+  :: Ptr Word8 -> Base32 alphabet ShortByteString -> ShortByteString
+decodeShortTyped (Ptr table) encoded = runST $ do
+    dst <- newByteArray capacity
+#ifdef BASE32_SIMD
+    consumed <- SIMD.decodeByteArrayTypedPrefix table src len dst
+#else
+    let consumed = 0
+#endif
+    let go !i !j
+          | len - i >= 8 = do
+              let word = indexByteArray src (i `quot` 8) :: Word64
+                  t = case targetByteOrder of
+                    LittleEndian -> byteSwap64 word
+                    BigEndian -> word
+                  at n = fromIntegral
+                    (aix (fromIntegral (t `unsafeShiftR` n)) table) :: Word64
+                  w = at 56 `unsafeShiftL` 35 .|. at 48 `unsafeShiftL` 30
+                    .|. at 40 `unsafeShiftL` 25 .|. at 32 `unsafeShiftL` 20
+                    .|. at 24 `unsafeShiftL` 15 .|. at 16 `unsafeShiftL` 10
+                    .|. at 8 `unsafeShiftL` 5 .|. at 0
+              writeByteArray dst j (fromIntegral (w `unsafeShiftR` 32) :: Word8)
+              writeByteArray dst (j + 1) (fromIntegral (w `unsafeShiftR` 24) :: Word8)
+              writeByteArray dst (j + 2) (fromIntegral (w `unsafeShiftR` 16) :: Word8)
+              writeByteArray dst (j + 3) (fromIntegral (w `unsafeShiftR` 8) :: Word8)
+              writeByteArray dst (j + 4) (fromIntegral w :: Word8)
+              go (i + 8) (j + 5)
+          | otherwise = tailBytes i j 0 (0 :: Word16)
+        tailBytes !i !j !bits !buffer
+          | bits >= 8 = do
+              let rest = bits - 8
+              writeByteArray dst j (fromIntegral (buffer `unsafeShiftR` rest) :: Word8)
+              tailBytes i (j + 1) rest buffer
+          | i < len = tailBytes (i + 1) j (bits + 5)
+              (buffer `unsafeShiftL` 5 .|. fromIntegral (aix (byte i) table))
+          | otherwise = pure ()
+    go consumed (consumed `quot` 8 * 5)
+    ByteArray result <- unsafeFreezeByteArray dst
+    pure (SBS result)
+  where
+    !input@(SBS source) = extractBase32 encoded
+    src = ByteArray source
+    byte i = indexByteArray src i :: Word8
+    payloadEnd n
+      | n > 0 && byte (n - 1) == 61 = payloadEnd (n - 1)
+      | otherwise = n
+    len = payloadEnd (SBS.length input)
+    capacity = (len `quot` 8) * 5 + (len `rem` 8) * 5 `quot` 8
+{-# INLINE decodeShortTyped #-}

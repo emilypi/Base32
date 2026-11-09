@@ -4,7 +4,7 @@
 module Main (main) where
 
 import Criterion.Main
-import Data.Base32.Types (extractBase32)
+import Data.Base32.Types (assertBase32, extractBase32)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Base32 as B32
 import qualified Data.ByteString.Base32.Hex as H32
@@ -34,9 +34,15 @@ main =
             bgroup
               "decode"
               [ bench "strict" $ nf B32.decodeBase32Untyped encoded
+              , env (pure (assertBase32 encoded)) $ \typed ->
+                  bench "strict-typed" $ nf B32.decodeBase32 typed
               , bench "parse" $ nf B32.parseBase32 encoded
               , env (pure (S.toShort encoded)) $ \short ->
-                  bench "short" $ nf S32.decodeBase32Untyped short
+                  bgroup "short"
+                    [ bench "checked" $ nf S32.decodeBase32Untyped short
+                    , env (pure (assertBase32 short)) $ \typed ->
+                        bench "typed" $ nf S32.decodeBase32 typed
+                    ]
               ]
         , env (pure (T.fromText "Base32 benchmark λ")) $ \shortText ->
             bench "short-text" $ nf T32.encodeBase32 shortText

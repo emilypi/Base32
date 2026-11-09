@@ -44,7 +44,7 @@ newtype Base32 (alphabet :: Alphabet) a = Base32
   deriving (Functor, Applicative, Monad) via Identity
 
 -- | Assert provenance without validation. Prefer a parser for external input.
--- A false assertion can cause typed decoding to fail.
+-- The caller must establish validity; typed decoding performs no validation.
 assertBase32 :: a -> Base32 alphabet a
 assertBase32 = Base32
 {-# INLINE assertBase32 #-}

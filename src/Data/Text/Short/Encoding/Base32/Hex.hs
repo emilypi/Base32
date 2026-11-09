@@ -41,8 +41,10 @@ import qualified Data.Text as ErrorText
 
 import Data.Bifunctor (first)
 import Data.ByteString.Short (ShortByteString)
+import qualified Data.ByteString.Short as SBS
 import qualified Data.ByteString.Short.Base32.Hex as BS32H
 import Data.Text (Text)
+import qualified Data.Text.Encoding as TE
 import Data.Text.Encoding.Base32.Error
 import Data.Text.Short
 
@@ -222,13 +224,13 @@ decodeBase32PaddedWith f t = case BS32H.decodeBase32PaddedUntyped t of
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32PaddedWith #-}
 
--- | Decode a value with established alphabet provenance.
+-- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
--- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+-- Decoded Text payloads must be valid UTF-8.
+-- Character conversion is separate from the Base32 provenance.
 decodeBase32 :: Base32 'Hex ShortText -> ShortText
-decodeBase32 = either (error . ErrorText.unpack) id
-  . decodeBase32Untyped . extractBase32
+decodeBase32 = fromText . TE.decodeUtf8 . SBS.fromShort
+  . BS32H.decodeBase32 . fmap toShortByteString
 {-# INLINE decodeBase32 #-}
 
 -- | Validate encoded input, retaining its original representation and case.
@@ -239,13 +241,13 @@ parseBase32 value = assertBase32 value
   <$ (BS32H.decodeBase32Untyped . toShortByteString) value
 {-# INLINE parseBase32 #-}
 
--- | Decode a value with established alphabet provenance.
--- Use 'parseBase32Padded' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
--- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+-- | Decode established Base32 provenance without repeating validation.
+-- Use 'parseBase32Padded' to check the padding policy on external input.
+-- Typed decoding accepts either padding form; the alphabet is already known.
+-- Decoded Text payloads must be valid UTF-8.
+-- Character conversion is separate from the Base32 provenance.
 decodeBase32Padded :: Base32 'Hex ShortText -> ShortText
-decodeBase32Padded = either (error . ErrorText.unpack) id
-  . decodeBase32PaddedUntyped . extractBase32
+decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
@@ -256,13 +258,13 @@ parseBase32Padded value = assertBase32 value
   <$ (BS32H.decodeBase32PaddedUntyped . toShortByteString) value
 {-# INLINE parseBase32Padded #-}
 
--- | Decode a value with established alphabet provenance.
--- Use 'parseBase32Unpadded' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
--- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+-- | Decode established Base32 provenance without repeating validation.
+-- Use 'parseBase32Unpadded' to check the padding policy on external input.
+-- Typed decoding accepts either padding form; the alphabet is already known.
+-- Decoded Text payloads must be valid UTF-8.
+-- Character conversion is separate from the Base32 provenance.
 decodeBase32Unpadded :: Base32 'Hex ShortText -> ShortText
-decodeBase32Unpadded = either (error . ErrorText.unpack) id
-  . decodeBase32UnpaddedUntyped . extractBase32
+decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.

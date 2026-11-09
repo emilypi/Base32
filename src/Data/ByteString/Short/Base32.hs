@@ -39,7 +39,6 @@ import Data.ByteString.Base32.Internal.Short
 import Data.ByteString.Base32.Internal.Tables
 import Data.ByteString.Short (ShortByteString)
 import Data.Base32.Types
-import qualified Data.Text as ErrorText
 
 import Data.Text (Text)
 import Data.Text.Short (ShortText)
@@ -173,12 +172,10 @@ decodeBase32PaddedUntyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32PaddedUntyped = decodeShort stdDecodeTable RequirePadding
 {-# INLINE decodeBase32PaddedUntyped #-}
 
--- | Decode a value with established alphabet provenance.
+-- | Decode established Base32 provenance without repeating validation.
 -- Use 'parseBase32' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
 decodeBase32 :: Base32 'Std ShortByteString -> ShortByteString
-decodeBase32 = either (error . ErrorText.unpack) id
-  . decodeBase32Untyped . extractBase32
+decodeBase32 = decodeShortTyped stdDecodeTable
 {-# INLINE decodeBase32 #-}
 
 -- | Validate encoded input, retaining its original representation and case.
@@ -189,12 +186,11 @@ parseBase32 value = assertBase32 value
   <$ (decodeBase32Untyped) value
 {-# INLINE parseBase32 #-}
 
--- | Decode a value with established alphabet provenance.
--- Use 'parseBase32Padded' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
+-- | Decode established Base32 provenance without repeating validation.
+-- Use 'parseBase32Padded' to check the padding policy on external input.
+-- Typed decoding accepts either padding form; the alphabet is already known.
 decodeBase32Padded :: Base32 'Std ShortByteString -> ShortByteString
-decodeBase32Padded = either (error . ErrorText.unpack) id
-  . decodeBase32PaddedUntyped . extractBase32
+decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
 -- | Validate encoded input, retaining its original representation and case.
@@ -205,12 +201,11 @@ parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
 {-# INLINE parseBase32Padded #-}
 
--- | Decode a value with established alphabet provenance.
--- Use 'parseBase32Unpadded' to validate external input first.
--- A false assertion or incompatible padding policy causes an error.
+-- | Decode established Base32 provenance without repeating validation.
+-- Use 'parseBase32Unpadded' to check the padding policy on external input.
+-- Typed decoding accepts either padding form; the alphabet is already known.
 decodeBase32Unpadded :: Base32 'Std ShortByteString -> ShortByteString
-decodeBase32Unpadded = either (error . ErrorText.unpack) id
-  . decodeBase32UnpaddedUntyped . extractBase32
+decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
 -- | Validate encoded input, retaining its original representation and case.

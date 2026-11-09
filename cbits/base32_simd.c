@@ -75,7 +75,8 @@ static size_t neon_encode(const uint8_t *src, size_t len, uint8_t *dst, int hex)
     return done;
 }
 
-static size_t neon_decode(const uint8_t *src, size_t len, uint8_t *dst, int hex)
+static size_t neon_decode(const uint8_t *src, size_t len, uint8_t *dst,
+                         int hex, int checked)
 {
     static const int8_t shifts_a[16] = {3,6,4,7,5,3,6,4,7,5,0,0,0,0,0,0};
     static const int8_t shifts_b[16] = {-2,1,-1,2,0,-2,1,-1,2,0,0,0,0,0,0,0};
@@ -88,7 +89,7 @@ static size_t neon_decode(const uint8_t *src, size_t len, uint8_t *dst, int hex)
         const uint8x16_t digit = vsubq_u8(input, vdupq_n_u8(hex ? '0' : '2'));
         const uint8x16_t is_letter = vcleq_u8(letter, vdupq_n_u8(hex ? 21 : 25));
         const uint8x16_t is_digit = vcleq_u8(digit, vdupq_n_u8(hex ? 9 : 5));
-        if (vminvq_u8(vorrq_u8(is_letter, is_digit)) == 0) {
+        if (checked && vminvq_u8(vorrq_u8(is_letter, is_digit)) == 0) {
             break;
         }
         const uint8x16_t value = vbslq_u8(is_letter,
@@ -173,7 +174,8 @@ static size_t ssse3_encode(const uint8_t *src, size_t len, uint8_t *dst, int hex
 }
 
 __attribute__((target("ssse3")))
-static size_t ssse3_decode(const uint8_t *src, size_t len, uint8_t *dst, int hex)
+static size_t ssse3_decode(const uint8_t *src, size_t len, uint8_t *dst,
+                          int hex, int checked)
 {
     size_t done = 0;
     while (len - done >= 16) {
@@ -185,7 +187,7 @@ static size_t ssse3_decode(const uint8_t *src, size_t len, uint8_t *dst, int hex
         const __m128i digits = _mm_and_si128(
             _mm_cmpgt_epi8(input, _mm_set1_epi8(hex ? '0' - 1 : '2' - 1)),
             _mm_cmpgt_epi8(_mm_set1_epi8(hex ? '9' + 1 : '7' + 1), input));
-        if ((unsigned)_mm_movemask_epi8(_mm_or_si128(letters, digits))
+        if (checked && (unsigned)_mm_movemask_epi8(_mm_or_si128(letters, digits))
             != 0xffffU) {
             break;
         }
@@ -310,7 +312,8 @@ static size_t avx2_encode(const uint8_t *src, size_t len, uint8_t *dst, int hex)
 }
 
 __attribute__((target("avx2")))
-static size_t avx2_decode(const uint8_t *src, size_t len, uint8_t *dst, int hex)
+static size_t avx2_decode(const uint8_t *src, size_t len, uint8_t *dst,
+                          int hex, int checked)
 {
     size_t done = 0;
     while (len - done >= 32) {
@@ -322,7 +325,7 @@ static size_t avx2_decode(const uint8_t *src, size_t len, uint8_t *dst, int hex)
         const __m256i digits = _mm256_and_si256(
             _mm256_cmpgt_epi8(input, _mm256_set1_epi8(hex ? '0' - 1 : '2' - 1)),
             _mm256_cmpgt_epi8(_mm256_set1_epi8(hex ? '9' + 1 : '7' + 1), input));
-        if ((unsigned)_mm256_movemask_epi8(_mm256_or_si256(letters, digits))
+        if (checked && (unsigned)_mm256_movemask_epi8(_mm256_or_si256(letters, digits))
             != 0xffffffffU) {
             break;
         }
@@ -423,14 +426,36 @@ size_t hs_base32_simd_encode(const uint8_t *src, size_t len, uint8_t *dst, int h
 size_t hs_base32_simd_decode(const uint8_t *src, size_t len, uint8_t *dst, int hex)
 {
 #if defined(HS_BASE32_NEON)
-    return neon_decode(src, len, dst, hex);
+    return neon_decode(src, len, dst, hex, 1);
 #elif defined(HS_BASE32_X86)
     const int backend = hs_base32_simd_backend();
     if (backend == 3) {
-        return avx2_decode(src, len, dst, hex);
+        return avx2_decode(src, len, dst, hex, 1);
     }
     if (backend == 1) {
-        return ssse3_decode(src, len, dst, hex);
+        return ssse3_decode(src, len, dst, hex, 1);
+    }
+#endif
+    (void)src;
+    (void)len;
+    (void)dst;
+    (void)hex;
+    return 0;
+}
+
+/* Typed callers establish validity before entering these loops. */
+size_t hs_base32_simd_decode_typed(const uint8_t *src, size_t len,
+                                  uint8_t *dst, int hex)
+{
+#if defined(HS_BASE32_NEON)
+    return neon_decode(src, len, dst, hex, 0);
+#elif defined(HS_BASE32_X86)
+    const int backend = hs_base32_simd_backend();
+    if (backend == 3) {
+        return avx2_decode(src, len, dst, hex, 0);
+    }
+    if (backend == 1) {
+        return ssse3_decode(src, len, dst, hex, 0);
     }
 #endif
     (void)src;

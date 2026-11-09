@@ -31,10 +31,15 @@ now consume `Base32` values and return the decoded result directly. The
 `decodeBase32With`, `decodeBase32PaddedWith`, and `decodeBase32UnpaddedWith`
 functions keep their checked signatures and names.
 
-Typed padded/unpadded decoders still require the corresponding padding policy;
-the alphabet tag alone does not prove it. For external input, pair each typed
-decoder with its matching parser. False assertions, representation updates, or
-incompatible padding policies cause typed decoding to fail.
+Typed decoders use dedicated unchecked loops. They trust the established
+provenance and do not check the alphabet, input length, padding, or unused bits.
+The typed padded/unpadded names are aliases of `decodeBase32`, accepting either
+valid padding form. Select a padding-specific parser to enforce a wire policy.
+Callers using `assertBase32`, record updates, or mapping instances must preserve
+validity themselves.
+
+Typed lazy decoding streams through complete quanta. Checked lazy decoding and
+parsing still validate a complete finite input.
 
 ## Replace predicates with parsers
 

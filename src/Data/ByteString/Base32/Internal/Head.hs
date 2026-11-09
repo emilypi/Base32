@@ -6,10 +6,13 @@ module Data.ByteString.Base32.Internal.Head
 ( encodeBase32_
 , encodeBase32NoPad_
 , decodeBase32_
+, decodeBase32Typed_
 ) where
 
 
 import Prelude hiding (length, null)
+import Data.Base32.Types (Base32, extractBase32)
+import qualified Data.ByteString as BS
 import Data.ByteString (length, null)
 import Data.ByteString.Internal
 import Data.ByteString.Base32.Internal.Utils (encodedLength)
@@ -84,3 +87,16 @@ decodeComplete (Ptr !dtable) (BS !sfp !slen) =
         decodeLoop dtable dfp dptr sptr end
   where
     !dlen = (slen `quot` 8) * 5
+
+-- | Decode established Base32 provenance without validation.
+-- Padding contributes no payload; partial final quanta need no copying.
+decodeBase32Typed_ :: Ptr Word8 -> Base32 alphabet ByteString -> ByteString
+decodeBase32Typed_ (Ptr table) encoded = unsafeDupablePerformIO $ do
+    dfp <- mallocPlainForeignPtrBytes dlen
+    withForeignPtr dfp $ \dst ->
+      withForeignPtr sfp $ \src -> decodeLoopTyped table dst src slen
+    pure (BS dfp dlen)
+  where
+    BS sfp slen = BS.dropWhileEnd (== 61) (extractBase32 encoded)
+    dlen = (slen `quot` 8) * 5 + (slen `rem` 8) * 5 `quot` 8
+{-# INLINE decodeBase32Typed_ #-}

@@ -5,6 +5,7 @@
 module Data.ByteString.Base32.Internal.Loop
 ( innerLoop
 , decodeLoop
+, decodeLoopTyped
 , decodeQuantum
 ) where
 
@@ -191,3 +192,47 @@ decodeQuantum !final !offset !a !b !c !d !e !f !g !h
       | value .&. mask == 0 = Right count
       | otherwise = failure "non-canonical encoding at offset: " i
 {-# INLINE decodeQuantum #-}
+
+-- | Decode known-valid symbols. Alphabet, size, padding placement and unused
+-- bits have already been established by the producer of the typed value.
+-- The caller excludes trailing padding from the source length.
+decodeLoopTyped :: Addr# -> Ptr Word8 -> Ptr Word8 -> Int -> IO ()
+decodeLoopTyped table dptr sptr slen = do
+#ifdef BASE32_SIMD
+    consumed <- SIMD.decodeTypedPrefix table sptr slen dptr
+#else
+    let consumed = 0
+#endif
+    go (plusPtr dptr (consumed `quot` 8 * 5)) consumed
+  where
+    look value = w64 (aix (fromIntegral value) table)
+    go !dst !i
+      | slen - i >= 8 = do
+          t <- peekWord64BE (castPtr (plusPtr sptr i))
+          let w = pack (look (t `unsafeShiftR` 56)) (look (t `unsafeShiftR` 48))
+                (look (t `unsafeShiftR` 40)) (look (t `unsafeShiftR` 32))
+                (look (t `unsafeShiftR` 24)) (look (t `unsafeShiftR` 16))
+                (look (t `unsafeShiftR` 8)) (look t)
+              first = fromIntegral (w `unsafeShiftR` 8) :: Word32
+          poke (castPtr dst) (case targetByteOrder of
+            LittleEndian -> byteSwap32 first
+            BigEndian -> first)
+          poke @Word8 (plusPtr dst 4) (fromIntegral w)
+          go (plusPtr dst 5) (i + 8)
+      | otherwise = tailBytes dst i 0 0 (0 :: Word16)
+    tailBytes !dst !i !bits !j !buffer
+      | bits >= 8 = do
+          let rest = bits - 8
+          poke @Word8 (plusPtr dst j) (fromIntegral (buffer `unsafeShiftR` rest))
+          tailBytes dst i rest (j + 1) buffer
+      | i < slen = do
+          symbol <- peek @Word8 (plusPtr sptr i)
+          tailBytes dst (i + 1) (bits + 5) j
+            (buffer `unsafeShiftL` 5 .|. fromIntegral (aix symbol table))
+      | otherwise = pure ()
+    pack a b c d e f g h =
+      a `unsafeShiftL` 35 .|. b `unsafeShiftL` 30
+        .|. c `unsafeShiftL` 25 .|. d `unsafeShiftL` 20
+        .|. e `unsafeShiftL` 15 .|. f `unsafeShiftL` 10
+        .|. g `unsafeShiftL` 5 .|. h
+{-# INLINE decodeLoopTyped #-}

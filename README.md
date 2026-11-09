@@ -35,8 +35,12 @@ alphabet, input length, padding placement, and zero unused trailing bits.
 They accept upper- and lowercase letters, preserve the original case and
 representation, and accept empty input. Whitespace is rejected.
 
-The wrapper identifies the alphabet; it does not record the padding policy or
-prove that decoded bytes form UTF-8. Use matching padded/unpadded operations.
+Typed decoders use dedicated unchecked loops: provenance establishes validity,
+so decoding does not repeat alphabet, length, padding, or canonical-bit checks.
+The typed padded/unpadded names are aliases of `decodeBase32`; enforce a padding
+policy at the parsing boundary.
+
+The wrapper identifies the alphabet; it does not prove that decoded bytes form UTF-8.
 Checked Text decoders return `Left` for invalid UTF-8; `decodeBase32With` and
 its variants let you choose a character conversion. For arbitrary binary
 payloads, use ByteString decoders.
@@ -46,8 +50,8 @@ can bypass validation. Typed decoding requires a truthful encoded value and,
 for Text, valid UTF-8 payload bytes. Use parsers and checked decoders for
 external input.
 
-Lazy encoding preserves streaming through rechunking. Checked lazy decoding
-and parsing validate a complete finite input; they are not streaming decoders.
+Lazy encoding and typed decoding preserve streaming through rechunking.
+Checked lazy decoding and parsing validate a complete finite input.
 
 ## Optional SIMD
 
@@ -61,8 +65,8 @@ and runtime-dispatched SSSE3/AVX2 kernels on x86-64, with scalar fallback on
 other targets. Small inputs and final quanta use Haskell scalar code. No
 external native library is required.
 
-Strict and short values use SIMD directly. ShortByteString and ShortText use
-byte arrays without an intermediate strict ByteString copy or pinning. Lazy
+Strict and short values use SIMD directly. Short codecs use byte arrays without
+pinning; typed ShortText additionally converts the decoded UTF-8 payload. Lazy
 variants reach the same kernels through their strict chunks or checked input.
 
 ## Development

@@ -16,6 +16,7 @@ module Data.ByteString.Base32.Internal
 ( encodeBase32_
 , encodeBase32NoPad_
 , decodeBase32_
+, decodeBase32Typed_
 , validateBase32
 , validateLastNPads
 ) where

@@ -33,7 +33,7 @@ module Internal
 ) where
 
 
-import Data.Base32.Types (extractBase32)
+import Data.Base32.Types (Alphabet(..), Base32, extractBase32)
 import Data.Either (isRight)
 import Test.QuickCheck hiding (label)
 import Data.Text
@@ -71,6 +71,12 @@ data Harness bs = Harness
   , encodeNopad :: bs -> bs
   , encodeHex :: bs -> bs
   , encodeHexNopad :: bs -> bs
+  , decodeTyped :: Base32 'Std bs -> bs
+  , decodePaddedTyped :: Base32 'Std bs -> bs
+  , decodeUnpaddedTyped :: Base32 'Std bs -> bs
+  , decodeHexTyped :: Base32 'Hex bs -> bs
+  , decodeHexPaddedTyped :: Base32 'Hex bs -> bs
+  , decodeHexUnpaddedTyped :: Base32 'Hex bs -> bs
   , decode :: bs -> Either Text bs
   , decodeHex :: bs -> Either Text bs
   , decodePad :: bs -> Either Text bs
@@ -94,6 +100,12 @@ b32 = Harness
   { label = "ByteString"
   , encode = extractBase32 . B32.encodeBase32'
   , encodeNopad = extractBase32 . B32.encodeBase32Unpadded'
+  , decodeTyped = B32.decodeBase32
+  , decodePaddedTyped = B32.decodeBase32Padded
+  , decodeUnpaddedTyped = B32.decodeBase32Unpadded
+  , decodeHexTyped = B32H.decodeBase32
+  , decodeHexPaddedTyped = B32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = B32H.decodeBase32Unpadded
   , decode = B32.decodeBase32Untyped
   , decodePad = B32.decodeBase32PaddedUntyped
   , decodeNopad = B32.decodeBase32UnpaddedUntyped
@@ -119,6 +131,12 @@ lb32 = Harness
   { label = "Lazy ByteString"
   , encode = extractBase32 . BL32.encodeBase32'
   , encodeNopad = extractBase32 . BL32.encodeBase32Unpadded'
+  , decodeTyped = BL32.decodeBase32
+  , decodePaddedTyped = BL32.decodeBase32Padded
+  , decodeUnpaddedTyped = BL32.decodeBase32Unpadded
+  , decodeHexTyped = BL32H.decodeBase32
+  , decodeHexPaddedTyped = BL32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = BL32H.decodeBase32Unpadded
   , decode = BL32.decodeBase32Untyped
   , decodePad = BL32.decodeBase32PaddedUntyped
   , decodeNopad = BL32.decodeBase32UnpaddedUntyped
@@ -144,6 +162,12 @@ sb32 = Harness
   { label = "Short ByteString"
   , encode = extractBase32 . BS32.encodeBase32'
   , encodeNopad = extractBase32 . BS32.encodeBase32Unpadded'
+  , decodeTyped = BS32.decodeBase32
+  , decodePaddedTyped = BS32.decodeBase32Padded
+  , decodeUnpaddedTyped = BS32.decodeBase32Unpadded
+  , decodeHexTyped = BS32H.decodeBase32
+  , decodeHexPaddedTyped = BS32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = BS32H.decodeBase32Unpadded
   , decode = BS32.decodeBase32Untyped
   , decodePad = BS32.decodeBase32PaddedUntyped
   , decodeNopad = BS32.decodeBase32UnpaddedUntyped
@@ -169,6 +193,12 @@ t32 = Harness
   { label = "Text"
   , encode = extractBase32 . T32.encodeBase32
   , encodeNopad = extractBase32 . T32.encodeBase32Unpadded
+  , decodeTyped = T32.decodeBase32
+  , decodePaddedTyped = T32.decodeBase32Padded
+  , decodeUnpaddedTyped = T32.decodeBase32Unpadded
+  , decodeHexTyped = T32H.decodeBase32
+  , decodeHexPaddedTyped = T32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = T32H.decodeBase32Unpadded
   , decode = T32.decodeBase32Untyped
   , decodePad = T32.decodeBase32PaddedUntyped
   , decodeNopad = T32.decodeBase32UnpaddedUntyped
@@ -194,6 +224,12 @@ tl32 = Harness
   { label = "Lazy Text"
   , encode = extractBase32 . TL32.encodeBase32
   , encodeNopad = extractBase32 . TL32.encodeBase32Unpadded
+  , decodeTyped = TL32.decodeBase32
+  , decodePaddedTyped = TL32.decodeBase32Padded
+  , decodeUnpaddedTyped = TL32.decodeBase32Unpadded
+  , decodeHexTyped = TL32H.decodeBase32
+  , decodeHexPaddedTyped = TL32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = TL32H.decodeBase32Unpadded
   , decode = TL32.decodeBase32Untyped
   , decodePad = TL32.decodeBase32PaddedUntyped
   , decodeNopad = TL32.decodeBase32UnpaddedUntyped
@@ -219,6 +255,12 @@ ts32 = Harness
   { label = "Short Lazy Text"
   , encode = extractBase32 . TS32.encodeBase32
   , encodeNopad = extractBase32 . TS32.encodeBase32Unpadded
+  , decodeTyped = TS32.decodeBase32
+  , decodePaddedTyped = TS32.decodeBase32Padded
+  , decodeUnpaddedTyped = TS32.decodeBase32Unpadded
+  , decodeHexTyped = TS32H.decodeBase32
+  , decodeHexPaddedTyped = TS32H.decodeBase32Padded
+  , decodeHexUnpaddedTyped = TS32H.decodeBase32Unpadded
   , decode = TS32.decodeBase32Untyped
   , decodePad = TS32.decodeBase32PaddedUntyped
   , decodeNopad = TS32.decodeBase32UnpaddedUntyped
