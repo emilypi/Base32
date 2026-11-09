@@ -51,7 +51,7 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "Sun"
+-- >>> encodeBase32 (SBS.toShort (BS8.pack "Sun"))
 -- "KN2W4==="
 --
 encodeBase32 :: ShortByteString -> Base32 'StdPadded ShortText
@@ -64,7 +64,7 @@ encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' "Sun"
+-- >>> encodeBase32' (SBS.toShort (BS8.pack "Sun"))
 -- "KN2W4==="
 --
 encodeBase32' :: ShortByteString -> Base32 'StdPadded ShortByteString
@@ -83,13 +83,13 @@ encodeBase32' =
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Untyped "KN2W4==="
+-- >>> decodeBase32Untyped (SBS.toShort (BS8.pack "KN2W4==="))
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "KN2W4"
+-- >>> decodeBase32Untyped (SBS.toShort (BS8.pack "KN2W4"))
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "KN2W==="
+-- >>> decodeBase32Untyped (SBS.toShort (BS8.pack "KN2W==="))
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Untyped :: ShortByteString -> Either Text ShortByteString
@@ -105,7 +105,7 @@ decodeBase32Untyped = decodeShort stdDecodeTable OptionalPadding
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "Sun"
+-- >>> encodeBase32Unpadded (SBS.toShort (BS8.pack "Sun"))
 -- "KN2W4"
 --
 encodeBase32Unpadded :: ShortByteString -> Base32 'StdUnpadded ShortText
@@ -120,7 +120,7 @@ encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "Sun"
+-- >>> encodeBase32Unpadded' (SBS.toShort (BS8.pack "Sun"))
 -- "KN2W4"
 --
 encodeBase32Unpadded' :: ShortByteString -> Base32 'StdUnpadded ShortByteString
@@ -141,10 +141,10 @@ encodeBase32Unpadded' =
 --
 -- === __Examples__:
 --
--- >>> decodeBase32UnpaddedUntyped "KN2W4"
+-- >>> decodeBase32UnpaddedUntyped (SBS.toShort (BS8.pack "KN2W4"))
 -- Right "Sun"
 --
--- >>> decodeBase32UnpaddedUntyped "KN2W4==="
+-- >>> decodeBase32UnpaddedUntyped (SBS.toShort (BS8.pack "KN2W4==="))
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32UnpaddedUntyped :: ShortByteString -> Either Text ShortByteString
@@ -162,10 +162,10 @@ decodeBase32UnpaddedUntyped = decodeShort stdDecodeTable ForbidPadding
 --
 -- === __Examples__:
 --
--- >>> decodeBase32PaddedUntyped "KN2W4==="
+-- >>> decodeBase32PaddedUntyped (SBS.toShort (BS8.pack "KN2W4==="))
 -- Right "Sun"
 --
--- >>> decodeBase32PaddedUntyped "KN2W4"
+-- >>> decodeBase32PaddedUntyped (SBS.toShort (BS8.pack "KN2W4"))
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32PaddedUntyped :: ShortByteString -> Either Text ShortByteString
@@ -208,3 +208,7 @@ parseBase32Unpadded
 parseBase32Unpadded value = assertBase32 value
   <$ (decodeBase32UnpaddedUntyped) value
 {-# INLINE parseBase32Unpadded #-}
+
+-- $setup
+-- >>> import qualified Data.ByteString.Char8 as BS8
+-- >>> import qualified Data.ByteString.Short as SBS

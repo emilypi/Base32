@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module       : Data.ByteString.Base32.Internal.Short
 -- Copyright    : (c) 2026 Emily Pillmore
@@ -28,6 +27,7 @@ import Data.ByteString.Short.Internal (ShortByteString(..))
 import qualified Data.ByteString.Short as SBS
 import Data.Primitive.ByteArray
 import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Word
 import GHC.Exts (Addr#)
 import GHC.ByteOrder
@@ -100,11 +100,11 @@ decodeShort
 decodeShort (Ptr table) policy input@(SBS source)
   | len == 0 = Right input
   | remainder == 1 || remainder == 3 || remainder == 6 =
-      Left "Base32-encoded bytestring has invalid size"
+      Left (Text.pack "Base32-encoded bytestring has invalid size")
   | policy == RequirePadding && remainder /= 0 =
-      Left "Base32-encoded bytestring requires padding"
+      Left (Text.pack "Base32-encoded bytestring requires padding")
   | any isPad [len - checkPads .. len - 1] =
-      Left "Base32-encoded bytestring has invalid padding"
+      Left (Text.pack "Base32-encoded bytestring has invalid padding")
   | otherwise = runST $ do
       dst <- newByteArray capacity
 #ifdef BASE32_SIMD

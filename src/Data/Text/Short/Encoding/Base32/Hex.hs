@@ -55,7 +55,7 @@ import Data.Text.Short
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "Sun"
+-- >>> encodeBase32 (Text.pack "Sun")
 -- "ADQMS==="
 --
 encodeBase32 :: ShortText -> Base32 'HexPadded ShortText
@@ -77,13 +77,13 @@ encodeBase32 =
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Untyped "ADQMS==="
+-- >>> decodeBase32Untyped (Text.pack "ADQMS===")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "ADQMS"
+-- >>> decodeBase32Untyped (Text.pack "ADQMS")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "ADQMS==="
+-- >>> decodeBase32Untyped (Text.pack "ADQMS===")
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32Untyped :: ShortText -> Either Text ShortText
 decodeBase32Untyped value =
@@ -124,7 +124,7 @@ decodeBase32With f t = case BS32H.decodeBase32Untyped t of
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "Sun"
+-- >>> encodeBase32Unpadded (Text.pack "Sun")
 -- "ADQMS"
 --
 encodeBase32Unpadded :: ShortText -> Base32 'HexUnpadded ShortText
@@ -143,10 +143,10 @@ encodeBase32Unpadded =
 --
 -- === __Examples__:
 --
--- >>> decodeBase32UnpaddedUntyped "ADQMS"
+-- >>> decodeBase32UnpaddedUntyped (Text.pack "ADQMS")
 -- Right "Sun"
 --
--- >>> decodeBase32UnpaddedUntyped "ADQMS==="
+-- >>> decodeBase32UnpaddedUntyped (Text.pack "ADQMS===")
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32UnpaddedUntyped :: ShortText -> Either Text ShortText
 decodeBase32UnpaddedUntyped value =
@@ -189,10 +189,10 @@ decodeBase32UnpaddedWith f t = case BS32H.decodeBase32UnpaddedUntyped t of
 --
 -- === __Examples__:
 --
--- >>> decodeBase32PaddedUntyped "ADQMS==="
+-- >>> decodeBase32PaddedUntyped (Text.pack "ADQMS===")
 -- Right "Sun"
 --
--- >>> decodeBase32PaddedUntyped "ADQMS"
+-- >>> decodeBase32PaddedUntyped (Text.pack "ADQMS")
 -- Left "Base32-encoded bytestring requires padding"
 decodeBase32PaddedUntyped :: ShortText -> Either Text ShortText
 decodeBase32PaddedUntyped value =
@@ -266,3 +266,6 @@ parseBase32Unpadded :: ShortText -> Either Text (Base32 'HexUnpadded ShortText)
 parseBase32Unpadded value = assertBase32 value
   <$ (BS32H.decodeBase32UnpaddedUntyped . toShortByteString) value
 {-# INLINE parseBase32Unpadded #-}
+
+-- $setup
+-- >>> import qualified Data.Text.Short as Text

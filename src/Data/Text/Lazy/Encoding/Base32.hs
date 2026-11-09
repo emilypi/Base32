@@ -53,7 +53,7 @@ import qualified Data.Text.Lazy.Encoding as TL
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "Sun"
+-- >>> encodeBase32 (Text.pack "Sun")
 -- "KN2W4==="
 --
 encodeBase32 :: TL.Text -> Base32 'StdPadded TL.Text
@@ -73,13 +73,13 @@ encodeBase32 = BL32.encodeBase32 . TL.encodeUtf8
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Untyped "KN2W4==="
+-- >>> decodeBase32Untyped (Text.pack "KN2W4===")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "KN2W4"
+-- >>> decodeBase32Untyped (Text.pack "KN2W4")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "KN2W==="
+-- >>> decodeBase32Untyped (Text.pack "KN2W===")
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32Untyped :: TL.Text -> Either T.Text TL.Text
 decodeBase32Untyped value = BL32.decodeBase32Untyped (TL.encodeUtf8 value)
@@ -117,7 +117,7 @@ decodeBase32With f t = case BL32.decodeBase32Untyped t of
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "Sun"
+-- >>> encodeBase32Unpadded (Text.pack "Sun")
 -- "KN2W4"
 --
 encodeBase32Unpadded :: TL.Text -> Base32 'StdUnpadded TL.Text
@@ -134,10 +134,10 @@ encodeBase32Unpadded = BL32.encodeBase32Unpadded . TL.encodeUtf8
 --
 -- === __Examples__:
 --
--- >>> decodeBase32UnpaddedUntyped "KN2W4"
+-- >>> decodeBase32UnpaddedUntyped (Text.pack "KN2W4")
 -- Right "Sun"
 --
--- >>> decodeBase32UnpaddedUntyped "KN2W4==="
+-- >>> decodeBase32UnpaddedUntyped (Text.pack "KN2W4===")
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32UnpaddedUntyped :: TL.Text -> Either T.Text TL.Text
 decodeBase32UnpaddedUntyped value = BL32.decodeBase32UnpaddedUntyped (TL.encodeUtf8 value)
@@ -177,10 +177,10 @@ decodeBase32UnpaddedWith f t = case BL32.decodeBase32UnpaddedUntyped t of
 --
 -- === __Examples__:
 --
--- >>> decodeBase32PaddedUntyped "KN2W4==="
+-- >>> decodeBase32PaddedUntyped (Text.pack "KN2W4===")
 -- Right "Sun"
 --
--- >>> decodeBase32PaddedUntyped "KN2W4"
+-- >>> decodeBase32PaddedUntyped (Text.pack "KN2W4")
 -- Left "Base32-encoded bytestring requires padding"
 decodeBase32PaddedUntyped :: TL.Text -> Either T.Text TL.Text
 decodeBase32PaddedUntyped value = BL32.decodeBase32PaddedUntyped (TL.encodeUtf8 value)
@@ -251,3 +251,6 @@ parseBase32Unpadded :: TL.Text -> Either T.Text (Base32 'StdUnpadded TL.Text)
 parseBase32Unpadded value = assertBase32 value
   <$ (BL32.decodeBase32UnpaddedUntyped . TL.encodeUtf8) value
 {-# INLINE parseBase32Unpadded #-}
+
+-- $setup
+-- >>> import qualified Data.Text.Lazy as Text

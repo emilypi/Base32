@@ -49,7 +49,7 @@ import Data.Text.Encoding.Base32.Error (Base32Error(..))
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "Sun"
+-- >>> encodeBase32 (Text.pack "Sun")
 -- "KN2W4==="
 --
 encodeBase32 :: Text -> Base32 'StdPadded Text
@@ -69,13 +69,13 @@ encodeBase32 = B32.encodeBase32 . T.encodeUtf8
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Untyped "KN2W4==="
+-- >>> decodeBase32Untyped (Text.pack "KN2W4===")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "KN2W4"
+-- >>> decodeBase32Untyped (Text.pack "KN2W4")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "KN2W==="
+-- >>> decodeBase32Untyped (Text.pack "KN2W===")
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32Untyped :: Text -> Either Text Text
 decodeBase32Untyped value = B32.decodeBase32Untyped (T.encodeUtf8 value)
@@ -111,7 +111,7 @@ decodeBase32With f t = case B32.decodeBase32Untyped t of
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded "Sun"
+-- >>> encodeBase32Unpadded (Text.pack "Sun")
 -- "KN2W4"
 --
 encodeBase32Unpadded :: Text -> Base32 'StdUnpadded Text
@@ -128,10 +128,10 @@ encodeBase32Unpadded = B32.encodeBase32Unpadded . T.encodeUtf8
 --
 -- === __Examples__:
 --
--- >>> decodeBase32UnpaddedUntyped "KN2W4"
+-- >>> decodeBase32UnpaddedUntyped (Text.pack "KN2W4")
 -- Right "Sun"
 --
--- >>> decodeBase32UnpaddedUntyped "KN2W4==="
+-- >>> decodeBase32UnpaddedUntyped (Text.pack "KN2W4===")
 -- Left "Base32-encoded bytestring has invalid padding"
 decodeBase32UnpaddedUntyped :: Text -> Either Text Text
 decodeBase32UnpaddedUntyped value = B32.decodeBase32UnpaddedUntyped (T.encodeUtf8 value)
@@ -172,10 +172,10 @@ decodeBase32UnpaddedWith f t = case B32.decodeBase32UnpaddedUntyped t of
 --
 -- === __Examples__:
 --
--- >>> decodeBase32PaddedUntyped "KN2W4==="
+-- >>> decodeBase32PaddedUntyped (Text.pack "KN2W4===")
 -- Right "Sun"
 --
--- >>> decodeBase32PaddedUntyped "KN2W4"
+-- >>> decodeBase32PaddedUntyped (Text.pack "KN2W4")
 -- Left "Base32-encoded bytestring requires padding"
 decodeBase32PaddedUntyped :: Text -> Either Text Text
 decodeBase32PaddedUntyped value = B32.decodeBase32PaddedUntyped (T.encodeUtf8 value)
@@ -246,3 +246,6 @@ parseBase32Unpadded :: Text -> Either Text (Base32 'StdUnpadded Text)
 parseBase32Unpadded value = assertBase32 value
   <$ (B32.decodeBase32UnpaddedUntyped . T.encodeUtf8) value
 {-# INLINE parseBase32Unpadded #-}
+
+-- $setup
+-- >>> import qualified Data.Text as Text

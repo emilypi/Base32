@@ -67,7 +67,8 @@ rejected instead of silently decoding as `f`.
 ## Text decoding and binary payloads
 
 The wrapper establishes Base32 syntax, not the decoded payload's character
-encoding. `parseBase32Padded "74======"` succeeds, since it encodes byte `0xff`.
+encoding. `parseBase32Padded (Text.pack "74======")` succeeds, since it encodes
+byte `0xff`.
 Checked Text decoding now reports invalid UTF-8 as `Left`, including short and
 lazy Text. Typed Text decoding requires valid UTF-8 and fails otherwise. Use
 ByteString decoding for binary data, or a `decode*With` function for explicit

@@ -2,7 +2,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Trustworthy #-}
 -- |
 -- Module       : Data.ByteString.Base32.Hex
@@ -45,6 +44,7 @@ import Data.ByteString.Base32.Internal.Head
 import Data.ByteString.Base32.Internal.Tables
 import Data.ByteString.Base32.Internal.Utils (validateLastNPads)
 import Data.Text (Text)
+import qualified Data.Text as Text
 import qualified Data.Text.Encoding as T
 
 import System.IO.Unsafe (unsafeDupablePerformIO)
@@ -56,7 +56,7 @@ import System.IO.Unsafe (unsafeDupablePerformIO)
 --
 -- === __Examples__:
 --
--- >>> encodeBase32 "Sun"
+-- >>> encodeBase32 (BS8.pack "Sun")
 -- "ADQMS==="
 --
 encodeBase32 :: ByteString -> Base32 'HexPadded Text
@@ -69,7 +69,7 @@ encodeBase32 = fmap T.decodeUtf8 . encodeBase32'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32' "Sun"
+-- >>> encodeBase32' (BS8.pack "Sun")
 -- "ADQMS==="
 --
 encodeBase32' :: ByteString -> Base32 'HexPadded ByteString
@@ -85,13 +85,13 @@ encodeBase32' = assertBase32 . encodeBase32_ "0123456789ABCDEFGHIJKLMNOPQRSTUV"#
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Untyped "ADQMS==="
+-- >>> decodeBase32Untyped (BS8.pack "ADQMS===")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "ADQMS"
+-- >>> decodeBase32Untyped (BS8.pack "ADQMS")
 -- Right "Sun"
 --
--- >>> decodeBase32Untyped "ADQM==="
+-- >>> decodeBase32Untyped (BS8.pack "ADQM===")
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Untyped :: ByteString -> Either Text ByteString
@@ -99,11 +99,14 @@ decodeBase32Untyped bs@(BS _ !l)
     | l == 0 = Right bs
     | r == 0 = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable bs
     | r == 2 = unsafeDupablePerformIO $
-        decodeBase32_ hexDecodeTable (BS.append bs "======")
-    | r == 4 = validateLastNPads 2 bs $ decodeBase32_ hexDecodeTable (BS.append bs "====")
-    | r == 5 = validateLastNPads 3 bs $ decodeBase32_ hexDecodeTable (BS.append bs "===")
-    | r == 7 = validateLastNPads 5 bs $ decodeBase32_ hexDecodeTable (BS.append bs "=")
-    | otherwise = Left "Base32-encoded bytestring has invalid size"
+        decodeBase32_ hexDecodeTable (BS.append bs (BS.replicate 6 0x3d))
+    | r == 4 = validateLastNPads 2 bs $
+        decodeBase32_ hexDecodeTable (BS.append bs (BS.replicate 4 0x3d))
+    | r == 5 = validateLastNPads 3 bs $
+        decodeBase32_ hexDecodeTable (BS.append bs (BS.replicate 3 0x3d))
+    | r == 7 = validateLastNPads 5 bs $
+        decodeBase32_ hexDecodeTable (BS.append bs (BS.replicate 1 0x3d))
+    | otherwise = Left (Text.pack "Base32-encoded bytestring has invalid size")
   where
     !r = l `rem` 8
 {-# INLINE decodeBase32Untyped #-}
@@ -114,7 +117,7 @@ decodeBase32Untyped bs@(BS _ !l)
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "Sun"
+-- >>> encodeBase32Unpadded' (BS8.pack "Sun")
 -- "ADQMS"
 --
 encodeBase32Unpadded :: ByteString -> Base32 'HexUnpadded Text
@@ -127,7 +130,7 @@ encodeBase32Unpadded = fmap T.decodeUtf8 . encodeBase32Unpadded'
 --
 -- === __Examples__:
 --
--- >>> encodeBase32Unpadded' "Sun"
+-- >>> encodeBase32Unpadded' (BS8.pack "Sun")
 -- "ADQMS"
 --
 encodeBase32Unpadded' :: ByteString -> Base32 'HexUnpadded ByteString
@@ -141,10 +144,10 @@ encodeBase32Unpadded' = assertBase32
 --
 -- === __Examples__:
 --
--- >>> decodeBase32UnpaddedUntyped "ADQMS"
+-- >>> decodeBase32UnpaddedUntyped (BS8.pack "ADQMS")
 -- Right "Sun"
 --
--- >>> decodeBase32UnpaddedUntyped "ADQMS==="
+-- >>> decodeBase32UnpaddedUntyped (BS8.pack "ADQMS===")
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32UnpaddedUntyped :: ByteString -> Either Text ByteString
@@ -152,11 +155,14 @@ decodeBase32UnpaddedUntyped bs@(BS _ !l)
     | l == 0 = Right bs
     | r == 0 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable bs
     | r == 2 = unsafeDupablePerformIO $
-        decodeBase32_ hexDecodeTable (BS.append bs "======")
-    | r == 4 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable (BS.append bs "====")
-    | r == 5 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable (BS.append bs "===")
-    | r == 7 = validateLastNPads 1 bs $ decodeBase32_ hexDecodeTable (BS.append bs "=")
-    | otherwise = Left "Base32-encoded bytestring has invalid size"
+        decodeBase32_ hexDecodeTable (BS.append bs (BS.replicate 6 0x3d))
+    | r == 4 = validateLastNPads 1 bs $
+        decodeBase32_ hexDecodeTable (BS.append bs (BS.replicate 4 0x3d))
+    | r == 5 = validateLastNPads 1 bs $
+        decodeBase32_ hexDecodeTable (BS.append bs (BS.replicate 3 0x3d))
+    | r == 7 = validateLastNPads 1 bs $
+        decodeBase32_ hexDecodeTable (BS.append bs (BS.replicate 1 0x3d))
+    | otherwise = Left (Text.pack "Base32-encoded bytestring has invalid size")
   where
     !r = l `rem` 8
 {-# INLINE decodeBase32UnpaddedUntyped #-}
@@ -167,19 +173,19 @@ decodeBase32UnpaddedUntyped bs@(BS _ !l)
 --
 -- === __Examples__:
 --
--- >>> decodeBase32PaddedUntyped "ADQMS==="
+-- >>> decodeBase32PaddedUntyped (BS8.pack "ADQMS===")
 -- Right "Sun"
 --
--- >>> decodeBase32PaddedUntyped "ADQMS"
+-- >>> decodeBase32PaddedUntyped (BS8.pack "ADQMS")
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32PaddedUntyped :: ByteString -> Either Text ByteString
 decodeBase32PaddedUntyped bs@(BS _ !l)
     | l == 0 = Right bs
-    | r == 1 = Left "Base32-encoded bytestring has invalid size"
-    | r == 3 = Left "Base32-encoded bytestring has invalid size"
-    | r == 6 = Left "Base32-encoded bytestring has invalid size"
-    | r /= 0 = Left "Base32-encoded bytestring requires padding"
+    | r == 1 = Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r == 3 = Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r == 6 = Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r /= 0 = Left (Text.pack "Base32-encoded bytestring requires padding")
     | otherwise = unsafeDupablePerformIO $ decodeBase32_ hexDecodeTable bs
   where
     !r = l `rem` 8
@@ -220,3 +226,6 @@ parseBase32Unpadded :: ByteString -> Either Text (Base32 'HexUnpadded ByteString
 parseBase32Unpadded value = assertBase32 value
   <$ (decodeBase32UnpaddedUntyped) value
 {-# INLINE parseBase32Unpadded #-}
+
+-- $setup
+-- >>> import qualified Data.ByteString.Char8 as BS8

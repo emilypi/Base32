@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeApplications #-}
@@ -30,6 +29,7 @@ import Data.ByteString.Base32.Internal.Utils (encodedLength)
 import Data.ByteString.Base32.Internal.Loop
 import Data.ByteString.Base32.Internal.Tail
 import Data.Text (Text)
+import qualified Data.Text as Text
 
 import Foreign.Ptr
 import Foreign.ForeignPtr
@@ -86,7 +86,8 @@ encodeBase32NoPad_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
 decodeBase32_ :: Ptr Word8 -> ByteString -> IO (Either Text ByteString)
 decodeBase32_ table bs
   | null bs = pure (Right bs)
-  | length bs `rem` 8 /= 0 = pure (Left "Base32 input requires complete quanta")
+  | length bs `rem` 8 /= 0 =
+      pure (Left (Text.pack "Base32 input requires complete quanta"))
   | otherwise = decodeComplete table bs
 
 decodeComplete :: Ptr Word8 -> ByteString -> IO (Either Text ByteString)

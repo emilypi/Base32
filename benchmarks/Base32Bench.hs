@@ -1,8 +1,17 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeApplications #-}
-
+-- |
+-- Module       : Main
+-- Copyright    : (c) 2020-2026 Emily Pillmore
+-- License      : BSD-style
+--
+-- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
+-- Stability    : Experimental
+-- Portability  : portable
+--
+-- Benchmarks for strict, short, and SIMD Base32 codecs.
+--
 module Main (main) where
 
 import Criterion.Main
@@ -46,7 +55,7 @@ main =
                         bench "typed" $ nf S32.decodeBase32 typed
                     ]
               ]
-        , env (pure (T.fromText "Base32 benchmark λ")) $ \shortText ->
+        , env (pure (T.pack "Base32 benchmark λ")) $ \shortText ->
             bench "short-text" $ nf T32.encodeBase32 shortText
         ]
     | n <- [25, 39, 40, 41, 79, 80, 81, 1000, 1000000]

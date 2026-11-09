@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- |
@@ -24,6 +23,7 @@ import Control.Monad (forM_, forever)
 import Data.Base32.Types
 import Data.Bits (xor)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Base32 as B
 import qualified Data.ByteString.Base32.Hex as H
 import Data.ByteString.Base32.Internal.Head (decodeBase32_, encodeBase32_)
@@ -36,9 +36,10 @@ import qualified Data.ByteString.Short as SBS
 import qualified Data.ByteString.Short.Base32 as S
 import qualified Data.ByteString.Short.Base32.Hex as SH
 import Data.Either (isLeft, isRight)
-import Data.String (IsString)
+import Data.String (IsString, fromString)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding.Base32 as T
+import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding.Base32 as TL
 import qualified Data.Text.Short as TS
 import qualified Data.Text.Short.Encoding.Base32 as TS
@@ -113,10 +114,16 @@ regressions =
           BL.take 16 (L.decodeBase32 (L.encodeBase32' (BL.repeat 255)))
         output @?= Just (BL.replicate 16 255)
     , testCase "parsed padding provenance selects the matching typed decoder" $ do
-        fmap B.decodeBase32Padded (B.parseBase32Padded "MY======") @?= Right "f"
-        fmap H.decodeBase32Unpadded (H.parseBase32Unpadded "CO") @?= Right "f"
-        fmap S.decodeBase32Padded (S.parseBase32Padded "MY======") @?= Right "f"
-        fmap SH.decodeBase32Unpadded (SH.parseBase32Unpadded "CO") @?= Right "f"
+        let padded = BS8.pack "MY======"
+            unpaddedHex = BS8.pack "CO"
+            decoded = BS8.pack "f"
+        fmap B.decodeBase32Padded (B.parseBase32Padded padded) @?= Right decoded
+        fmap H.decodeBase32Unpadded (H.parseBase32Unpadded unpaddedHex)
+          @?= Right decoded
+        fmap S.decodeBase32Padded (S.parseBase32Padded (SBS.toShort padded))
+          @?= Right (SBS.toShort decoded)
+        fmap SH.decodeBase32Unpadded (SH.parseBase32Unpadded (SBS.toShort unpaddedHex))
+          @?= Right (SBS.toShort decoded)
     , testCase "lazy padding at every chunk boundary" $ do
         let encoded = extractBase32 (B.encodeBase32' (BS.replicate 81 102))
         forM_ [0 .. BS.length encoded] $ \i -> do
@@ -126,7 +133,7 @@ regressions =
           L.decodeBase32 (assertBase32 @'StdPadded chunks) @?= BL.replicate 81 102
     , testCase "invalid bytes after SIMD prefixes keep global offsets" $
         forM_ [0 .. 159] $ \i -> do
-          let input = BS.replicate i 65 <> "!" <> BS.replicate (159 - i) 65
+          let input = BS.replicate i 65 <> BS.singleton 33 <> BS.replicate (159 - i) 65
               expected = Left (T.pack ("invalid character at offset: " ++ show i))
           B.decodeBase32Untyped input @?= expected
           S.decodeBase32Untyped (SBS.toShort input) @?= expected
@@ -144,10 +151,12 @@ regressions =
                   === S.decodeBase32UnpaddedUntyped short
               ]
     , testCase "text parsers accept binary; decoders check UTF-8" $ do
-        assertBool "binary parser" (isRight (T.parseBase32Padded "74======"))
-        assertBool "invalid UTF-8" (isLeft (T.decodeBase32Untyped "74======"))
-        assertBool "lazy invalid UTF-8" (isLeft (TL.decodeBase32Untyped "74======"))
-        assertBool "short invalid UTF-8" (isLeft (TS.decodeBase32Untyped "74======"))
+        assertBool "binary parser" (isRight (T.parseBase32Padded (T.pack "74======")))
+        assertBool "invalid UTF-8" (isLeft (T.decodeBase32Untyped (T.pack "74======")))
+        assertBool "lazy invalid UTF-8"
+          (isLeft (TL.decodeBase32Untyped (TL.pack "74======")))
+        assertBool "short invalid UTF-8"
+          (isLeft (TS.decodeBase32Untyped (TS.pack "74======")))
     , testCase "short arrays remain valid during concurrent collection" $
         bracket (forkIO (forever (performGC >> threadDelay 1000))) killThread $ \_ ->
           forM_ [0 .. 99 :: Int] $ \salt -> do
@@ -159,8 +168,8 @@ regressions =
             output <- evaluate (force (S.decodeBase32 (S.encodeBase32' input)))
             output @?= input
     , testCase "typed text roundtrip" $ do
-        T.decodeBase32 (T.encodeBase32 "λ☃") @?= "λ☃"
-        TS.decodeBase32 (TS.encodeBase32 (TS.fromText "λ☃")) @?= TS.fromText "λ☃"
+        T.decodeBase32 (T.encodeBase32 (T.pack "λ☃")) @?= T.pack "λ☃"
+        TS.decodeBase32 (TS.encodeBase32 (TS.pack "λ☃")) @?= TS.pack "λ☃"
     ]
 
 parserTests ::
@@ -193,21 +202,24 @@ parserTests Harness{..} =
     , testProperty "preserve unpadded hex input" $ \input ->
         parseHexUnpaddedValue (encodeHexNopad input) === Right (encodeHexNopad input)
     , testCase "preserve original letter case" $ do
-        parseValue "my======" @?= Right "my======"
-        parseHexValue "co======" @?= Right "co======"
-        decodeTyped (assertBase32 @'StdPadded "my======") @?= "f"
-        decodeHexTyped (assertBase32 @'HexPadded "co======") @?= "f"
+        parseValue (fromString "my======") @?= Right (fromString "my======")
+        parseHexValue (fromString "co======") @?= Right (fromString "co======")
+        decodeTyped (assertBase32 @'StdPadded (fromString "my======")) @?= fromString "f"
+        decodeHexTyped (assertBase32 @'HexPadded (fromString "co======"))
+          @?= fromString "f"
     , testCase "enforce padding policies" $ do
-        assertBool "padded requires padding" (isLeft (parsePaddedValue "MY"))
-        assertBool "unpadded rejects padding" (isLeft (parseUnpaddedValue "MY======"))
-        assertBool "hex padded requires padding" (isLeft (parseHexPaddedValue "CO"))
+        assertBool "padded requires padding" (isLeft (parsePaddedValue (fromString "MY")))
+        assertBool "unpadded rejects padding"
+          (isLeft (parseUnpaddedValue (fromString "MY======")))
+        assertBool "hex padded requires padding"
+          (isLeft (parseHexPaddedValue (fromString "CO")))
         assertBool
           "hex unpadded rejects padding"
-          (isLeft (parseHexUnpaddedValue "CO======"))
-        parseValue "" @?= Right ""
-        parseHexValue "" @?= Right ""
+          (isLeft (parseHexUnpaddedValue (fromString "CO======")))
+        parseValue (fromString "") @?= Right (fromString "")
+        parseHexValue (fromString "") @?= Right (fromString "")
     , testCase "reject nonzero unused bits in all tail lengths" $ do
-        forM_
+        forM_ (map fromString
           [ "MZ"
           , "MZXR"
           , "MZXW7"
@@ -216,11 +228,11 @@ parserTests Harness{..} =
           , "MZXR===="
           , "MZXW7==="
           , "MZXW6YR="
-          ]
+          ])
           $ \value ->
             assertBool (show value)
               (isLeft (parsePaddedValue value) && isLeft (parseUnpaddedValue value))
-        forM_
+        forM_ (map fromString
           [ "CP"
           , "CPNH"
           , "CPNMV"
@@ -229,12 +241,13 @@ parserTests Harness{..} =
           , "CPNH===="
           , "CPNMV==="
           , "CPNMUOH="
-          ]
+          ])
           $ \value ->
             assertBool (show value)
               (isLeft (parseHexPaddedValue value) && isLeft (parseHexUnpaddedValue value))
     , testCase "parser and checked decoder report the same errors" $
-        forM_ ["M", "!Y======", "MZ======", "MY====", "MY======MY======"] $ \value ->
+        forM_ (map fromString
+          ["M", "!Y======", "MZ======", "MY====", "MY======MY======"]) $ \value ->
           case decodePad value of
             Left err -> parseValue value @?= Left err
             Right _ -> assertFailure "expected malformed fixture"

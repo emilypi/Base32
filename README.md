@@ -7,19 +7,19 @@ RFC 4648 standard and extended-hex Base32 encoding, with padded and unpadded
 variants for strict, lazy, and short `ByteString` and `Text`.
 
 ```haskell
-{-# LANGUAGE OverloadedStrings #-}
 import Data.Base32.Types
+import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Base32 as B32
 
-encoded = B32.encodeBase32' "Sun"
+encoded = B32.encodeBase32' (BS.pack "Sun")
 -- encoded :: Base32 'StdPadded ByteString
--- extractBase32 encoded == "KN2W4==="
--- B32.decodeBase32 encoded == "Sun"
+-- extractBase32 encoded == BS.pack "KN2W4==="
+-- B32.decodeBase32 encoded == BS.pack "Sun"
 
-parsed = B32.parseBase32Unpadded "KN2W4"
+parsed = B32.parseBase32Unpadded (BS.pack "KN2W4")
 -- Right "KN2W4"; the original encoded representation is retained
 
-raw = B32.decodeBase32Untyped "KN2W4"
+raw = B32.decodeBase32Untyped (BS.pack "KN2W4")
 -- Right "Sun"
 ```
 
