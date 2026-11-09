@@ -1,1 +1,12 @@
-dist-newstyle
+dist*/
+*.tar.gz
+cabal.project.local
+logs/
+*.log
+.Codex/
+.codex/
+.agents/
+.claude/
+AGENTS.md
+CLAUDE.md
+FOCUS.md
