@@ -19,7 +19,7 @@ module Regression (regressions) where
 import Control.Concurrent (forkIO, killThread, threadDelay)
 import Control.DeepSeq (force)
 import Control.Exception (ErrorCall, bracket, evaluate, try)
-import Control.Monad (forM_, forever)
+import Control.Monad (forM_, forever, replicateM)
 import Data.Base32.Types
 import Data.Bits (xor)
 import qualified Data.ByteString as BS
@@ -73,7 +73,7 @@ regressions =
               | otherwise = w
         withArray (zipWith replace [0 :: Int ..] table) $ \custom -> do
           decodeBase32_ custom expected >>= (@?= Right input)
-          decodeShort custom OptionalPadding (SBS.toShort expected)
+          decodeShort custom (SBS.toShort expected)
             @?= Right (SBS.toShort input)
     , testCase "allocation lengths reject overflow before allocation" $ do
         forM_ [-1, maxBound] $ \n -> do
@@ -137,6 +137,22 @@ regressions =
               expected = Left (T.pack ("invalid character at offset: " ++ show i))
           B.decodeBase32Untyped input @?= expected
           S.decodeBase32Untyped (SBS.toShort input) @?= expected
+    , testCase "strict and short decoders agree on final padding" $
+        forM_ [0, 80] $ \prefixLength ->
+          forM_ [0 .. 8] $ \tailLength ->
+            forM_ (replicateM tailLength [False, True]) $ \padding -> do
+              let input symbol = BS.replicate prefixLength symbol
+                    <> BS.pack (map (\pad -> if pad then 0x3d else symbol) padding)
+                  standard = input 65
+                  hex = input 48
+                  check raw decodeStrict decodeSmall =
+                    decodeSmall (SBS.toShort raw) @?= fmap SBS.toShort (decodeStrict raw)
+              check standard B.decodeBase32Untyped S.decodeBase32Untyped
+              check standard B.decodeBase32PaddedUntyped S.decodeBase32PaddedUntyped
+              check standard B.decodeBase32UnpaddedUntyped S.decodeBase32UnpaddedUntyped
+              check hex H.decodeBase32Untyped SH.decodeBase32Untyped
+              check hex H.decodeBase32PaddedUntyped SH.decodeBase32PaddedUntyped
+              check hex H.decodeBase32UnpaddedUntyped SH.decodeBase32UnpaddedUntyped
     , testProperty "strict and short malformed inputs agree" $ \(bytes :: [Word]) ->
         let input = BS.pack (map fromIntegral bytes)
             short = SBS.toShort input

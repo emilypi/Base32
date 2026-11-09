@@ -38,9 +38,11 @@ module Data.ByteString.Short.Base32
 import Data.ByteString.Base32.Internal.Short
 import Data.ByteString.Base32.Internal.Tables
 import Data.ByteString.Short (ShortByteString)
+import qualified Data.ByteString.Short as SBS
 import Data.Base32.Types
 
 import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Text.Short (ShortText)
 import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 
@@ -93,7 +95,19 @@ encodeBase32' =
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32Untyped :: ShortByteString -> Either Text ShortByteString
-decodeBase32Untyped = decodeShort stdDecodeTable OptionalPadding
+decodeBase32Untyped bs
+    | l == 0 = Right bs
+    | r == 1 || r == 3 || r == 6 =
+        Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r == 4 && any isPad [1 .. 2]
+      || r == 5 && any isPad [1 .. 3]
+      || r == 7 && any isPad [1 .. 5] =
+        Left (Text.pack "Base32-encoded bytestring has invalid padding")
+    | otherwise = decodeShort stdDecodeTable bs
+  where
+    l = SBS.length bs
+    r = l `rem` 8
+    isPad i = SBS.index bs (l - i) == 0x3d
 {-# INLINE decodeBase32Untyped #-}
 
 -- | Encode a 'ShortByteString' value as Base32 'Text' without padding. Note that for
@@ -148,7 +162,16 @@ encodeBase32Unpadded' =
 -- Left "Base32-encoded bytestring has invalid padding"
 --
 decodeBase32UnpaddedUntyped :: ShortByteString -> Either Text ShortByteString
-decodeBase32UnpaddedUntyped = decodeShort stdDecodeTable ForbidPadding
+decodeBase32UnpaddedUntyped bs
+    | l == 0 = Right bs
+    | r == 1 || r == 3 || r == 6 =
+        Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r /= 2 && SBS.index bs (l - 1) == 0x3d =
+        Left (Text.pack "Base32-encoded bytestring has invalid padding")
+    | otherwise = decodeShort stdDecodeTable bs
+  where
+    l = SBS.length bs
+    r = l `rem` 8
 {-# INLINE decodeBase32UnpaddedUntyped #-}
 
 -- | Decode a padded Base32-encoded 'ShortByteString' value. Input strings are
@@ -169,7 +192,15 @@ decodeBase32UnpaddedUntyped = decodeShort stdDecodeTable ForbidPadding
 -- Left "Base32-encoded bytestring requires padding"
 --
 decodeBase32PaddedUntyped :: ShortByteString -> Either Text ShortByteString
-decodeBase32PaddedUntyped = decodeShort stdDecodeTable RequirePadding
+decodeBase32PaddedUntyped bs
+    | l == 0 = Right bs
+    | r == 1 || r == 3 || r == 6 =
+        Left (Text.pack "Base32-encoded bytestring has invalid size")
+    | r /= 0 = Left (Text.pack "Base32-encoded bytestring requires padding")
+    | otherwise = decodeShort stdDecodeTable bs
+  where
+    l = SBS.length bs
+    r = l `rem` 8
 {-# INLINE decodeBase32PaddedUntyped #-}
 
 -- | Decode a typed Base32-encoded 'ShortByteString' value.

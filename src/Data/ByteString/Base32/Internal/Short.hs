@@ -19,7 +19,7 @@ module Data.ByteString.Base32.Internal.Short
   ) where
 
 import Control.Monad.ST (runST)
-import Data.Base32.Types (Base32, Padding(..), extractBase32)
+import Data.Base32.Types (Base32, extractBase32)
 import Data.Bits
 import Data.ByteString.Base32.Internal.Loop (decodeQuantum)
 import Data.ByteString.Base32.Internal.Utils (aix, encodedLength)
@@ -27,7 +27,6 @@ import Data.ByteString.Short.Internal (ShortByteString(..))
 import qualified Data.ByteString.Short as SBS
 import Data.Primitive.ByteArray
 import Data.Text (Text)
-import qualified Data.Text as Text
 import Data.Word
 import GHC.Exts (Addr#)
 import GHC.ByteOrder
@@ -94,18 +93,11 @@ encodeShort alphabet padded input@(SBS source) = runST $ do
     byte i = indexByteArray src i :: Word8
 {-# INLINE encodeShort #-}
 
--- | Decode with an ASCII lookup table and explicit padding policy.
+-- | Decode with an ASCII lookup table. The caller checks the input length
+-- and final padding before entering the loop.
 decodeShort
-  :: Ptr Word8 -> Padding -> ShortByteString -> Either Text ShortByteString
-decodeShort (Ptr table) policy input@(SBS source)
-  | len == 0 = Right input
-  | remainder == 1 || remainder == 3 || remainder == 6 =
-      Left (Text.pack "Base32-encoded bytestring has invalid size")
-  | policy == RequirePadding && remainder /= 0 =
-      Left (Text.pack "Base32-encoded bytestring requires padding")
-  | any isPad [len - checkPads .. len - 1] =
-      Left (Text.pack "Base32-encoded bytestring has invalid padding")
-  | otherwise = runST $ do
+  :: Ptr Word8 -> ShortByteString -> Either Text ShortByteString
+decodeShort (Ptr table) input@(SBS source) = runST $ do
       dst <- newByteArray capacity
 #ifdef BASE32_SIMD
       consumed <- SIMD.decodeByteArrayPrefix table
@@ -176,14 +168,6 @@ decodeShort (Ptr table) policy input@(SBS source)
     len = SBS.length input
     remainder = len `rem` 8
     capacity = (len `quot` 8) * 5 + (remainder * 5 `quot` 8)
-    isPad i = (indexByteArray src i :: Word8) == 61
-    checkPads
-      | policy == ForbidPadding && remainder /= 2 = 1
-      | policy /= OptionalPadding = 0
-      | remainder == 4 = 2
-      | remainder == 5 = 3
-      | remainder == 7 = 5
-      | otherwise = 0
     look i
       | i >= len = 0x63
       | otherwise = fromIntegral (aix (indexByteArray src i) table) :: Word64

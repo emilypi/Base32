@@ -22,7 +22,6 @@ module Data.Base32.Types
   ( Alphabet (..)
   , StdAlphabet
   , HexAlphabet
-  , Padding (..)
   , Base32
   , extractBase32
   , assertBase32
@@ -62,11 +61,6 @@ type family HexAlphabet (k :: Alphabet) :: Constraint where
     ( 'Text "Cannot prove base32 value is encoded using the extended-hex alphabet. "
       ':<>: 'Text "Use the hex encoders or padding-specific parsers."
     )
-
--- | The padding policy enforced by a checked decoder or parser.
---
-data Padding = OptionalPadding | RequirePadding | ForbidPadding
-  deriving (Eq, Ord, Show)
 
 -- | A value encoded with the given alphabet and padding. Encoding and parsing establish
 -- this provenance. 'assertBase32', record updates, and the derived mapping
