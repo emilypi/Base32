@@ -2,21 +2,26 @@
 
 ## Encoded values carry their alphabet and padding
 
-Import `Data.Base32.Types` for the opaque `Base32` wrapper, `Alphabet(..)`,
-`extractBase32`, and `assertBase32`. Standard encoders return `Base32 'StdPadded a`
-or `Base32 'StdUnpadded a`; extended-hex encoders return `Base32 'HexPadded a` or
-`Base32 'HexUnpadded a`. Add `DataKinds` when writing these signatures explicitly.
+Encoding now produces type-tagged values that carry the alphabet and padding provenance 
+carried out by the encoding. You can extract these bytes or assert their provenance by importing `Data.Base32.Types` and manipulating the wrapper through the supplied functions. `Alphabet(..)` is also included, and can be used in conjunction with `-XDataKinds` to assert what you need. Standard encoders return `Base32 'StdPadded a`
+or `Base32 'StdUnpadded a`, while extended-hex encoders return `Base32 'HexPadded a` or
+`Base32 'HexUnpadded a`. For example:
 
 ```haskell
 -- Before
-wire = B32.encodeBase32' bytes
+rawb32bytes = B32.encodeBase32' bytes
 
 -- After, when the surrounding API expects a plain ByteString
-wire = extractBase32 (B32.encodeBase32' bytes)
+rawb32bytes = extractBase32 (B32.encodeBase32' unencodedbytes)
 
 -- A typed roundtrip no longer returns Either
-bytesAgain = B32.decodeBase32 (B32.encodeBase32' bytes)
+unencodedBytesAgain = B32.decodeBase32 (B32.encodeBase32' unencodedbytes)
 ```
+
+The reasoning behind this wrapper is clear from a performance perspective: by shoving the information about the bytes into the typed wrapper and shunting the contract to the user 
+or the program, we have all the info we need to forego validity checks during the decode 
+process. This removes most branching from the procedure and hotpath detection is both 
+faster and easier, resulting in a significant speedup. Go Haskell!
 
 ## Checked decoding keeps an explicit name
 
@@ -29,7 +34,8 @@ bytesAgain = B32.decodeBase32 (B32.encodeBase32' bytes)
 These replacements apply to all twelve ByteString/Text modules. The old names
 now consume `Base32` values and return the decoded result directly. The
 `decodeBase32With`, `decodeBase32PaddedWith`, and `decodeBase32UnpaddedWith`
-functions keep their checked signatures and names.
+functions keep their checked signatures and names, and are `Text` only, because 
+decoding is separate from utf8 conversion and errors are surfaced accordingly for each step.  
 
 Typed decoders use dedicated unchecked loops. They trust the established
 provenance and do not check the alphabet, input length, padding, or unused bits.
