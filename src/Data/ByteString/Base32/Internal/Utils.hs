@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module       : Data.ByteString.Base32.Internal.Utils
 -- Copyright    : (c) 2020-2026 Emily Pillmore
@@ -29,6 +28,7 @@ module Data.ByteString.Base32.Internal.Utils
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.Text (Text)
+import qualified Data.Text as Text
 
 import Foreign.Ptr
 import Foreign.Storable
@@ -131,6 +131,6 @@ validateLastNPads
     -> Either Text ByteString
 validateLastNPads n bs io
     | BS.elem 0x3d (BS.drop (BS.length bs - n) bs) =
-        Left "Base32-encoded bytestring has invalid padding"
+        Left (Text.pack "Base32-encoded bytestring has invalid padding")
     | otherwise = unsafeDupablePerformIO io
 {-# INLINE validateLastNPads #-}
