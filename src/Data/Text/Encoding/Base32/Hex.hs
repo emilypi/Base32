@@ -1,7 +1,9 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE Safe #-}
+
 -- |
 -- Module       : Data.Text.Encoding.Base32.Hex
--- Copyright    : (c) 2019-2023 Emily Pillmore
+-- Copyright    : (c) 2019-2026 Emily Pillmore
 -- License      : BSD-style
 --
 -- Maintainer   : Emily Pillmore <emilypi@cohomolo.gy>
@@ -13,21 +15,25 @@
 -- encoding format. This includes strictly padded and unpadded
 -- decoding variants, as well as internal and external validation
 -- for canonicity.
---
 module Data.Text.Encoding.Base32.Hex
-( encodeBase32
-, decodeBase32
-, decodeBase32With
-, encodeBase32Unpadded
-, decodeBase32Unpadded
-, decodeBase32UnpaddedWith
-, decodeBase32Padded
-, decodeBase32PaddedWith
--- , decodeBase32Lenient
-, isBase32Hex
-, isValidBase32Hex
-) where
+  ( encodeBase32
+  , decodeBase32Untyped
+  , decodeBase32With
+  , encodeBase32Unpadded
+  , decodeBase32UnpaddedUntyped
+  , decodeBase32UnpaddedWith
+  , decodeBase32PaddedUntyped
+  , decodeBase32PaddedWith
+  , decodeBase32
+  , decodeBase32Padded
+  , decodeBase32Unpadded
+  , parseBase32
+  , parseBase32Padded
+  , parseBase32Unpadded
+  ) where
 
+import Data.Base32.Types
+import qualified Data.Text as ErrorText
 
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
@@ -35,7 +41,7 @@ import qualified Data.ByteString.Base32.Hex as B32H
 
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
-import Data.Text.Encoding.Base32.Error (Base32Error(..))
+import Data.Text.Encoding.Base32.Error (Base32Error (..))
 
 -- | Encode a 'Text' value in Base32hex with padding.
 --
@@ -45,37 +51,35 @@ import Data.Text.Encoding.Base32.Error (Base32Error(..))
 --
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
---
-encodeBase32 :: Text -> Text
+encodeBase32 :: Text -> Base32 'Hex Text
 encodeBase32 = B32H.encodeBase32 . T.encodeUtf8
 {-# INLINE encodeBase32 #-}
 
 -- | Decode a padded Base32hex-encoded 'Text' value. If its length is not a multiple
--- of 4, then padding chars will be added to fill out the input to a multiple of
--- 4 for safe decoding as base32hex encodings are optionally padded.
+-- of 8, then padding chars will be added to fill out the input to a multiple of
+-- 8 for safe decoding as base32hex encodings are optionally padded.
 --
--- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeUtf8'. This will always round trip for any valid Base32-encoded
--- text value, but it may not round trip for bad inputs. The onus is on the
--- caller to make sure inputs are valid. If unsure, defer to `decodeBase32With`
--- and pass in a custom decode function.
+-- Decoded bytes are interpreted as UTF-8. Invalid Base32 or UTF-8
+-- returns 'Left'. Use the corresponding @decode*With@ function
+-- to choose a different character encoding.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32 "ADQMS==="
+-- >>> decodeBase32Untyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32 "ADQMS"
+-- >>> decodeBase32Untyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32 "ADQMS==="
+-- >>> decodeBase32Untyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
-decodeBase32 :: Text -> Either Text Text
-decodeBase32 = fmap T.decodeUtf8 . B32H.decodeBase32 . T.encodeUtf8
-{-# INLINE decodeBase32 #-}
+decodeBase32Untyped :: Text -> Either Text Text
+decodeBase32Untyped value =
+  B32H.decodeBase32Untyped (T.encodeUtf8 value)
+    >>= first (ErrorText.pack . show) . T.decodeUtf8'
+{-# INLINE decodeBase32Untyped #-}
 
 -- | Attempt to decode a 'ByteString' value as Base32hex, converting from
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
@@ -87,16 +91,15 @@ decodeBase32 = fmap T.decodeUtf8 . B32H.decodeBase32 . T.encodeUtf8
 --
 -- @
 -- 'decodeBase32With' 'T.decodeUtf8''
---   :: 'Text' -> 'Either' ('Base32Error' 'UnicodeException') 'Text'
+--   :: 'Text' -> 'Either' ('Base32Error' UnicodeException) 'Text'
 -- @
---
-decodeBase32With
-    :: (ByteString -> Either err Text)
-      -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
-    -> ByteString
-      -- ^ Input text to decode
-    -> Either (Base32Error err) Text
-decodeBase32With f t = case B32H.decodeBase32 t of
+decodeBase32With ::
+  -- | convert a bytestring to text (e.g. 'T.decodeUtf8'')
+  (ByteString -> Either err Text) ->
+  -- | Input text to decode
+  ByteString ->
+  Either (Base32Error err) Text
+decodeBase32With f t = case B32H.decodeBase32Untyped t of
   Left de -> Left $ DecodeError de
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32With #-}
@@ -111,40 +114,34 @@ decodeBase32With f t = case B32H.decodeBase32 t of
 --
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
---
-encodeBase32Unpadded :: Text -> Text
+encodeBase32Unpadded :: Text -> Base32 'Hex Text
 encodeBase32Unpadded = B32H.encodeBase32Unpadded . T.encodeUtf8
 {-# INLINE encodeBase32Unpadded #-}
 
-
 -- | Decode an unpadded Base32hex encoded 'Text' value.
 --
--- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeUtf8'. This will always round trip for any valid Base32-encoded
--- text value, but it may not round trip for bad inputs. The onus is on the
--- caller to make sure inputs are valid. If unsure, defer to `decodeBase32WUnpaddedWith`
--- and pass in a custom decode function.
+-- Decoded bytes are interpreted as UTF-8. Invalid Base32 or UTF-8
+-- returns 'Left'. Use the corresponding @decode*With@ function
+-- to choose a different character encoding.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Unpadded "ADQMS"
+-- >>> decodeBase32UnpaddedUntyped "ADQMS"
 -- Right "Sun"
 --
--- >>> decodeBase32Unpadded "ADQMS==="
+-- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
---
-decodeBase32Unpadded :: Text -> Either Text Text
-decodeBase32Unpadded = fmap T.decodeUtf8
-    . B32H.decodeBase32Unpadded
-    . T.encodeUtf8
-{-# INLINE decodeBase32Unpadded #-}
-
+decodeBase32UnpaddedUntyped :: Text -> Either Text Text
+decodeBase32UnpaddedUntyped value =
+  B32H.decodeBase32UnpaddedUntyped (T.encodeUtf8 value)
+    >>= first (ErrorText.pack . show) . T.decodeUtf8'
+{-# INLINE decodeBase32UnpaddedUntyped #-}
 
 -- | Attempt to decode an unpadded 'ByteString' value as Base32hex, converting from
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
--- This is something like 'decodeUtf8'', which may produce an error.
+-- This is something like 'T.decodeUtf8'', which may produce an error.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
@@ -152,44 +149,39 @@ decodeBase32Unpadded = fmap T.decodeUtf8
 --
 -- @
 -- 'decodeBase32UnpaddedWith' 'T.decodeUtf8''
---   :: 'ByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'Text'
+--   :: 'ByteString' -> 'Either' ('Base32Error' UnicodeException) 'Text'
 -- @
---
-decodeBase32UnpaddedWith
-    :: (ByteString -> Either err Text)
-      -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
-    -> ByteString
-      -- ^ Input text to decode
-    -> Either (Base32Error err) Text
-decodeBase32UnpaddedWith f t = case B32H.decodeBase32Unpadded t of
+decodeBase32UnpaddedWith ::
+  -- | convert a bytestring to text (e.g. 'T.decodeUtf8'')
+  (ByteString -> Either err Text) ->
+  -- | Input text to decode
+  ByteString ->
+  Either (Base32Error err) Text
+decodeBase32UnpaddedWith f t = case B32H.decodeBase32UnpaddedUntyped t of
   Left de -> Left $ DecodeError de
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32UnpaddedWith #-}
 
-
 -- | Decode an padded Base32hex encoded 'Text' value
 --
--- /Note:/ This function makes sure that decoding is total by deferring to
--- 'T.decodeUtf8'. This will always round trip for any valid Base32-encoded
--- text value, but it may not round trip for bad inputs. The onus is on the
--- caller to make sure inputs are valid. If unsure, defer to `decodeBase32PaddedWith`
--- and pass in a custom decode function.
+-- Decoded bytes are interpreted as UTF-8. Invalid Base32 or UTF-8
+-- returns 'Left'. Use the corresponding @decode*With@ function
+-- to choose a different character encoding.
 --
 -- See: <https://tools.ietf.org/html/rfc4648#section-6 RFC-4648 section 6>
 --
 -- === __Examples__:
 --
--- >>> decodeBase32Padded "ADQMS==="
+-- >>> decodeBase32PaddedUntyped "ADQMS==="
 -- Right "Sun"
 --
--- >>> decodeBase32Padded "ADQMS"
+-- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
---
-decodeBase32Padded :: Text -> Either Text Text
-decodeBase32Padded = fmap T.decodeUtf8
-    . B32H.decodeBase32Padded
-    . T.encodeUtf8
-{-# INLINE decodeBase32Padded #-}
+decodeBase32PaddedUntyped :: Text -> Either Text Text
+decodeBase32PaddedUntyped value =
+  B32H.decodeBase32PaddedUntyped (T.encodeUtf8 value)
+    >>= first (ErrorText.pack . show) . T.decodeUtf8'
+{-# INLINE decodeBase32PaddedUntyped #-}
 
 -- | Attempt to decode a padded 'ByteString' value as Base32hex, converting from
 -- 'ByteString' to 'Text' according to some encoding function. In practice,
@@ -201,16 +193,15 @@ decodeBase32Padded = fmap T.decodeUtf8
 --
 -- @
 -- 'decodeBase32PaddedWith' 'T.decodeUtf8''
---   :: 'ByteString' -> 'Either' ('Base32Error' 'UnicodeException') 'Text'
+--   :: 'ByteString' -> 'Either' ('Base32Error' UnicodeException) 'Text'
 -- @
---
-decodeBase32PaddedWith
-    :: (ByteString -> Either err Text)
-      -- ^ convert a bytestring to text (e.g. 'T.decodeUtf8'')
-    -> ByteString
-      -- ^ Input text to decode
-    -> Either (Base32Error err) Text
-decodeBase32PaddedWith f t = case B32H.decodeBase32Padded t of
+decodeBase32PaddedWith ::
+  -- | convert a bytestring to text (e.g. 'T.decodeUtf8'')
+  (ByteString -> Either err Text) ->
+  -- | Input text to decode
+  ByteString ->
+  Either (Base32Error err) Text
+decodeBase32PaddedWith f t = case B32H.decodeBase32PaddedUntyped t of
   Left de -> Left $ DecodeError de
   Right a -> first ConversionError (f a)
 {-# INLINE decodeBase32PaddedWith #-}
@@ -227,40 +218,62 @@ decodeBase32PaddedWith f t = case B32H.decodeBase32Padded t of
 -- --     . T.encodeUtf8
 -- -- {-# INLINE decodeBase32Lenient #-}
 
--- | Tell whether a 'Text' value is Base32hex-encoded.
---
--- === __Examples__:
---
--- >>> isBase32Hex "ADQMS"
--- True
---
--- >>> isBase32Hex "ADQMS==="
--- True
---
--- >>> isBase32Hex "ADQMS=="
--- False
---
-isBase32Hex :: Text -> Bool
-isBase32Hex = B32H.isBase32Hex . T.encodeUtf8
-{-# INLINE isBase32Hex #-}
+-- | Decode a value with established alphabet provenance.
+-- Use 'parseBase32' to validate external input first.
+-- A false assertion or incompatible padding policy causes an error.
+-- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+decodeBase32 :: Base32 'Hex Text -> Text
+decodeBase32 =
+  either (error . ErrorText.unpack) id
+    . decodeBase32Untyped
+    . extractBase32
+{-# INLINE decodeBase32 #-}
 
--- | Tell whether a 'Text' value is a valid Base32hex format.
---
--- This will not tell you whether or not this is a correct Base32hex representation,
--- only that it conforms to the correct shape. To check whether it is a true
--- Base32 encoded 'Text' value, use 'isBase32Hex'.
---
--- === __Examples__:
---
--- >>> isValidBase32Hex "ADQMS"
--- True
---
--- >>> isValidBase32Hex "ADQMS="
--- False
---
--- >>> isValidBase32Hex "ADQMS%"
--- False
---
-isValidBase32Hex :: Text -> Bool
-isValidBase32Hex = B32H.isValidBase32Hex . T.encodeUtf8
-{-# INLINE isValidBase32Hex #-}
+-- | Validate encoded input, retaining its original representation and case.
+-- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
+-- This validates Base32 bytes, not the character encoding of the payload.
+parseBase32 :: Text -> Either Text (Base32 'Hex Text)
+parseBase32 value =
+  assertBase32 value
+    <$ (B32H.decodeBase32Untyped . T.encodeUtf8) value
+{-# INLINE parseBase32 #-}
+
+-- | Decode a value with established alphabet provenance.
+-- Use 'parseBase32Padded' to validate external input first.
+-- A false assertion or incompatible padding policy causes an error.
+-- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+decodeBase32Padded :: Base32 'Hex Text -> Text
+decodeBase32Padded =
+  either (error . ErrorText.unpack) id
+    . decodeBase32PaddedUntyped
+    . extractBase32
+{-# INLINE decodeBase32Padded #-}
+
+-- | Validate encoded input, retaining its original representation and case.
+-- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
+-- This validates Base32 bytes, not the character encoding of the payload.
+parseBase32Padded :: Text -> Either Text (Base32 'Hex Text)
+parseBase32Padded value =
+  assertBase32 value
+    <$ (B32H.decodeBase32PaddedUntyped . T.encodeUtf8) value
+{-# INLINE parseBase32Padded #-}
+
+-- | Decode a value with established alphabet provenance.
+-- Use 'parseBase32Unpadded' to validate external input first.
+-- A false assertion or incompatible padding policy causes an error.
+-- Decoded bytes must be valid UTF-8; use the checked decoder otherwise.
+decodeBase32Unpadded :: Base32 'Hex Text -> Text
+decodeBase32Unpadded =
+  either (error . ErrorText.unpack) id
+    . decodeBase32UnpaddedUntyped
+    . extractBase32
+{-# INLINE decodeBase32Unpadded #-}
+
+-- | Validate encoded input, retaining its original representation and case.
+-- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
+-- This validates Base32 bytes, not the character encoding of the payload.
+parseBase32Unpadded :: Text -> Either Text (Base32 'Hex Text)
+parseBase32Unpadded value =
+  assertBase32 value
+    <$ (B32H.decodeBase32UnpaddedUntyped . T.encodeUtf8) value
+{-# INLINE parseBase32Unpadded #-}
