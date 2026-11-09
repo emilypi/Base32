@@ -12,6 +12,8 @@
 --
 -- Allocation and entry points for the strict encoding and decoding loops.
 --
+-- @since 1.0
+--
 module Data.ByteString.Base32.Internal.Head
 ( encodeBase32_
 , encodeBase32NoPad_
@@ -47,6 +49,9 @@ import System.IO.Unsafe
 -- allocates the correct number of bytes that will be written, and
 -- executes the inner encoding loop against that data.
 --
+-- Since 1.0, exported from this module instead of
+-- @Data.ByteString.Base32.Internal@.
+--
 encodeBase32_ :: Addr# -> ByteString -> ByteString
 encodeBase32_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
     dfp <- mallocPlainForeignPtrBytes dlen
@@ -65,6 +70,9 @@ encodeBase32_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
 -- allocates the correct number of bytes that will be written, and
 -- executes the inner encoding loop against that data.
 --
+-- Since 1.0, exported from this module instead of
+-- @Data.ByteString.Base32.Internal@.
+--
 encodeBase32NoPad_ :: Addr# -> ByteString -> ByteString
 encodeBase32NoPad_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
     !dfp <- mallocPlainForeignPtrBytes dlen
@@ -82,6 +90,9 @@ encodeBase32NoPad_ !lut (BS !sfp !l) = unsafeDupablePerformIO $ do
 -- This function takes a base32-decoding lookup table and base32-encoded
 -- bytestring, allocates the correct number of bytes that will be written,
 -- and executes the inner decoding loop against that data.
+--
+-- Since 1.0, exported from this module instead of
+-- @Data.ByteString.Base32.Internal@.
 --
 decodeBase32_ :: Ptr Word8 -> ByteString -> IO (Either Text ByteString)
 decodeBase32_ table bs
@@ -102,6 +113,9 @@ decodeComplete (Ptr !dtable) (BS !sfp !slen) =
 
 -- | Decode established Base32 provenance without validation.
 -- Padding contributes no payload; partial final quanta need no copying.
+--
+-- @since 1.0
+--
 decodeBase32Typed_ :: Ptr Word8 -> Base32 alphabet ByteString -> ByteString
 decodeBase32Typed_ (Ptr table) encoded = unsafeDupablePerformIO $ do
     dfp <- mallocPlainForeignPtrBytes dlen

@@ -11,6 +11,8 @@
 --
 -- Final quantum encoding for padded and unpadded output.
 --
+-- @since 1.0
+--
 module Data.ByteString.Base32.Internal.Tail
 ( loopTail
 , loopTailNoPad
@@ -30,6 +32,8 @@ import GHC.Word
 
 
 -- | Unroll final quantum encoding for base32
+--
+-- @since 1.0
 --
 loopTail
     :: Addr#
@@ -119,6 +123,8 @@ loopTail !lut !dfp !dptr !end !dst !src
 {-# INLINE loopTail #-}
 
 -- | Unroll final quantum encoding for base32
+--
+-- @since 1.0
 --
 loopTailNoPad
     :: Addr#

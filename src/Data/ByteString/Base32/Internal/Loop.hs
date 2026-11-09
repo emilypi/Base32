@@ -13,6 +13,8 @@
 --
 -- Encoding loops, checked and typed decoding loops, and quantum validation.
 --
+-- @since 1.0
+--
 module Data.ByteString.Base32.Internal.Loop
 ( innerLoop
 , decodeLoop
@@ -42,6 +44,10 @@ import GHC.Word
 -- ------------------------------------------------------------------------ --
 -- Encoding loops
 
+-- | Encode complete quanta, then run the supplied tail handler.
+--
+-- @since 1.0
+--
 innerLoop
     :: Addr#
     -> Ptr Word64
@@ -94,6 +100,10 @@ innerLoop !lut !dptr !sptr !end finish = do
 -- ------------------------------------------------------------------------ --
 -- Decoding loops
 
+-- | Decode and validate complete quanta, including the final padding.
+--
+-- @since 1.0
+--
 decodeLoop
     :: Addr#
     -> ForeignPtr Word8
@@ -159,6 +169,9 @@ decodeLoop !lut !dfp !dptr !sptr !end = do
 
 -- | Validate a decoded quantum before any output is written. Return its
 -- payload length. Both pointer and byte-array loops use the same rules.
+--
+-- @since 1.0
+--
 decodeQuantum
   :: Bool -> Int
   -> Word64 -> Word64 -> Word64 -> Word64
@@ -207,6 +220,9 @@ decodeQuantum !final !offset !a !b !c !d !e !f !g !h
 -- | Decode known-valid symbols. Alphabet, size, padding placement and unused
 -- bits have already been established by the producer of the typed value.
 -- The caller excludes trailing padding from the source length.
+--
+-- @since 1.0
+--
 decodeLoopTyped :: Addr# -> Ptr Word8 -> Ptr Word8 -> Int -> IO ()
 decodeLoopTyped table dptr sptr slen = do
 #ifdef BASE32_SIMD

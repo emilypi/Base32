@@ -56,6 +56,9 @@ import qualified Data.Text.Lazy.Encoding as TL
 --
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
+--
+-- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+--
 encodeBase32 :: ByteString -> Base32 'HexPadded TL.Text
 encodeBase32 = fmap TL.decodeUtf8 . encodeBase32'
 {-# INLINE encodeBase32 #-}
@@ -68,6 +71,8 @@ encodeBase32 = fmap TL.decodeUtf8 . encodeBase32'
 --
 -- >>> encodeBase32' "Sun"
 -- "ADQMS==="
+--
+-- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
 --
 encodeBase32' :: ByteString -> Base32 'HexPadded ByteString
 encodeBase32' = assertBase32 . fromChunks
@@ -93,6 +98,8 @@ encodeBase32' = assertBase32 . fromChunks
 -- >>> decodeBase32Untyped "ADQM==="
 -- Left "Base32-encoded bytestring has invalid padding"
 --
+-- @since 1.0
+--
 decodeBase32Untyped :: ByteString -> Either T.Text ByteString
 decodeBase32Untyped = fmap (fromChunks . (:[]))
     . B32H.decodeBase32Untyped
@@ -111,6 +118,9 @@ decodeBase32Untyped = fmap (fromChunks . (:[]))
 --
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
+--
+-- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+--
 encodeBase32Unpadded :: ByteString -> Base32 'HexUnpadded TL.Text
 encodeBase32Unpadded = fmap TL.decodeUtf8 . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
@@ -125,6 +135,8 @@ encodeBase32Unpadded = fmap TL.decodeUtf8 . encodeBase32Unpadded'
 --
 -- >>> encodeBase32Unpadded' "Sun"
 -- "ADQMS"
+--
+-- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
 --
 encodeBase32Unpadded' :: ByteString -> Base32 'HexUnpadded ByteString
 encodeBase32Unpadded' = assertBase32 . fromChunks
@@ -148,6 +160,8 @@ encodeBase32Unpadded' = assertBase32 . fromChunks
 --
 -- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
 --
 decodeBase32UnpaddedUntyped :: ByteString -> Either T.Text ByteString
 decodeBase32UnpaddedUntyped = fmap (fromChunks . (:[]))
@@ -173,6 +187,8 @@ decodeBase32UnpaddedUntyped = fmap (fromChunks . (:[]))
 -- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 decodeBase32PaddedUntyped :: ByteString -> Either T.Text ByteString
 decodeBase32PaddedUntyped = fmap (fromChunks . (:[]))
     . B32H.decodeBase32PaddedUntyped
@@ -190,6 +206,8 @@ decodeBase32PaddedUntyped = fmap (fromChunks . (:[]))
 -- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
+-- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+--
 decodeBase32 :: forall k. HexAlphabet k => Base32 k ByteString -> ByteString
 decodeBase32 = fromChunks
   . fmap (B32H.decodeBase32
@@ -201,6 +219,8 @@ decodeBase32 = fromChunks
 --
 -- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
+--
+-- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
 --
 decodeBase32Padded :: Base32 'HexPadded ByteString -> ByteString
 decodeBase32Padded = decodeBase32
@@ -220,6 +240,8 @@ decodeBase32Padded = decodeBase32
 -- >>> parseBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 parseBase32Padded :: ByteString -> Either T.Text (Base32 'HexPadded ByteString)
 parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
@@ -229,6 +251,8 @@ parseBase32Padded value = assertBase32 value
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
+--
+-- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
 --
 decodeBase32Unpadded :: Base32 'HexUnpadded ByteString -> ByteString
 decodeBase32Unpadded = decodeBase32
@@ -250,6 +274,8 @@ decodeBase32Unpadded = decodeBase32
 --
 -- >>> isLeft (parseBase32Unpadded "CP")
 -- True
+--
+-- @since 1.0
 --
 parseBase32Unpadded :: ByteString -> Either T.Text (Base32 'HexUnpadded ByteString)
 parseBase32Unpadded value = assertBase32 value

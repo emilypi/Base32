@@ -11,6 +11,8 @@
 --
 -- Shared allocation, byte-order, table lookup, rechunking, and padding utilities.
 --
+-- @since 1.0
+--
 module Data.ByteString.Base32.Internal.Utils
 ( aix
 , peekWord32BE
@@ -43,25 +45,41 @@ import Foreign.Marshal.Alloc (mallocBytes)
 
 -- | Read 'Word8' index off alphabet addr
 --
+-- @since 1.0
+--
 aix :: Word8 -> Addr# -> Word8
 aix w8 alpha = W8# (indexWord8OffAddr# alpha i)
   where
     !(I# i) = fromIntegral w8
 {-# INLINE aix #-}
 
+-- | Widen a 'Word8' to a 'Word32'.
+--
+-- @since 1.0
+--
 w32 :: Word8 -> Word32
 w32 = fromIntegral
 {-# INLINE w32 #-}
 
+-- | Widen a 'Word32' to a 'Word64'.
+--
+-- @since 1.0
+--
 w64_32 :: Word32 -> Word64
 w64_32 = fromIntegral
 {-# INLINE w64_32 #-}
 
+-- | Widen a 'Word8' to a 'Word64'.
+--
+-- @since 1.0
+--
 w64 :: Word8 -> Word64
 w64 = fromIntegral
 {-# INLINE w64 #-}
 
 -- | Allocate and fill @n@ bytes with some data
+--
+-- @since 1.0
 --
 writeNPlainPtrBytes
   :: Storable a
@@ -77,12 +95,20 @@ writeNPlainPtrBytes !n as = unsafeDupablePerformIO $ do
     go !p (x:xs) = poke p x >> go (plusPtr p 1) xs
 {-# INLINE writeNPlainPtrBytes #-}
 
+-- | Read a 32-bit word in big-endian byte order.
+--
+-- @since 1.0
+--
 peekWord32BE :: Ptr Word32 -> IO Word32
 peekWord32BE p = case targetByteOrder of
   LittleEndian -> byteSwap32 <$> peek p
   BigEndian -> peek p
 {-# inline peekWord32BE #-}
 
+-- | Read a 64-bit word in big-endian byte order.
+--
+-- @since 1.0
+--
 peekWord64BE :: Ptr Word64 -> IO Word64
 peekWord64BE p = case targetByteOrder of
   LittleEndian -> byteSwap64 <$> peek p
@@ -90,6 +116,8 @@ peekWord64BE p = case targetByteOrder of
 {-# inline peekWord64BE #-}
 
 -- | Rechunk a list of bytestrings in multiples of @n@
+--
+-- @since 1.0
 --
 reChunkN :: Int -> [ByteString] -> [ByteString]
 reChunkN n = go
@@ -113,6 +141,9 @@ reChunkN n = go
 {-# INLINE reChunkN #-}
 
 -- | Padded output capacity, using checked integer arithmetic.
+--
+-- @since 1.0
+--
 encodedLength :: Int -> Int
 encodedLength n
   | n < 0 || blocks > maxBound `quot` 8 = error "Base32 output is too large"
@@ -124,6 +155,10 @@ encodedLength n
 -- | Reject '=' in the final @n@ bytes before running the decoder.
 -- The caller selects @n@ from the input length and padding policy, preventing
 -- existing padding from being accepted when missing padding is added.
+--
+-- Since 1.0, exported from this module instead of
+-- @Data.ByteString.Base32.Internal@.
+--
 validateLastNPads
     :: Int
     -> ByteString

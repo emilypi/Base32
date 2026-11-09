@@ -18,6 +18,8 @@
 --
 -- Encoded values tagged with their alphabet and padding policy.
 --
+-- @since 1.0
+--
 module Data.Base32.Types
   ( Alphabet (..)
   , StdAlphabet
@@ -34,10 +36,18 @@ import GHC.TypeLits (ErrorMessage (..), TypeError)
 
 -- | The alphabets and padding forms from RFC 4648 sections 6 and 7.
 --
+-- @since 1.0
+--
 data Alphabet = StdPadded | StdUnpadded | HexPadded | HexUnpadded
-  deriving (Eq, Ord, Show)
+  deriving
+    ( Eq   -- ^ @since 1.0
+    , Ord  -- ^ @since 1.0
+    , Show -- ^ @since 1.0
+    )
 
 -- | Padded and unpadded forms of the standard alphabet.
+--
+-- @since 1.0
 --
 type family StdAlphabet (k :: Alphabet) :: Constraint where
   StdAlphabet 'StdPadded = ()
@@ -54,6 +64,9 @@ type family StdAlphabet (k :: Alphabet) :: Constraint where
 -- "ADQMS==="
 -- >>> hex (assertBase32 @'HexUnpadded "ADQMS")
 -- "ADQMS"
+--
+-- @since 1.0
+--
 type family HexAlphabet (k :: Alphabet) :: Constraint where
   HexAlphabet 'HexPadded = ()
   HexAlphabet 'HexUnpadded = ()
@@ -66,13 +79,30 @@ type family HexAlphabet (k :: Alphabet) :: Constraint where
 -- this provenance. 'assertBase32', record updates, and the derived mapping
 -- instances do not validate their results.
 --
+-- @since 1.0
+--
 type role Base32 nominal representational
 newtype Base32 (alphabet :: Alphabet) a = Base32
-  { extractBase32 :: a }
-  deriving (Eq, Ord, Show, NFData) via a 
-  deriving (Functor, Applicative, Monad) via Identity
+  { extractBase32 :: a
+    -- ^ Extract the encoded representation without decoding it.
+    --
+    -- @since 1.0
+  }
+  deriving
+    ( Eq     -- ^ @since 1.0
+    , Ord    -- ^ @since 1.0
+    , Show   -- ^ @since 1.0
+    , NFData -- ^ @since 1.0
+    ) via a
+  deriving
+    ( Functor     -- ^ @since 1.0
+    , Applicative -- ^ @since 1.0
+    , Monad       -- ^ @since 1.0
+    ) via Identity
 
 -- | Assert that a value is Base32-encoded.  
+--
+-- @since 1.0
 --
 assertBase32 :: forall alphabet a. a -> Base32 alphabet a
 assertBase32 = Base32

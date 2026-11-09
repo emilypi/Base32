@@ -55,6 +55,8 @@ import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
 -- >>> encodeBase32 "Sun"
 -- "ADQMS==="
 --
+-- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+--
 encodeBase32 :: ShortByteString -> Base32 'HexPadded ShortText
 encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 {-# INLINE encodeBase32 #-}
@@ -67,6 +69,8 @@ encodeBase32 = fmap fromShortByteStringUnsafe . encodeBase32'
 --
 -- >>> encodeBase32' "Sun"
 -- "ADQMS==="
+--
+-- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
 --
 encodeBase32' :: ShortByteString -> Base32 'HexPadded ShortByteString
 encodeBase32' =
@@ -92,6 +96,8 @@ encodeBase32' =
 --
 -- >>> decodeBase32Untyped "ADQM==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
 --
 decodeBase32Untyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32Untyped bs
@@ -121,6 +127,8 @@ decodeBase32Untyped bs
 -- >>> encodeBase32Unpadded "Sun"
 -- "ADQMS"
 --
+-- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
+--
 encodeBase32Unpadded :: ShortByteString -> Base32 'HexUnpadded ShortText
 encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 {-# INLINE encodeBase32Unpadded #-}
@@ -136,6 +144,8 @@ encodeBase32Unpadded = fmap fromShortByteStringUnsafe . encodeBase32Unpadded'
 --
 -- >>> encodeBase32Unpadded' "Sun"
 -- "ADQMS"
+--
+-- Since 1.0, returns a 'Base32' value recording the alphabet and padding.
 --
 encodeBase32Unpadded' :: ShortByteString -> Base32 'HexUnpadded ShortByteString
 encodeBase32Unpadded' =
@@ -160,6 +170,8 @@ encodeBase32Unpadded' =
 --
 -- >>> decodeBase32UnpaddedUntyped "ADQMS==="
 -- Left "Base32-encoded bytestring has invalid padding"
+--
+-- @since 1.0
 --
 decodeBase32UnpaddedUntyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32UnpaddedUntyped bs
@@ -191,6 +203,8 @@ decodeBase32UnpaddedUntyped bs
 -- >>> decodeBase32PaddedUntyped "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 decodeBase32PaddedUntyped :: ShortByteString -> Either Text ShortByteString
 decodeBase32PaddedUntyped bs
     | l == 0 = Right bs
@@ -213,6 +227,8 @@ decodeBase32PaddedUntyped bs
 -- >>> decodeBase32 (encodeBase32Unpadded' "Sun")
 -- "Sun"
 --
+-- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
+--
 decodeBase32 :: HexAlphabet k => Base32 k ShortByteString -> ShortByteString
 decodeBase32 = decodeShortTyped hexDecodeTable
 {-# INLINE decodeBase32 #-}
@@ -221,6 +237,8 @@ decodeBase32 = decodeShortTyped hexDecodeTable
 --
 -- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
+--
+-- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
 --
 decodeBase32Padded :: Base32 'HexPadded ShortByteString -> ShortByteString
 decodeBase32Padded = decodeBase32
@@ -240,6 +258,8 @@ decodeBase32Padded = decodeBase32
 -- >>> parseBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
+-- @since 1.0
+--
 parseBase32Padded :: ShortByteString -> Either Text (Base32 'HexPadded ShortByteString)
 parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
@@ -249,6 +269,8 @@ parseBase32Padded value = assertBase32 value
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
+--
+-- Since 1.0, consumes a 'Base32' value and returns the decoded result directly.
 --
 decodeBase32Unpadded :: Base32 'HexUnpadded ShortByteString -> ShortByteString
 decodeBase32Unpadded = decodeBase32
@@ -270,6 +292,8 @@ decodeBase32Unpadded = decodeBase32
 --
 -- >>> isLeft (parseBase32Unpadded "CP")
 -- True
+--
+-- @since 1.0
 --
 parseBase32Unpadded
   :: ShortByteString -> Either Text (Base32 'HexUnpadded ShortByteString)

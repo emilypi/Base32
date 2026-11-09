@@ -10,6 +10,8 @@
 --
 -- Decoding tables for the standard and extended-hex alphabets.
 --
+-- @since 1.0
+--
 module Data.ByteString.Base32.Internal.Tables
 ( stdDecodeTable
 , hexDecodeTable
@@ -22,6 +24,10 @@ import GHC.Word (Word8)
 import GHC.Ptr (Ptr)
 
 
+-- | ASCII decoding table for the standard alphabet.
+--
+-- @since 1.0
+--
 stdDecodeTable :: Ptr Word8
 stdDecodeTable = writeNPlainPtrBytes @Word8 256
     [ 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
@@ -43,6 +49,10 @@ stdDecodeTable = writeNPlainPtrBytes @Word8 256
     ]
 {-# NOINLINE stdDecodeTable #-}
 
+-- | ASCII decoding table for the extended-hex alphabet.
+--
+-- @since 1.0
+--
 hexDecodeTable :: Ptr Word8
 hexDecodeTable = writeNPlainPtrBytes @Word8 256
     [ 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff

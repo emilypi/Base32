@@ -2,6 +2,9 @@
 
 ## 1.0
 
+This release introduces a typed encoding API with breaking signature changes.
+See [MIGRATION-1.0.md](MIGRATION-1.0.md) for the changes from 0.4.
+
 * Introduce alphabet- and padding-tagged `Base32` values in `Data.Base32.Types`.
   Encoders return wrapped values; typed decoders consume them. Checked decoders
   now use the `Untyped` suffix; custom text conversion functions retain their names.
@@ -22,8 +25,6 @@
 * Remove `Data.ByteString.Base32.Internal`; use `Internal.Head` for codec entry
   points and `Internal.Utils` for `validateLastNPads`.
 * Support GHC 9.6–9.14; update copyright through 2026, CI, bounds, and benchmarks.
-
-See [MIGRATION-1.0.md](MIGRATION-1.0.md) for source compatibility changes.
 
 ## 0.4
 
