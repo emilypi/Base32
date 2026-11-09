@@ -38,13 +38,8 @@ import GHC.TypeLits (ErrorMessage (..), TypeError)
 data Alphabet = StdPadded | StdUnpadded | HexPadded | HexUnpadded
   deriving (Eq, Ord, Show)
 
--- | Both padding forms of the standard alphabet.
+-- | Padded and unpadded forms of the standard alphabet.
 --
--- >>> let standard :: StdAlphabet k => Base32 k a -> a; standard = extractBase32
--- >>> standard (assertBase32 @'StdPadded "KN2W4===")
--- "KN2W4==="
--- >>> standard (assertBase32 @'StdUnpadded "KN2W4")
--- "KN2W4"
 type family StdAlphabet (k :: Alphabet) :: Constraint where
   StdAlphabet 'StdPadded = ()
   StdAlphabet 'StdUnpadded = ()
@@ -53,7 +48,7 @@ type family StdAlphabet (k :: Alphabet) :: Constraint where
       ':<>: 'Text "Use the standard encoders or padding-specific parsers."
     )
 
--- | Both padding forms of the extended-hex alphabet.
+-- | Padded and unpadded forms of the extended-hex alphabet.
 --
 -- >>> let hex :: HexAlphabet k => Base32 k a -> a; hex = extractBase32
 -- >>> hex (assertBase32 @'HexPadded "ADQMS===")
@@ -70,8 +65,6 @@ type family HexAlphabet (k :: Alphabet) :: Constraint where
 
 -- | The padding policy enforced by a checked decoder or parser.
 --
--- >>> [OptionalPadding, RequirePadding, ForbidPadding]
--- [OptionalPadding,RequirePadding,ForbidPadding]
 data Padding = OptionalPadding | RequirePadding | ForbidPadding
   deriving (Eq, Ord, Show)
 
@@ -79,25 +72,15 @@ data Padding = OptionalPadding | RequirePadding | ForbidPadding
 -- this provenance. 'assertBase32', record updates, and the derived mapping
 -- instances do not validate their results.
 --
--- >>> assertBase32 "KN2W4===" :: Base32 'StdPadded String
--- "KN2W4==="
 type role Base32 nominal representational
-
 newtype Base32 (alphabet :: Alphabet) a = Base32
-  { extractBase32 :: a
-  -- ^ Extract the encoded representation without decoding it.
-  --
-  -- >>> extractBase32 (assertBase32 @'StdPadded "KN2W4===")
-  -- "KN2W4==="
-  }
-  deriving (Eq, Ord, Show, NFData) via a
+  { extractBase32 :: a }
+  deriving (Eq, Ord, Show, NFData) via a 
   deriving (Functor, Applicative, Monad) via Identity
 
 -- | Assert provenance without validation. Prefer a parser for external input.
 -- The caller must establish validity; typed decoding performs no validation.
 --
--- >>> assertBase32 @'HexUnpadded "ADQMS"
--- "ADQMS"
 assertBase32 :: forall alphabet a. a -> Base32 alphabet a
 assertBase32 = Base32
 {-# INLINE assertBase32 #-}

@@ -191,8 +191,9 @@ decodeBase32PaddedUntyped bs@(BS _ !l)
     !r = l `rem` 8
 {-# INLINE decodeBase32PaddedUntyped #-}
 
--- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32Padded' or 'parseBase32Unpadded' for external input.
+-- | Decode a typed Base32hex-encoded 'ByteString' value. 
+-- 
+-- This function is padding-agnostic.
 --
 -- >>> decodeBase32 (encodeBase32' "Sun")
 -- "Sun"
@@ -203,9 +204,7 @@ decodeBase32 :: HexAlphabet k => Base32 k ByteString -> ByteString
 decodeBase32 = decodeBase32Typed_ hexDecodeTable
 {-# INLINE decodeBase32 #-}
 
--- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32Padded' to check the padding policy on external input.
--- The type establishes the alphabet and padding policy.
+-- | Decode a typed, padded Base32hex-encoded 'ByteString' value 
 --
 -- >>> decodeBase32Padded (encodeBase32' "Sun")
 -- "Sun"
@@ -214,16 +213,17 @@ decodeBase32Padded :: Base32 'HexPadded ByteString -> ByteString
 decodeBase32Padded = decodeBase32
 {-# INLINE decodeBase32Padded #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
+-- | Parse and validate a base32hex-encoded value, assuming that it has padding.
 --
 -- >>> parseBase32Padded "adqms==="
 -- Right "adqms==="
+--
 -- >>> fmap decodeBase32Padded (parseBase32Padded "ADQMS===")
 -- Right "Sun"
+-- 
 -- >>> parseBase32Padded ""
 -- Right ""
+--
 -- >>> parseBase32Padded "ADQMS"
 -- Left "Base32-encoded bytestring requires padding"
 --
@@ -232,9 +232,7 @@ parseBase32Padded value = assertBase32 value
   <$ (decodeBase32PaddedUntyped) value
 {-# INLINE parseBase32Padded #-}
 
--- | Decode established Base32 provenance without repeating validation.
--- Use 'parseBase32Unpadded' to check the padding policy on external input.
--- The type establishes the alphabet and padding policy.
+-- | Decode a typed, unpadded Base32hex-encoded value.
 --
 -- >>> decodeBase32Unpadded (encodeBase32Unpadded' "Sun")
 -- "Sun"
@@ -243,9 +241,7 @@ decodeBase32Unpadded :: Base32 'HexUnpadded ByteString -> ByteString
 decodeBase32Unpadded = decodeBase32
 {-# INLINE decodeBase32Unpadded #-}
 
--- | Validate encoded input, retaining its original representation and case.
--- Checks alphabet, padding, length, and zero unused bits. Empty input is valid.
--- This validates Base32 bytes, not the character encoding of the payload.
+-- | Parse and validate a base32hex-encoded value, assuming that is unpadded.
 --
 -- >>> parseBase32Unpadded "adqms"
 -- Right "adqms"
